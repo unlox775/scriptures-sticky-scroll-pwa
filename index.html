@@ -21,6 +21,15 @@
         <button id="installButton" class="header-btn" hidden>Install</button>
       </header>
 
+      <div id="autoScrollPanel" class="auto-scroll-panel auto-scroll-panel-global" hidden>
+        <button id="autoScrollStop" class="stop-btn" aria-label="Stop auto-scroll">×</button>
+        <label for="autoScrollSpeed">Speed</label>
+        <div class="auto-scroll-slider-wrap">
+          <input id="autoScrollSpeed" type="range" min="8" max="100" step="5" value="90" />
+        </div>
+        <span id="autoScrollSpeedLabel">90 px/s</span>
+      </div>
+
       <main class="app-main">
         <section id="homeView" class="view"></section>
         <section id="booksView" class="view" hidden></section>
@@ -28,17 +37,8 @@
         <section id="historyView" class="view" hidden></section>
 
         <section id="readerView" class="view reader-view" hidden>
-          <div id="autoScrollPanel" class="auto-scroll-panel" hidden>
-            <button id="autoScrollStop" class="stop-btn" aria-label="Stop auto-scroll">×</button>
-            <label for="autoScrollSpeed">Speed</label>
-            <div class="auto-scroll-slider-wrap">
-              <input id="autoScrollSpeed" type="range" min="8" max="100" step="5" value="90" />
-            </div>
-            <span id="autoScrollSpeedLabel">90 px/s</span>
-          </div>
           <div id="bookmarkRibbons" class="bookmark-ribbons" aria-hidden="true"></div>
-          <div class="reader-status">
-            <span id="currentReference">Reference: -</span>
+          <div id="readerStatus" class="reader-status" hidden>
             <span id="bookmarkStatus"></span>
           </div>
           <div id="readerScroller" class="reader-scroller">

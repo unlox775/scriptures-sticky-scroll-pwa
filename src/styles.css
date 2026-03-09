@@ -175,7 +175,13 @@ body {
   background: #e2e8f0;
   border-bottom: 1px solid var(--border);
   width: 100%;
-  max-width: 100%;
+}
+
+.auto-scroll-panel-global {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 15;
+  margin: 0;
 }
 
 .auto-scroll-slider-wrap {
@@ -259,6 +265,7 @@ body {
   position: absolute;
   left: 4px;
   transform: translateY(-50%);
+  transition: top 0.25s ease-out;
 }
 
 .reader-content {

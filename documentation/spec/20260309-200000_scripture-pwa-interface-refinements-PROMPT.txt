@@ -1,0 +1,33 @@
+This file captures the full agentic process for interface refinements: every user prompt and follow-up, verbatim and chronological (earliest-first). Append newest prompts at the end.
+
+=== Prompt 1 (auto-scroll, bookmarks, ribbons) ===
+
+The auto-scroll needs to max out at 100px/sec. and auto-scroll and the scroll slie/stop bar should ONLY be a viewing-scriptures UI thing. Not elsewhere. Also the scroll stop/slide bar should ONLY show when scrolling is ON, it is showing all the time right now.
+
+The existing-bookmark show in place as you browse around is not working. I have a bookmark at 1 Ne 7:14, but going to there naturalltyy, I don't see the ribbon on the left side, anchored to verse 14. Then as I scroll quickly past it should not follow. Then if I scroll pretty-slow and smooth (or repeated, half/full-page scrolls with 10-20 second pauses as I read, so we need to do average over-30-sec logic), the bookmark should follow me as I go.
+
+=== Prompt 2 (Daily Reading default, refresh button) ===
+
+And on the "Daily Reading" bookmark you pre-added, make that start at 1 Ne, 1:1. Also we need a "refresh-arrow" button next to the "+" icon, which lets you choose an existing bookmark and move it to your current location.
+
+=== Prompt 3 (low-speed scroll, stop button, slider, panel visibility) ===
+
+For some reason when then scrolling speed is 13px or less (or 55px or less on iOS) the scrolling stops entirely. Make the Stop button just be an "X" icon, then make the scroll-speed-slider full width on the UI up tp 400px wide max.
+
+And that stop/slider bar is STILL showing even when NOT scrolling, and showing on pages that are NOT the scripture-viewing page
+
+=== Prompt 4 (top bar rework per view) ===
+
+Also, the top bar just needs reworking on the different views. You're keeping the same top bar on every freaking view, which is not helpful. On a home screen, you don't need a home icon. Just standard works reader. Sounds great. You don't need auto-scroll. You don't need chapters on that view. If you're viewing an actual book, Book of Mormon or something like that, then having a home button is helpful. and then Book of Mormon arrow books is a great thing at the top. You don't need to auto scroll or chapters in there. When you clicked on a book, First Nephi, you can still show Book of Mormon, First Nephi, arrow chapters. That's fine. But I think at that point, make Book of Mormon be a link. Maybe even just show... I think I don't even like showing like the... When you're on Book of Mormon, I just don't want to have Book of Mormon greater than books. I just want to have Book of Mormon. Home and then Book of Mormon is all you would see at that point. They can go back to home. But when you clicked on First Nephi, then I think it should show a back, a home button on the left side, a less than symbol, and then the word back on a second icon to go back. And that should be a standard thing for all the other views. And then after that, just show one Nephi. You don't need to have Book of Mormon. You don't need to have chapters. You don't need to have any other stuff. Just, it'll keep the title a lot shorter. And then it'll have a standard, just home back button. When you've actually gone into a chapter, just having the chapter name at the top. So on that view, when you're actually viewing scriptures, I would see a home button, a back button, a 1 Nephi colon 2 (or whatever chapter I'm on). And then I would see an auto scroll. I would see the plus icon, the curly refresh icon, and then an auto scroll button. But they don't need a chapters button. If I want to go to that point, I'll hit back. Simple navigation interface.
+
+=== Prompt 5 (spec rehash) ===
+
+I need you to rehash the specs thing that you were doing before. The one that is in the brain graft tracker, the 001 script for PWA standard works prompt and to-do files, that would be the first spec. That is the initial prompt to generate the whole app and build everything in here. I want that spec and prompt for historical purposes as the first spec pair of files. Everything since I started in this conversation, plus all the prompts I've given you now, I want tracked in a second set of spec files, which is refining the interface or whatever like that. And then as we keep doing iterations here, I want you to keep updating that prompts file and the spec file to keep including everything that we're doing in the to-dos and everything else as part of that thing.
+
+=== Prompt 6 (scroller bar, reference, iOS install, ribbon placement) ===
+
+We have some explaining to do. Why the heck is the bar at the top, the scroller thing, it used to be anchored correctly so it went edge to edge like a secondary bar below the header. Right now it is showing as this lame kind of a middle thing in the middle of it. I don't know what that reference dash thingy is supposed to be on there. Not at all useful. The other interface is looking okay. One other weird glitch, the install button shown here looks great. When I pull it up on Chrome on iOS ... it does not show me an install link. On Safari it also doesn't show either. But so that install button is showing while I'm on a desktop Chrome or Brave or something like that. But it should be showing on iOS as well... maybe the install button should gives you instructions of how to add it as a local app here as a view, rather than actually automatically going and adding the thing.
+
+The bookmark at 1 Ne 7:13 - I'm seeing it there but it's way up on the top, not in place next to verse 13. I don't like that reference it's not useful for anybody.
+
+[Bookmark follow behavior refinement:] When scrolling and pausing (e.g. 30 sec reading verses 13-18), then scrolling a small amount (less than full screen), we should detect that and update the bookmark. If I stayed on the page long enough and scrolled within that buffer, automatically slide the bookmark. It should move down to each verse one at a time - a little sliding animation would be really nice instead of just popping.

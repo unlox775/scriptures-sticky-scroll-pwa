@@ -28,7 +28,7 @@ const homeButton = document.getElementById("homeButton");
 const backButton = document.getElementById("backButton");
 const addBookmarkButton = document.getElementById("addBookmarkButton");
 const moveBookmarkButton = document.getElementById("moveBookmarkButton");
-const currentReferenceEl = document.getElementById("currentReference");
+const readerStatusEl = document.getElementById("readerStatus");
 const bookmarkStatusEl = document.getElementById("bookmarkStatus");
 const bookmarkRibbonsEl = document.getElementById("bookmarkRibbons");
 const readerRibbonsOverlay = document.getElementById("readerRibbonsOverlay");
@@ -374,7 +374,6 @@ function shouldAutoFollow(anchor, meta) {
 }
 
 function handleAnchorChange(anchor, meta) {
-  currentReferenceEl.textContent = `Reference: ${anchor.reference}`;
   state.currentLocation = anchor;
   if (!readerView.hidden) updateHeader("readerView");
   renderBookmarkRibbons();
@@ -382,6 +381,7 @@ function handleAnchorChange(anchor, meta) {
   const toFollow = bookmarks.getBookmarkToFollow(anchor);
   if (!toFollow) {
     bookmarkStatusEl.textContent = "";
+    readerStatusEl.hidden = true;
     return;
   }
   if (shouldAutoFollow(anchor, meta)) {
@@ -389,8 +389,10 @@ function handleAnchorChange(anchor, meta) {
     state.lastAutoBookmarkAt = meta.timestamp;
     state.lastAutoReference = anchor.reference;
     bookmarkStatusEl.textContent = `${toFollow.name} updated`;
+    readerStatusEl.hidden = false;
   } else {
     bookmarkStatusEl.textContent = "";
+    readerStatusEl.hidden = true;
   }
 }
 
@@ -427,6 +429,7 @@ function wireGlobalEvents() {
     if (list.length === 1) {
       bookmarks.updateBookmarkLocation(list[0].id, state.currentLocation, "manual");
       bookmarkStatusEl.textContent = `Moved ${list[0].name} to ${state.currentLocation.reference}`;
+      readerStatusEl.hidden = false;
       renderBookmarkRibbons();
       return;
     }
@@ -442,6 +445,7 @@ function wireGlobalEvents() {
       btn.addEventListener("click", () => {
         bookmarks.updateBookmarkLocation(b.id, state.currentLocation, "manual");
         bookmarkStatusEl.textContent = `Moved ${b.name} to ${state.currentLocation.reference}`;
+        readerStatusEl.hidden = false;
         picker.remove();
         renderBookmarkRibbons();
       });
@@ -496,18 +500,41 @@ function wireGlobalEvents() {
     if (state.reader) state.reader.setAutoScrollSpeed(speed);
   });
 
+  function isStandaloneOrDesktopInstall() {
+    return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true ||
+      document.referrer.includes("android-app://")
+    );
+  }
+
+  function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     state.deferredPrompt = e;
-    installButton.hidden = false;
+    if (!isStandaloneOrDesktopInstall()) installButton.hidden = false;
   });
 
+  if (isIOS() && !isStandaloneOrDesktopInstall()) {
+    installButton.textContent = "Add to Home Screen";
+    installButton.hidden = false;
+  }
+
   installButton.addEventListener("click", async () => {
-    if (!state.deferredPrompt) return;
-    state.deferredPrompt.prompt();
-    await state.deferredPrompt.userChoice;
-    state.deferredPrompt = null;
-    installButton.hidden = true;
+    if (state.deferredPrompt) {
+      state.deferredPrompt.prompt();
+      await state.deferredPrompt.userChoice;
+      state.deferredPrompt = null;
+      installButton.hidden = true;
+      return;
+    }
+    if (isIOS()) {
+      const msg = "To add this app to your home screen:\n\n1. Tap the Share button (□↑)\n2. Scroll and tap \"Add to Home Screen\"\n3. Tap Add";
+      alert(msg);
+    }
   });
 }
 

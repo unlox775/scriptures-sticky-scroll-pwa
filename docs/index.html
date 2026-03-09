@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#0f172a" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>Scripture Reader PWA</title>
-    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/index-6m7PIejT.js"></script>
-    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/index-NStbToeT.css">
+    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/index-Dj9o_DX1.js"></script>
+    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/index-CtgEpfiL.css">
   </head>
   <body>
     <div id="app">
@@ -23,6 +23,15 @@
         <button id="installButton" class="header-btn" hidden>Install</button>
       </header>
 
+      <div id="autoScrollPanel" class="auto-scroll-panel auto-scroll-panel-global" hidden>
+        <button id="autoScrollStop" class="stop-btn" aria-label="Stop auto-scroll">×</button>
+        <label for="autoScrollSpeed">Speed</label>
+        <div class="auto-scroll-slider-wrap">
+          <input id="autoScrollSpeed" type="range" min="8" max="100" step="5" value="90" />
+        </div>
+        <span id="autoScrollSpeedLabel">90 px/s</span>
+      </div>
+
       <main class="app-main">
         <section id="homeView" class="view"></section>
         <section id="booksView" class="view" hidden></section>
@@ -30,17 +39,8 @@
         <section id="historyView" class="view" hidden></section>
 
         <section id="readerView" class="view reader-view" hidden>
-          <div id="autoScrollPanel" class="auto-scroll-panel" hidden>
-            <button id="autoScrollStop" class="stop-btn" aria-label="Stop auto-scroll">×</button>
-            <label for="autoScrollSpeed">Speed</label>
-            <div class="auto-scroll-slider-wrap">
-              <input id="autoScrollSpeed" type="range" min="8" max="100" step="5" value="90" />
-            </div>
-            <span id="autoScrollSpeedLabel">90 px/s</span>
-          </div>
           <div id="bookmarkRibbons" class="bookmark-ribbons" aria-hidden="true"></div>
-          <div class="reader-status">
-            <span id="currentReference">Reference: -</span>
+          <div id="readerStatus" class="reader-status" hidden>
             <span id="bookmarkStatus"></span>
           </div>
           <div id="readerScroller" class="reader-scroller">
