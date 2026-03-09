@@ -1,0 +1,10 @@
+This spec marks a pivot point. The interface-refinements work (Prompts 1–8) was not making sufficient progress. From here forward, iterate in this spec.
+
+=== Prompt 1 (URL/state, layout, reader bubble, scroller, debug mode) ===
+
+URL/state persistence: Add hash-based routing (#/w/:workId, #/b/:workId/:bookId, #/r/:workId/:bookId/:chapter/:verse) so refresh and hot-reload preserve the current view. Use localStorage as fallback for PWA when URL might reset.
+Layout: Add padding so content isn't smashed against the top bar on each view.
+Reader: Remove the bordered/rounded "bubble" around the reader content—make it full-bleed, no clipping at bottom.
+Scroller: Fix jumpToLocation so opening 2 Ne 4 actually shows chapter 4 (scroller positioning bug).
+Auto-scroll bar: Ensure it only shows in reader when auto-scroll is active.
+Developer mode: Easter egg—tap top-left 10×10px zone on home screen to enable. Bug icon at bottom-right opens a drawer with Storage (localStorage explorer) and Logs. Comprehensive logger for anchor changes, scroll velocity, auto-follow, etc. Copy button exports logs as JSON to textarea (auto-select for paste). Session-based logs with 7-day purge.

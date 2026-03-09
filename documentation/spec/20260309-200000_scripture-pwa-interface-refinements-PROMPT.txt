@@ -31,3 +31,18 @@ We have some explaining to do. Why the heck is the bar at the top, the scroller 
 The bookmark at 1 Ne 7:13 - I'm seeing it there but it's way up on the top, not in place next to verse 13. I don't like that reference it's not useful for anybody.
 
 [Bookmark follow behavior refinement:] When scrolling and pausing (e.g. 30 sec reading verses 13-18), then scrolling a small amount (less than full screen), we should detect that and update the bookmark. If I stayed on the page long enough and scrolled within that buffer, automatically slide the bookmark. It should move down to each verse one at a time - a little sliding animation would be really nice instead of just popping.
+
+=== Prompt 7 (auto-scroll bar visibility, button toggle, stop on other actions) ===
+
+While in auto-scroll, hitting any button (including the plus button to add a new bookmark and the refresh button to move an existing bookmark) should stop auto-scroll. Also, the auto-scroll button should switch to "Stop" when active instead of disappearing; the red X and speed slider bar can remain. The bar with the stop/speed controls was showing on every screen—it should only appear in the scripture reader view when auto-scroll is active. [Note: When recording this prompt, translate any strong language to milder wording; this is a church-oriented project.]
+
+=== Prompt 8 (collections, tiles, headers, ribbons, back button, chapter grid) ===
+
+Scripture Collections: Remove the "Scripture Collections" header; put Book of Mormon, Old Testament, New Testament, etc. tiles right at the top. Remove Browse buttons—make the entire tile clickable. Remove book/chapter counts (wasting space). Use slightly different styling so tiles don't all look like call-to-action buttons.
+Books view: Same—whole card clickable, no Chapters button, no chapter count. Don't show the work title (e.g. Book of Mormon) twice in the header and content; remove the duplicate.
+Chapter view: Don't show the book title (e.g. 1 Nephi) twice. Keep the "Tap a chapter tile to enter continuous reading mode" hint. Use a denser grid—5 columns instead of 3.
+Back button: Replace "‹ Back" with just a larger ‹ icon.
+Bookmarks: Still not showing over verses. Improve positioning so the left-side ribbon appears over the verse the bookmark is set for. Add scroll-based updates to keep ribbons positioned correctly (virtualization/infinite scroll may make this tricky).
+
+---
+[SUPERSEDED] Prompt 9 moved to new pivot spec: `20260309-210000_scripture-pwa-pivot-*`. Iterate there from here forward.

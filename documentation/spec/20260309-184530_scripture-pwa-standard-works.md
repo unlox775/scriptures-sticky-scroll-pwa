@@ -79,6 +79,6 @@ This living spec rolls up every instruction and deliverable from the Scripture R
 
 ## Next Actions
 
-1. Polish mobile UX and long-session performance.
-2. Tune bookmark auto-follow heuristics for variable scroll speeds.
+1. Polish mobile UX and long-session performance — iterate in `20260309-210000_scripture-pwa-pivot-*`.
+2. Tune bookmark auto-follow heuristics — iterate in pivot spec.
 3. If footnote-capable data becomes available, wire footnote rendering.

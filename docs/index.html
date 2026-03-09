@@ -6,14 +6,15 @@
     <meta name="theme-color" content="#0f172a" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>Scripture Reader PWA</title>
-    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/index-Dj9o_DX1.js"></script>
-    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/index-CtgEpfiL.css">
+    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/index-BNXdLzM6.js"></script>
+    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/index-BWVVQoD2.css">
   </head>
   <body>
     <div id="app">
       <header class="app-header">
+        <div id="devEasterEgg" class="dev-easter-egg" aria-hidden="true"></div>
         <button id="homeButton" class="header-btn" hidden>Home</button>
-        <button id="backButton" class="header-btn header-back-btn" hidden aria-label="Back"><span aria-hidden="true">‹</span> Back</button>
+        <button id="backButton" class="header-btn header-back-btn" hidden aria-label="Back"><span aria-hidden="true" class="back-icon">‹</span></button>
         <div id="headerTitle" class="header-title">Standard Works Reader</div>
         <button id="addBookmarkButton" class="header-btn ribbon-plus-btn" title="Add Bookmark" hidden>
           <span class="ribbon-plus-icon" aria-hidden="true">+</span>
@@ -23,15 +24,6 @@
         <button id="installButton" class="header-btn" hidden>Install</button>
       </header>
 
-      <div id="autoScrollPanel" class="auto-scroll-panel auto-scroll-panel-global" hidden>
-        <button id="autoScrollStop" class="stop-btn" aria-label="Stop auto-scroll">×</button>
-        <label for="autoScrollSpeed">Speed</label>
-        <div class="auto-scroll-slider-wrap">
-          <input id="autoScrollSpeed" type="range" min="8" max="100" step="5" value="90" />
-        </div>
-        <span id="autoScrollSpeedLabel">90 px/s</span>
-      </div>
-
       <main class="app-main">
         <section id="homeView" class="view"></section>
         <section id="booksView" class="view" hidden></section>
@@ -39,6 +31,14 @@
         <section id="historyView" class="view" hidden></section>
 
         <section id="readerView" class="view reader-view" hidden>
+          <div id="autoScrollPanel" class="auto-scroll-panel" hidden>
+            <button id="autoScrollStop" class="stop-btn" aria-label="Stop auto-scroll">×</button>
+            <label for="autoScrollSpeed">Speed</label>
+            <div class="auto-scroll-slider-wrap">
+              <input id="autoScrollSpeed" type="range" min="8" max="100" step="5" value="90" />
+            </div>
+            <span id="autoScrollSpeedLabel">90 px/s</span>
+          </div>
           <div id="bookmarkRibbons" class="bookmark-ribbons" aria-hidden="true"></div>
           <div id="readerStatus" class="reader-status" hidden>
             <span id="bookmarkStatus"></span>
@@ -49,6 +49,32 @@
           </div>
         </section>
       </main>
+    </div>
+
+    <div id="devBugIcon" class="dev-bug-icon" hidden title="Debug">🐛</div>
+    <div id="devDrawer" class="dev-drawer" hidden>
+      <div class="dev-drawer-header">
+        <span>Debug</span>
+        <button id="devDrawerClose" class="header-btn">Close</button>
+      </div>
+      <div class="dev-drawer-tabs">
+        <button class="dev-tab active" data-tab="storage">Storage</button>
+        <button class="dev-tab" data-tab="logs">Logs</button>
+      </div>
+      <div id="devStoragePanel" class="dev-panel">
+        <div id="devStorageContent"></div>
+      </div>
+      <div id="devLogsPanel" class="dev-panel" hidden>
+        <div class="dev-log-header">
+          <button id="devLogPrev" type="button" title="Previous session">←</button>
+          <select id="devLogSessionSelect">
+            <option value="">No sessions</option>
+          </select>
+          <button id="devLogNext" type="button" title="Next session">→</button>
+        </div>
+        <button id="devCopyLogs" class="secondary-btn">Copy logs (JSON)</button>
+        <div id="devLogEntries" class="dev-log-entries"></div>
+      </div>
     </div>
 
   </body>

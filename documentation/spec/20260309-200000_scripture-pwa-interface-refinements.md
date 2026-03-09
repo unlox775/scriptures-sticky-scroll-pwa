@@ -1,9 +1,10 @@
-# Scripture PWA Interface Refinements — Iteration Log
+# Scripture PWA Interface Refinements — Iteration Log (DONE)
 
 **Prompt slug:** `scripture-pwa-interface-refinements`  
-**Last updated:** 2026-03-09
+**Last updated:** 2026-03-09  
+**Status:** Superseded by pivot spec. This spec covers Prompts 1–8. From Prompt 9 onward, see `20260309-210000_scripture-pwa-pivot-*`.
 
-This living spec rolls up every instruction and deliverable from the interface/UX refinement work. See `20260309-200000_scripture-pwa-interface-refinements-PROMPT.txt` for the full prompt history (chronological, earliest-first).
+This spec rolls up every instruction and deliverable from the interface/UX refinement work (Prompts 1–8). See `20260309-200000_scripture-pwa-interface-refinements-PROMPT.txt` for the full prompt history.
 
 ## Delivery Summary (cumulative)
 
@@ -57,5 +58,6 @@ This living spec rolls up every instruction and deliverable from the interface/U
 
 ## Next Actions
 
-1. Polish bookmark ribbon positioning if still misaligned.
-2. Tune bookmark auto-follow heuristics for variable scroll speeds and pause patterns.
+1. ~~Polish bookmark ribbon positioning~~ — Continue in pivot spec if needed.
+2. ~~Tune bookmark auto-follow heuristics~~ — Continue in pivot spec if needed.
+3. **All further iterations:** Update `20260309-210000_scripture-pwa-pivot-*`.

@@ -3,7 +3,7 @@
 **Prompt slug:** `scripture-pwa-initial`  
 **Last updated:** 2026-03-09
 
-This spec captures the initial intake from the original prompt that generated the whole app. For interface refinements and follow-up work, see `20260309-200000_scripture-pwa-interface-refinements-*.md`.
+This spec captures the initial intake from the original prompt that generated the whole app. Refinements (Prompts 1–8): `20260309-200000_scripture-pwa-interface-refinements-*`. Current work (pivot): `20260309-210000_scripture-pwa-pivot-*`.
 
 See `20260309-120000_scripture-pwa-initial-PROMPT.txt` for the raw prompt.
 

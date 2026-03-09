@@ -334,15 +334,20 @@ export class ReaderEngine {
       }
     }
 
-    const verseSelector = `.verse[data-seq="${seq}"][data-verse="${location.verse || 1}"]`;
-    const verseEl = this.content.querySelector(verseSelector);
-    const target = verseEl || this.content.querySelector(`.chapter-block[data-seq="${seq}"]`);
-    if (!target) {
-      return;
-    }
-    const scrollerRect = this.scroller.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-    const desiredTop = this.scroller.clientHeight * align;
-    this.scroller.scrollTop += targetRect.top - scrollerRect.top - desiredTop;
+    const scrollToTarget = () => {
+      const verseSelector = `.verse[data-seq="${seq}"][data-verse="${location.verse || 1}"]`;
+      const verseEl = this.content.querySelector(verseSelector);
+      const target = verseEl || this.content.querySelector(`.chapter-block[data-seq="${seq}"]`);
+      if (!target) return;
+      const scrollerRect = this.scroller.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const desiredTop = this.scroller.clientHeight * align;
+      const delta = targetRect.top - scrollerRect.top - desiredTop;
+      this.scroller.scrollTop = Math.max(0, this.scroller.scrollTop + delta);
+    };
+
+    await new Promise((r) => requestAnimationFrame(r));
+    await new Promise((r) => requestAnimationFrame(r));
+    scrollToTarget();
   }
 }
