@@ -1,0 +1,22 @@
+{
+  "name": "scripture_pwa_reading_system",
+  "version": "1.0.0",
+  "description": "PWA scripture reader with sticky bookmarks and infinite scrolling",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:data": "node scripts/build-scripture-data.mjs",
+    "check": "npm run build:data && npm run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@bencrowder/scriptures-json": "^1.0.1"
+  },
+  "devDependencies": {
+    "vite": "^7.3.1"
+  }
+}

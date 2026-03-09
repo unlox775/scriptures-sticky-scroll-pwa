@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>Scripture Reader PWA</title>
+    <script type="module" crossorigin src="./assets/index-BKt8Df8e.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CXMZR9xh.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="app-header">
+        <button id="homeButton" class="header-btn">Home</button>
+        <div id="breadcrumb" class="breadcrumb">Standard Works Reader</div>
+        <button id="installButton" class="header-btn" hidden>Install</button>
+      </header>
+
+      <main class="app-main">
+        <section id="homeView" class="view"></section>
+        <section id="booksView" class="view" hidden></section>
+        <section id="chaptersView" class="view" hidden></section>
+
+        <section id="readerView" class="view reader-view" hidden>
+          <div id="readerControlBar" class="reader-control-bar">
+            <div class="bookmark-row">
+              <label for="activeBookmarkSelect">Bookmark</label>
+              <select id="activeBookmarkSelect"></select>
+              <button id="newBookmarkButton" class="secondary-btn">+ New</button>
+              <button id="showChaptersButton" class="secondary-btn">Chapters</button>
+            </div>
+
+            <div id="autoScrollDock" class="auto-scroll-dock">
+              <button id="autoScrollStart" class="primary-btn">Start Auto-Scroll</button>
+              <div id="autoScrollPanel" class="auto-scroll-panel" hidden>
+                <button id="autoScrollStop" class="stop-btn">STOP</button>
+                <label for="autoScrollSpeed">Speed</label>
+                <input id="autoScrollSpeed" type="range" min="20" max="360" step="5" value="90" />
+                <span id="autoScrollSpeedLabel">90 px/s</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="reader-status">
+            <span id="currentReference">Reference: -</span>
+            <span id="bookmarkStatus">Bookmark follow: idle</span>
+          </div>
+
+          <div id="readerScroller" class="reader-scroller">
+            <div id="readerContent" class="reader-content"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+  </body>
+</html>
