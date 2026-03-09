@@ -48,9 +48,14 @@ body {
   color: #e2e8f0;
 }
 
-.breadcrumb {
+.header-title {
   flex: 1;
   font-weight: 600;
+  min-width: 0;
+}
+
+.header-back-btn {
+  white-space: nowrap;
 }
 
 .app-main {

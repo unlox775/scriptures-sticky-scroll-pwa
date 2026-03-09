@@ -6,20 +6,20 @@
     <meta name="theme-color" content="#0f172a" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>Scripture Reader PWA</title>
-    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/index-BCSlPu9Z.js"></script>
-    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/index-D9jP3gZc.css">
+    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/index-6m7PIejT.js"></script>
+    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/index-NStbToeT.css">
   </head>
   <body>
     <div id="app">
       <header class="app-header">
-        <button id="homeButton" class="header-btn">Home</button>
-        <div id="breadcrumb" class="breadcrumb">Standard Works Reader</div>
+        <button id="homeButton" class="header-btn" hidden>Home</button>
+        <button id="backButton" class="header-btn header-back-btn" hidden aria-label="Back"><span aria-hidden="true">‹</span> Back</button>
+        <div id="headerTitle" class="header-title">Standard Works Reader</div>
         <button id="addBookmarkButton" class="header-btn ribbon-plus-btn" title="Add Bookmark" hidden>
           <span class="ribbon-plus-icon" aria-hidden="true">+</span>
         </button>
         <button id="moveBookmarkButton" class="header-btn" title="Move bookmark to current location" hidden aria-label="Move bookmark to current location">↻</button>
-        <button id="autoScrollStart" class="header-btn">Auto-scroll</button>
-        <button id="showChaptersButton" class="header-btn">Chapters</button>
+        <button id="autoScrollStart" class="header-btn" hidden>Auto-scroll</button>
         <button id="installButton" class="header-btn" hidden>Install</button>
       </header>
 

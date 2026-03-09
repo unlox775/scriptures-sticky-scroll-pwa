@@ -22,12 +22,12 @@ const booksView = document.getElementById("booksView");
 const chaptersView = document.getElementById("chaptersView");
 const historyView = document.getElementById("historyView");
 const readerView = document.getElementById("readerView");
-const breadcrumbEl = document.getElementById("breadcrumb");
+const headerTitleEl = document.getElementById("headerTitle");
 const installButton = document.getElementById("installButton");
 const homeButton = document.getElementById("homeButton");
+const backButton = document.getElementById("backButton");
 const addBookmarkButton = document.getElementById("addBookmarkButton");
 const moveBookmarkButton = document.getElementById("moveBookmarkButton");
-const showChaptersButton = document.getElementById("showChaptersButton");
 const currentReferenceEl = document.getElementById("currentReference");
 const bookmarkStatusEl = document.getElementById("bookmarkStatus");
 const bookmarkRibbonsEl = document.getElementById("bookmarkRibbons");
@@ -53,6 +53,33 @@ function setView(viewId) {
   moveBookmarkButton.hidden = !inReader;
   autoScrollStart.hidden = !inReader;
   autoScrollPanel.hidden = !inReader || !state.autoScrollActive;
+  updateHeader(viewId);
+}
+
+function updateHeader(viewId) {
+  homeButton.hidden = viewId === "homeView";
+  backButton.hidden = viewId === "homeView" || viewId === "booksView";
+  switch (viewId) {
+    case "homeView":
+      headerTitleEl.textContent = "Standard Works Reader";
+      break;
+    case "booksView":
+      headerTitleEl.textContent = state.currentWork?.title ?? "Standard Works Reader";
+      break;
+    case "chaptersView":
+      headerTitleEl.textContent = state.currentBook?.title ?? "";
+      break;
+    case "readerView":
+      headerTitleEl.textContent = state.currentLocation
+        ? `${state.currentBook?.title ?? ""} ${state.currentLocation.chapter ?? 1}`
+        : "";
+      break;
+    case "historyView":
+      headerTitleEl.textContent = state.historyBookmarkName ?? "History";
+      break;
+    default:
+      headerTitleEl.textContent = "Standard Works Reader";
+  }
 }
 
 function defaultLocationFromIndex() {
@@ -116,7 +143,6 @@ async function openReader(location) {
   await state.reader.open(safeLocation);
   renderBookmarkRibbons();
   setView("readerView");
-  breadcrumbEl.textContent = `${work.title} > ${book.title}`;
 }
 
 function isBookmarkInView(bookmark) {
@@ -179,8 +205,8 @@ function escapeHtml(value) {
 }
 
 function renderHistoryView(bookmark) {
+  state.historyBookmarkName = `History: ${bookmark.name}`;
   setView("historyView");
-  breadcrumbEl.textContent = `History: ${bookmark.name}`;
   const entries = bookmarks.getHistoryOnePerDay(bookmark);
   const lines =
     entries.length === 0
@@ -201,7 +227,6 @@ function renderHistoryView(bookmark) {
 
 function renderHomeView() {
   setView("homeView");
-  breadcrumbEl.textContent = "Standard Works Reader";
   const works = state.index.works
     .map(
       (work) => `
@@ -268,7 +293,6 @@ function renderBooksView() {
     renderHomeView();
     return;
   }
-  breadcrumbEl.textContent = `${state.currentWork.title} > Books`;
   const booksHtml = state.currentWork.books
     .map(
       (book) => `
@@ -299,7 +323,6 @@ function renderChaptersView() {
     renderBooksView();
     return;
   }
-  breadcrumbEl.textContent = `${state.currentWork.title} > ${state.currentBook.title} > Chapters`;
   const chapterButtons = Array.from({ length: state.currentBook.chapterCount }, (_, i) => i + 1)
     .map((ch) => `<button class="secondary-btn" data-open-chapter="${ch}">${ch}</button>`)
     .join("");
@@ -353,6 +376,7 @@ function shouldAutoFollow(anchor, meta) {
 function handleAnchorChange(anchor, meta) {
   currentReferenceEl.textContent = `Reference: ${anchor.reference}`;
   state.currentLocation = anchor;
+  if (!readerView.hidden) updateHeader("readerView");
   renderBookmarkRibbons();
 
   const toFollow = bookmarks.getBookmarkToFollow(anchor);
@@ -439,12 +463,15 @@ function wireGlobalEvents() {
     });
   });
 
-  showChaptersButton.addEventListener("click", () => {
+  backButton.addEventListener("click", () => {
     if (state.reader) state.reader.stopAutoScroll();
     state.autoScrollActive = false;
     autoScrollPanel.hidden = true;
     autoScrollStart.hidden = false;
-    renderChaptersView();
+    if (!readerView.hidden) renderChaptersView();
+    else if (!chaptersView.hidden) renderBooksView();
+    else if (!booksView.hidden) renderHomeView();
+    else if (!historyView.hidden) renderHomeView();
   });
 
   autoScrollStart.addEventListener("click", () => {
