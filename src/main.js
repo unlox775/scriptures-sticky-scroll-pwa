@@ -385,7 +385,9 @@ async function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) {
     return;
   }
-  await navigator.serviceWorker.register("/sw.js");
+  const base = import.meta.env.BASE_URL;
+  const swUrl = base.endsWith("/") ? `${base}sw.js` : `${base}/sw.js`;
+  await navigator.serviceWorker.register(swUrl, { scope: base });
 }
 
 async function init() {

@@ -1,3 +1,5 @@
+**Superseded by:** `documentation/spec/20260309-184530_scripture-pwa-standard-works.md` — intake items and integration status live there; this tracker is retained for reference only.
+
 ## Intake Items
 
 1. Build a Progressive Web App for reading Church of Jesus Christ of Latter-day Saints standard works.
@@ -34,13 +36,13 @@
 13. Status: DONE — Structured online source selected and integrated (`@bencrowder/scriptures-json`; see README/Data Sources).
 14. Status: DONE — Per-book `.json.gz` assets generated and runtime cache capped to two thawed books (`scripts/build-scripture-data.mjs`, `src/data.js`).
 15. Status: PARTIAL — Current source lacks official footnotes/page numbers; app links each chapter to Gospel Library and leaves room for future footnote enrichment (`src/readerEngine.js`, `README.md`).
-16. Status: DONE — Mode-by-mode layout visuals documented (`docs/layout_modes.md`).
+16. Status: DONE — Mode-by-mode layout visuals documented (`documentation/layout_modes.md`).
 
 ## Files to Update
 
 - App scaffold and UI: `index.html`, `src/*`, `public/*`
 - Data pipeline: `scripts/build-scripture-data.mjs`
-- Docs: `README.md`, `docs/layout_modes.md`
+- Docs: `README.md`, `documentation/layout_modes.md`
 
 ## Files Considered (No Edit Needed)
 

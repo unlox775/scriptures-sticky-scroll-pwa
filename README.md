@@ -16,7 +16,7 @@ Progressive Web App focused on scripture reading with sticky bookmarks, automati
 
 ## Deployment (GitHub Pages)
 - Build outputs to `docs/`; enable GitHub Pages to serve from the `docs` folder.
-- Uses `base: './'` and relative asset paths for correct loading when deployed.
+- Uses `base: '/scriptures-sticky-scroll-pwa/'` for correct asset paths on project Pages.
 
 ## Definition of Done
 - App runs locally as a PWA (`npm run dev` / `npm run build`).
@@ -55,4 +55,9 @@ Progressive Web App focused on scripture reading with sticky bookmarks, automati
 - External chapter links open the corresponding chapter in Church study pages for deeper reference workflows.
 
 ## Layout Modes
-See [`docs/layout_modes.md`](docs/layout_modes.md) for a visual mode-by-mode layout description.
+See [`documentation/layout_modes.md`](documentation/layout_modes.md) for a visual mode-by-mode layout description.
+
+## Documentation
+- **Status & specs:** [`documentation/README.md`](documentation/README.md)
+- **Architecture:** [`documentation/architecture.md`](documentation/architecture.md)
+- **Spec/prompt logs:** `documentation/spec/`
