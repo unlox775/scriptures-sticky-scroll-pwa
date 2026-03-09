@@ -12,6 +12,8 @@ const state = {
   deferredPrompt: null,
   lastAutoBookmarkAt: 0,
   lastAutoReference: "",
+  velocitySamples: [],
+  autoScrollActive: false,
 };
 
 const viewIds = ["homeView", "booksView", "chaptersView", "historyView", "readerView"];
@@ -24,10 +26,12 @@ const breadcrumbEl = document.getElementById("breadcrumb");
 const installButton = document.getElementById("installButton");
 const homeButton = document.getElementById("homeButton");
 const addBookmarkButton = document.getElementById("addBookmarkButton");
+const moveBookmarkButton = document.getElementById("moveBookmarkButton");
 const showChaptersButton = document.getElementById("showChaptersButton");
 const currentReferenceEl = document.getElementById("currentReference");
 const bookmarkStatusEl = document.getElementById("bookmarkStatus");
 const bookmarkRibbonsEl = document.getElementById("bookmarkRibbons");
+const readerRibbonsOverlay = document.getElementById("readerRibbonsOverlay");
 const autoScrollStart = document.getElementById("autoScrollStart");
 const autoScrollPanel = document.getElementById("autoScrollPanel");
 const autoScrollStop = document.getElementById("autoScrollStop");
@@ -44,7 +48,11 @@ function setView(viewId) {
   for (const id of viewIds) {
     document.getElementById(id).hidden = id !== viewId;
   }
-  addBookmarkButton.hidden = viewId !== "readerView";
+  const inReader = viewId === "readerView";
+  addBookmarkButton.hidden = !inReader;
+  moveBookmarkButton.hidden = !inReader;
+  autoScrollStart.hidden = !inReader;
+  autoScrollPanel.hidden = !inReader || !state.autoScrollActive;
 }
 
 function defaultLocationFromIndex() {
@@ -122,18 +130,52 @@ function isBookmarkInView(bookmark) {
 
 function renderBookmarkRibbons() {
   const inView = bookmarks.getBookmarks().filter(isBookmarkInView);
-  bookmarkRibbonsEl.innerHTML = inView
+  if (!readerRibbonsOverlay || !scroller) return;
+
+  const scrollerRect = scroller.getBoundingClientRect();
+  const items = [];
+
+  for (const b of inView) {
+    const loc = b.location;
+    if (!loc) continue;
+    const bookId = loc.bookId;
+    const chapter = String(loc.chapter || 1);
+    const verse = String(loc.verse || 1);
+    const verseEl = content.querySelector(
+      `.verse[data-book-id="${CSS.escape(bookId)}"][data-chapter="${chapter}"][data-verse="${verse}"]`,
+    );
+    if (!verseEl) continue;
+    const verseRect = verseEl.getBoundingClientRect();
+    const top = verseRect.top - scrollerRect.top + verseRect.height / 2;
+    if (top < -20 || top > scrollerRect.height + 20) continue;
+    items.push({
+      b,
+      top,
+    });
+  }
+
+  readerRibbonsOverlay.innerHTML = items
     .map(
-      (b) =>
-        `<span class="bookmark-ribbon" data-bookmark-id="${b.id}" title="${b.location?.reference || b.name}">${b.name}</span>`,
+      ({ b, top }) =>
+        `<span class="bookmark-ribbon" data-bookmark-id="${b.id}" title="${(b.location?.reference || b.name).replace(/"/g, "&quot;")}" style="top: ${Math.round(top)}px">${escapeHtml(b.name)}</span>`,
     )
     .join("");
-  bookmarkRibbonsEl.querySelectorAll(".bookmark-ribbon").forEach((el) => {
+
+  readerRibbonsOverlay.querySelectorAll(".bookmark-ribbon").forEach((el) => {
     el.addEventListener("click", () => {
       const b = bookmarks.getBookmarks().find((x) => x.id === el.dataset.bookmarkId);
       if (b?.location) openReader(b.location);
     });
   });
+}
+
+function escapeHtml(value) {
+  if (typeof value !== "string") return "";
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 function renderHistoryView(bookmark) {
@@ -285,10 +327,24 @@ function renderChaptersView() {
   });
 }
 
+const VELOCITY_WINDOW_MS = 30_000;
+const SLOW_READING_THRESHOLD = 150;
+
+function getAverageVelocityOverWindow() {
+  const now = Date.now();
+  const cutoff = now - VELOCITY_WINDOW_MS;
+  state.velocitySamples = state.velocitySamples.filter((s) => s.ts >= cutoff);
+  if (state.velocitySamples.length === 0) return 0;
+  const sum = state.velocitySamples.reduce((a, s) => a + Math.abs(s.v), 0);
+  return sum / state.velocitySamples.length;
+}
+
 function shouldAutoFollow(anchor, meta) {
   const speed = Math.abs(meta.velocity);
   const now = meta.timestamp;
-  if (speed < 8 || speed > 3800) return false;
+  state.velocitySamples.push({ v: meta.velocity, ts: now });
+  const avg = getAverageVelocityOverWindow();
+  if (avg > SLOW_READING_THRESHOLD) return false;
   if (anchor.reference === state.lastAutoReference && now - state.lastAutoBookmarkAt < 2200) return false;
   if (now - state.lastAutoBookmarkAt < 1200) return false;
   return true;
@@ -317,6 +373,7 @@ function handleAnchorChange(anchor, meta) {
 function wireGlobalEvents() {
   homeButton.addEventListener("click", () => {
     if (state.reader) state.reader.stopAutoScroll();
+    state.autoScrollActive = false;
     autoScrollPanel.hidden = true;
     autoScrollStart.hidden = false;
     renderHomeView();
@@ -333,8 +390,58 @@ function wireGlobalEvents() {
     if (!homeView.hidden) renderHomeView();
   });
 
+  moveBookmarkButton.addEventListener("click", () => {
+    const list = bookmarks.getBookmarks();
+    if (list.length === 0) {
+      bookmarkStatusEl.textContent = "No bookmarks to move";
+      return;
+    }
+    if (!state.currentLocation) {
+      bookmarkStatusEl.textContent = "No current location";
+      return;
+    }
+    if (list.length === 1) {
+      bookmarks.updateBookmarkLocation(list[0].id, state.currentLocation, "manual");
+      bookmarkStatusEl.textContent = `Moved ${list[0].name} to ${state.currentLocation.reference}`;
+      renderBookmarkRibbons();
+      return;
+    }
+    const picker = document.createElement("div");
+    picker.className = "move-bookmark-picker";
+    picker.innerHTML = `<p>Move which bookmark to ${escapeHtml(state.currentLocation.reference)}?</p>`;
+    const btnWrap = document.createElement("div");
+    btnWrap.className = "move-bookmark-buttons";
+    for (const b of list) {
+      const btn = document.createElement("button");
+      btn.className = "secondary-btn";
+      btn.textContent = b.name;
+      btn.addEventListener("click", () => {
+        bookmarks.updateBookmarkLocation(b.id, state.currentLocation, "manual");
+        bookmarkStatusEl.textContent = `Moved ${b.name} to ${state.currentLocation.reference}`;
+        picker.remove();
+        renderBookmarkRibbons();
+      });
+      btnWrap.append(btn);
+    }
+    const cancel = document.createElement("button");
+    cancel.className = "secondary-btn";
+    cancel.textContent = "Cancel";
+    cancel.addEventListener("click", () => picker.remove());
+    btnWrap.append(cancel);
+    picker.append(btnWrap);
+    picker.style.cssText =
+      "position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;";
+    picker.querySelector("p").style.cssText = "background:#fff;padding:1rem;border-radius:0.5rem;margin:0 0 0.5rem;";
+    btnWrap.style.cssText = "display:flex;flex-wrap:wrap;gap:0.5rem;background:#fff;padding:1rem;border-radius:0.5rem;";
+    document.body.append(picker);
+    picker.addEventListener("click", (e) => {
+      if (e.target === picker) picker.remove();
+    });
+  });
+
   showChaptersButton.addEventListener("click", () => {
     if (state.reader) state.reader.stopAutoScroll();
+    state.autoScrollActive = false;
     autoScrollPanel.hidden = true;
     autoScrollStart.hidden = false;
     renderChaptersView();
@@ -343,6 +450,7 @@ function wireGlobalEvents() {
   autoScrollStart.addEventListener("click", () => {
     if (!state.reader) return;
     state.reader.startAutoScroll();
+    state.autoScrollActive = true;
     autoScrollPanel.hidden = false;
     autoScrollStart.hidden = true;
   });
@@ -350,6 +458,7 @@ function wireGlobalEvents() {
   autoScrollStop.addEventListener("click", () => {
     if (!state.reader) return;
     state.reader.stopAutoScroll();
+    state.autoScrollActive = false;
     autoScrollPanel.hidden = true;
     autoScrollStart.hidden = false;
   });

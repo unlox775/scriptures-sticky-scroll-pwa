@@ -4,11 +4,21 @@ function isoDateOnly(timestamp) {
   return new Date(timestamp).toISOString().slice(0, 10);
 }
 
+const DEFAULT_1NE_1_1 = {
+  workId: "book-of-mormon",
+  workTitle: "Book of Mormon",
+  bookId: "1-ne",
+  bookTitle: "1 Nephi",
+  chapter: 1,
+  verse: 1,
+  reference: "1 Nephi 1:1",
+};
+
 function makeDefaultBookmark() {
   return {
     id: crypto.randomUUID(),
     name: "Daily Reading",
-    location: null,
+    location: DEFAULT_1NE_1_1,
     updatedAt: null,
     history: [],
   };

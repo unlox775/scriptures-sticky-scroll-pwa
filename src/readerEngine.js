@@ -24,7 +24,7 @@ export class ReaderEngine {
     this.loaded = new Map();
     this.lastScroll = { top: 0, ts: performance.now() };
     this.frameId = null;
-    this.autoScroll = { active: false, speed: 90, frameId: null, lastTs: 0 };
+    this.autoScroll = { active: false, speed: 90, frameId: null, lastTs: 0, accumulatedPx: 0 };
     this.isBuffering = false;
     this.destroyed = false;
 
@@ -71,13 +71,19 @@ export class ReaderEngine {
     }
     this.autoScroll.active = true;
     this.autoScroll.lastTs = performance.now();
+    this.autoScroll.accumulatedPx = 0;
     const step = (ts) => {
       if (!this.autoScroll.active || this.destroyed) {
         return;
       }
       const dt = Math.max(0, (ts - this.autoScroll.lastTs) / 1000);
       this.autoScroll.lastTs = ts;
-      this.scroller.scrollTop += this.autoScroll.speed * dt;
+      this.autoScroll.accumulatedPx += this.autoScroll.speed * dt;
+      const whole = Math.floor(this.autoScroll.accumulatedPx);
+      if (whole >= 1) {
+        this.scroller.scrollTop += whole;
+        this.autoScroll.accumulatedPx -= whole;
+      }
       this.autoScroll.frameId = requestAnimationFrame(step);
     };
     this.autoScroll.frameId = requestAnimationFrame(step);

@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#0f172a" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>Scripture Reader PWA</title>
-    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/index-DIfAwxbp.js"></script>
-    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/index-Blsp-Gdz.css">
+    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/index-BCSlPu9Z.js"></script>
+    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/index-D9jP3gZc.css">
   </head>
   <body>
     <div id="app">
@@ -17,17 +17,11 @@
         <button id="addBookmarkButton" class="header-btn ribbon-plus-btn" title="Add Bookmark" hidden>
           <span class="ribbon-plus-icon" aria-hidden="true">+</span>
         </button>
+        <button id="moveBookmarkButton" class="header-btn" title="Move bookmark to current location" hidden aria-label="Move bookmark to current location">↻</button>
         <button id="autoScrollStart" class="header-btn">Auto-scroll</button>
         <button id="showChaptersButton" class="header-btn">Chapters</button>
         <button id="installButton" class="header-btn" hidden>Install</button>
       </header>
-
-      <div id="autoScrollPanel" class="auto-scroll-panel" hidden>
-        <button id="autoScrollStop" class="stop-btn">STOP</button>
-        <label for="autoScrollSpeed">Speed</label>
-        <input id="autoScrollSpeed" type="range" min="20" max="360" step="5" value="90" />
-        <span id="autoScrollSpeedLabel">90 px/s</span>
-      </div>
 
       <main class="app-main">
         <section id="homeView" class="view"></section>
@@ -36,12 +30,21 @@
         <section id="historyView" class="view" hidden></section>
 
         <section id="readerView" class="view reader-view" hidden>
-          <div id="bookmarkRibbons" class="bookmark-ribbons"></div>
+          <div id="autoScrollPanel" class="auto-scroll-panel" hidden>
+            <button id="autoScrollStop" class="stop-btn" aria-label="Stop auto-scroll">×</button>
+            <label for="autoScrollSpeed">Speed</label>
+            <div class="auto-scroll-slider-wrap">
+              <input id="autoScrollSpeed" type="range" min="8" max="100" step="5" value="90" />
+            </div>
+            <span id="autoScrollSpeedLabel">90 px/s</span>
+          </div>
+          <div id="bookmarkRibbons" class="bookmark-ribbons" aria-hidden="true"></div>
           <div class="reader-status">
             <span id="currentReference">Reference: -</span>
             <span id="bookmarkStatus"></span>
           </div>
           <div id="readerScroller" class="reader-scroller">
+            <div id="readerRibbonsOverlay" class="reader-ribbons-overlay" aria-hidden="true"></div>
             <div id="readerContent" class="reader-content"></div>
           </div>
         </section>
