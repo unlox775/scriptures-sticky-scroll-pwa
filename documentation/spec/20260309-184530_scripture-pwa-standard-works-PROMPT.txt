@@ -23,3 +23,7 @@ Oh, and I want the same instrumentation/structure/standards as web-whisper inclu
 === 2026-03-09 (spec conversion) ===
 
 I also like/want to keep the patterns of capturing the whole prompt text which captures the whole agentic process. Including go back to the brain-graft tracker files to get the original prompt/todo and convert them into a first set of files in the documentation/specs dir...
+
+=== 2026-03-09 (bookmark UX, View History, auto-engage, top bar) ===
+
+Ok, the bookmarks needs a "View History" view, showing the history (no more than one line per day) And the bookmark-sticky should be auto-engaging, not any bookmark showing as "active". I.e. once you go to a scripture that has a current bookmark (and you see that in view), if you move down at a slow-enough rate, the sticky-auto-apply should start moving down the bookmark as you scroll down manually (or auto-scroll). But Bookmarks should just show as a little ribbon graphic with the name on it, as you browse around. Then if you happen to be on that screen and scroll slow enough, it will begin following you. Also the viewing-scriptures screen should show a + Add Bookmark button (I would prefer a ribbon-plus icon) on the top-bar. The auto-scroll should be a button on the top bar, which once you click it, it opens up a second bar under, with the stop/speed controls. But if you click any home/chapters buttons, that turns off auto-scroll

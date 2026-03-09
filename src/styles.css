@@ -127,22 +127,64 @@ body {
   padding: 0;
 }
 
-.reader-control-bar {
-  position: sticky;
-  top: 3.2rem;
-  z-index: 12;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  padding: 0.65rem;
-  margin-bottom: 0.65rem;
+.ribbon-plus-btn {
+  padding: 0.35rem 0.5rem;
 }
 
-.bookmark-row {
+.ribbon-plus-icon {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.bookmark-ribbons {
   display: flex;
   flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+  min-height: 1.5rem;
+}
+
+.bookmark-ribbon {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  background: #1e3a5f;
+  color: #e2e8f0;
+  border-radius: 0.2rem 0.2rem 0.2rem 0;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.bookmark-ribbon:hover {
+  background: #2d4a6f;
+}
+
+.auto-scroll-panel {
+  display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.45rem 1rem;
+  background: #e2e8f0;
+  border-bottom: 1px solid var(--border);
+}
+
+.bookmark-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.history-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.history-line {
+  padding: 0.2rem 0;
 }
 
 .primary-btn {
@@ -151,22 +193,6 @@ body {
 }
 
 .secondary-btn {
-  background: #e2e8f0;
-}
-
-.auto-scroll-dock {
-  margin-top: 0.5rem;
-}
-
-.auto-scroll-panel {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  margin-top: 0.5rem;
-  padding: 0.45rem;
-  border: 1px solid var(--border);
-  border-radius: 0.6rem;
   background: #e2e8f0;
 }
 
@@ -266,6 +292,14 @@ body {
   .auto-scroll-panel {
     background: #1e293b;
     border-color: #334155;
+  }
+
+  .bookmark-ribbon {
+    background: #1e293b;
+  }
+
+  .bookmark-ribbon:hover {
+    background: #334155;
   }
 
   .verse-num {

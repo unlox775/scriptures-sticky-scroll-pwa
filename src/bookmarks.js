@@ -75,7 +75,6 @@ export class BookmarkStore {
       history: [],
     };
     this.state.bookmarks.push(bookmark);
-    this.state.activeBookmarkId = bookmark.id;
     this.save();
     return bookmark;
   }
@@ -85,6 +84,39 @@ export class BookmarkStore {
     if (!active || !location) {
       return null;
     }
+    return this.updateBookmarkLocation(active.id, location, source);
+  }
+
+  /** Compare two locations; returns -1 if a < b, 0 if equal, 1 if a > b. */
+  static compareLocations(a, b) {
+    if (!a || !b) return 0;
+    if (a.workId !== b.workId) return a.workId < b.workId ? -1 : 1;
+    if (a.bookId !== b.bookId) return a.bookId < b.bookId ? -1 : 1;
+    if (a.chapter !== b.chapter) return (a.chapter || 0) < (b.chapter || 0) ? -1 : 1;
+    const va = a.verse || 0;
+    const vb = b.verse || 0;
+    return va < vb ? -1 : va > vb ? 1 : 0;
+  }
+
+  /** Find the bookmark whose location is at or before the given location (for auto-follow). */
+  getBookmarkToFollow(currentLocation) {
+    if (!currentLocation) return null;
+    let best = null;
+    for (const b of this.state.bookmarks) {
+      if (!b.location) continue;
+      const cmp = BookmarkStore.compareLocations(b.location, currentLocation);
+      if (cmp <= 0) {
+        if (!best || BookmarkStore.compareLocations(best.location, b.location) < 0) {
+          best = b;
+        }
+      }
+    }
+    return best;
+  }
+
+  updateBookmarkLocation(bookmarkId, location, source = "manual") {
+    const bookmark = this.state.bookmarks.find((b) => b.id === bookmarkId);
+    if (!bookmark || !location) return null;
     const now = Date.now();
     const day = isoDateOnly(now);
     const historyItem = {
@@ -94,16 +126,26 @@ export class BookmarkStore {
       location,
       source,
     };
-
-    active.location = location;
-    active.updatedAt = historyItem.timestamp;
-    const existingIndex = active.history.findIndex((item) => item.day === day);
+    bookmark.location = location;
+    bookmark.updatedAt = historyItem.timestamp;
+    const existingIndex = bookmark.history.findIndex((item) => item.day === day);
     if (existingIndex >= 0) {
-      active.history[existingIndex] = historyItem;
+      bookmark.history[existingIndex] = historyItem;
     } else {
-      active.history.push(historyItem);
+      bookmark.history.push(historyItem);
     }
     this.save();
-    return active;
+    return bookmark;
+  }
+
+  /** History entries, at most one per day, newest first. */
+  getHistoryOnePerDay(bookmark) {
+    const byDay = new Map();
+    for (const h of bookmark.history) {
+      if (!byDay.has(h.day) || h.timestamp > (byDay.get(h.day).timestamp || "")) {
+        byDay.set(h.day, h);
+      }
+    }
+    return [...byDay.values()].sort((a, b) => (b.day > a.day ? 1 : -1));
   }
 }

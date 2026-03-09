@@ -72,6 +72,11 @@ This living spec rolls up every instruction and deliverable from the Scripture R
 
 - Footnote/page-number rendering data source — upstream dataset intentionally excludes copyrighted footnotes/chapter summaries.
 
+### ✅ Bookmark UX refresh — Delivered 2026-03-09
+- **View History**: Per-bookmark history view, one line per day, newest first.
+- **Auto-engaging bookmarks**: No "active" concept; when at a location that matches a bookmark and you scroll slowly, that bookmark auto-updates. Bookmarks shown as ribbon tags; tap to open.
+- **Reader top bar**: + Add Bookmark (ribbon-plus icon), Auto-scroll button. Auto-scroll expands to second bar with stop/speed. Home and Chapters turn off auto-scroll.
+
 ## Next Actions
 
 1. Polish mobile UX and long-session performance.

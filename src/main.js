@@ -14,19 +14,20 @@ const state = {
   lastAutoReference: "",
 };
 
-const viewIds = ["homeView", "booksView", "chaptersView", "readerView"];
+const viewIds = ["homeView", "booksView", "chaptersView", "historyView", "readerView"];
 const homeView = document.getElementById("homeView");
 const booksView = document.getElementById("booksView");
 const chaptersView = document.getElementById("chaptersView");
+const historyView = document.getElementById("historyView");
 const readerView = document.getElementById("readerView");
 const breadcrumbEl = document.getElementById("breadcrumb");
 const installButton = document.getElementById("installButton");
 const homeButton = document.getElementById("homeButton");
+const addBookmarkButton = document.getElementById("addBookmarkButton");
+const showChaptersButton = document.getElementById("showChaptersButton");
 const currentReferenceEl = document.getElementById("currentReference");
 const bookmarkStatusEl = document.getElementById("bookmarkStatus");
-const activeBookmarkSelect = document.getElementById("activeBookmarkSelect");
-const newBookmarkButton = document.getElementById("newBookmarkButton");
-const showChaptersButton = document.getElementById("showChaptersButton");
+const bookmarkRibbonsEl = document.getElementById("bookmarkRibbons");
 const autoScrollStart = document.getElementById("autoScrollStart");
 const autoScrollPanel = document.getElementById("autoScrollPanel");
 const autoScrollStop = document.getElementById("autoScrollStop");
@@ -43,6 +44,7 @@ function setView(viewId) {
   for (const id of viewIds) {
     document.getElementById(id).hidden = id !== viewId;
   }
+  addBookmarkButton.hidden = viewId !== "readerView";
 }
 
 function defaultLocationFromIndex() {
@@ -60,9 +62,7 @@ function defaultLocationFromIndex() {
 }
 
 function formatTimestamp(value) {
-  if (!value) {
-    return "Never";
-  }
+  if (!value) return "Never";
   return new Date(value).toLocaleString();
 }
 
@@ -95,9 +95,7 @@ async function openReader(location) {
   state.currentBook = book;
   state.currentLocation = safeLocation;
 
-  if (state.reader) {
-    state.reader.destroy();
-  }
+  if (state.reader) state.reader.destroy();
   state.reader = new ReaderEngine({
     scroller,
     content,
@@ -108,15 +106,60 @@ async function openReader(location) {
   autoScrollSpeedLabel.textContent = `${autoScrollSpeed.value} px/s`;
   state.reader.setAutoScrollSpeed(Number(autoScrollSpeed.value));
   await state.reader.open(safeLocation);
-  renderActiveBookmarkSelect();
+  renderBookmarkRibbons();
   setView("readerView");
   breadcrumbEl.textContent = `${work.title} > ${book.title}`;
+}
+
+function isBookmarkInView(bookmark) {
+  if (!bookmark.location || !state.currentLocation) return false;
+  if (bookmark.location.workId !== state.currentLocation.workId) return false;
+  if (bookmark.location.bookId !== state.currentLocation.bookId) return false;
+  const ch = state.currentLocation.chapter || 0;
+  const bCh = bookmark.location.chapter || 0;
+  return Math.abs(ch - bCh) <= 2;
+}
+
+function renderBookmarkRibbons() {
+  const inView = bookmarks.getBookmarks().filter(isBookmarkInView);
+  bookmarkRibbonsEl.innerHTML = inView
+    .map(
+      (b) =>
+        `<span class="bookmark-ribbon" data-bookmark-id="${b.id}" title="${b.location?.reference || b.name}">${b.name}</span>`,
+    )
+    .join("");
+  bookmarkRibbonsEl.querySelectorAll(".bookmark-ribbon").forEach((el) => {
+    el.addEventListener("click", () => {
+      const b = bookmarks.getBookmarks().find((x) => x.id === el.dataset.bookmarkId);
+      if (b?.location) openReader(b.location);
+    });
+  });
+}
+
+function renderHistoryView(bookmark) {
+  setView("historyView");
+  breadcrumbEl.textContent = `History: ${bookmark.name}`;
+  const entries = bookmarks.getHistoryOnePerDay(bookmark);
+  const lines =
+    entries.length === 0
+      ? "<p>No history yet.</p>"
+      : entries.map((h) => `<div class="history-line">${h.day}: ${h.reference}</div>`).join("");
+  historyView.innerHTML = `
+    <section class="panel">
+      <h2>${bookmark.name}</h2>
+      <p>One line per day, newest first.</p>
+      <div class="history-lines">${lines}</div>
+      <button id="historyBackButton" class="secondary-btn">Back</button>
+    </section>
+  `;
+  historyView.querySelector("#historyBackButton").addEventListener("click", () => {
+    renderHomeView();
+  });
 }
 
 function renderHomeView() {
   setView("homeView");
   breadcrumbEl.textContent = "Standard Works Reader";
-  const activeBookmark = bookmarks.getActiveBookmark();
   const works = state.index.works
     .map(
       (work) => `
@@ -131,28 +174,19 @@ function renderHomeView() {
 
   const bookmarkItems = bookmarks
     .getBookmarks()
-    .map((bookmark) => {
-      const history = [...bookmark.history].reverse().slice(0, 4);
-      const historyHtml =
-        history.length === 0
-          ? "<li>No history yet</li>"
-          : history.map((entry) => `<li>${entry.day}: ${entry.reference}</li>`).join("");
-      return `
+    .map(
+      (bookmark) => `
       <article class="bookmark-item">
         <div>
           <strong>${bookmark.name}</strong>
           <div class="bookmark-meta">${bookmark.location?.reference || "No location yet"}</div>
-          <div class="bookmark-meta">Updated: ${formatTimestamp(bookmark.updatedAt)}</div>
-          <ul class="history-list">${historyHtml}</ul>
         </div>
-        <div>
-          <button data-activate-bookmark="${bookmark.id}">${
-            activeBookmark?.id === bookmark.id ? "Active" : "Set Active"
-          }</button>
+        <div class="bookmark-actions">
+          <button data-view-history="${bookmark.id}">View History</button>
           <button data-open-bookmark="${bookmark.id}">Open</button>
         </div>
-      </article>`;
-    })
+      </article>`,
+    )
     .join("");
 
   homeView.innerHTML = `
@@ -160,32 +194,28 @@ function renderHomeView() {
       <h2>Scripture Collections</h2>
       <div class="grid works">${works}</div>
     </section>
-
     <section class="panel" style="margin-top: 1rem;">
       <h2>Bookmarks</h2>
-      <p>Sticky auto-follow updates your active bookmark as you read.</p>
+      <p>Scroll slowly and a bookmark at your location will auto-follow. Tap to open.</p>
       <div class="bookmark-list">${bookmarkItems}</div>
     </section>
   `;
 
-  homeView.querySelectorAll("[data-open-work]").forEach((button) => {
-    button.addEventListener("click", () => openWork(button.dataset.openWork));
+  homeView.querySelectorAll("[data-open-work]").forEach((btn) => {
+    btn.addEventListener("click", () => openWork(btn.dataset.openWork));
   });
-  homeView.querySelectorAll("[data-activate-bookmark]").forEach((button) => {
-    button.addEventListener("click", () => {
-      bookmarks.setActiveBookmark(button.dataset.activateBookmark);
-      renderActiveBookmarkSelect();
-      renderHomeView();
+  homeView.querySelectorAll("[data-view-history]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const b = bookmarks.getBookmarks().find((x) => x.id === btn.dataset.viewHistory);
+      if (b) renderHistoryView(b);
     });
   });
-  homeView.querySelectorAll("[data-open-bookmark]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const bookmark = bookmarks.getBookmarks().find((item) => item.id === button.dataset.openBookmark);
-      if (!bookmark) {
-        return;
-      }
-      const location = bookmark.location || defaultLocationFromIndex();
-      await openReader(location);
+  homeView.querySelectorAll("[data-open-bookmark]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const b = bookmarks.getBookmarks().find((x) => x.id === btn.dataset.openBookmark);
+      if (!b) return;
+      const loc = b.location || defaultLocationFromIndex();
+      await openReader(loc);
     });
   });
 }
@@ -216,8 +246,8 @@ function renderBooksView() {
     </section>
   `;
 
-  booksView.querySelectorAll("[data-open-book]").forEach((button) => {
-    button.addEventListener("click", () => openBook(button.dataset.openBook));
+  booksView.querySelectorAll("[data-open-book]").forEach((btn) => {
+    btn.addEventListener("click", () => openBook(btn.dataset.openBook));
   });
 }
 
@@ -228,13 +258,8 @@ function renderChaptersView() {
     return;
   }
   breadcrumbEl.textContent = `${state.currentWork.title} > ${state.currentBook.title} > Chapters`;
-  const chapterButtons = Array.from({ length: state.currentBook.chapterCount }, (_, index) => index + 1)
-    .map(
-      (chapter) => `
-      <button class="secondary-btn" data-open-chapter="${chapter}">
-        ${chapter}
-      </button>`,
-    )
+  const chapterButtons = Array.from({ length: state.currentBook.chapterCount }, (_, i) => i + 1)
+    .map((ch) => `<button class="secondary-btn" data-open-chapter="${ch}">${ch}</button>`)
     .join("");
 
   chaptersView.innerHTML = `
@@ -245,112 +270,85 @@ function renderChaptersView() {
     </section>
   `;
 
-  chaptersView.querySelectorAll("[data-open-chapter]").forEach((button) => {
-    button.addEventListener("click", async () => {
+  chaptersView.querySelectorAll("[data-open-chapter]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
       await openReader({
         workId: state.currentWork.id,
         workTitle: state.currentWork.title,
         bookId: state.currentBook.id,
         bookTitle: state.currentBook.title,
-        chapter: Number(button.dataset.openChapter),
+        chapter: Number(btn.dataset.openChapter),
         verse: 1,
-        reference: `${state.currentBook.title} ${button.dataset.openChapter}:1`,
+        reference: `${state.currentBook.title} ${btn.dataset.openChapter}:1`,
       });
     });
   });
 }
 
-function renderActiveBookmarkSelect() {
-  const list = bookmarks.getBookmarks();
-  const active = bookmarks.getActiveBookmark();
-  activeBookmarkSelect.innerHTML = list
-    .map((bookmark) => `<option value="${bookmark.id}">${bookmark.name}</option>`)
-    .join("");
-  if (active) {
-    activeBookmarkSelect.value = active.id;
-  }
-}
-
 function shouldAutoFollow(anchor, meta) {
   const speed = Math.abs(meta.velocity);
   const now = meta.timestamp;
-  if (speed < 8 || speed > 3800) {
-    return false;
-  }
-  if (anchor.reference === state.lastAutoReference && now - state.lastAutoBookmarkAt < 2200) {
-    return false;
-  }
-  if (now - state.lastAutoBookmarkAt < 1200) {
-    return false;
-  }
+  if (speed < 8 || speed > 3800) return false;
+  if (anchor.reference === state.lastAutoReference && now - state.lastAutoBookmarkAt < 2200) return false;
+  if (now - state.lastAutoBookmarkAt < 1200) return false;
   return true;
 }
 
 function handleAnchorChange(anchor, meta) {
   currentReferenceEl.textContent = `Reference: ${anchor.reference}`;
   state.currentLocation = anchor;
-  const active = bookmarks.getActiveBookmark();
-  if (!active) {
-    bookmarkStatusEl.textContent = "Bookmark follow: no active bookmark";
+  renderBookmarkRibbons();
+
+  const toFollow = bookmarks.getBookmarkToFollow(anchor);
+  if (!toFollow) {
+    bookmarkStatusEl.textContent = "";
     return;
   }
   if (shouldAutoFollow(anchor, meta)) {
-    bookmarks.updateActiveLocation(anchor, meta.autoScrolling ? "auto-scroll" : "scroll");
+    bookmarks.updateBookmarkLocation(toFollow.id, anchor, meta.autoScrolling ? "auto-scroll" : "scroll");
     state.lastAutoBookmarkAt = meta.timestamp;
     state.lastAutoReference = anchor.reference;
-    bookmarkStatusEl.textContent = `Bookmark "${active.name}" auto-saved at ${anchor.reference}`;
+    bookmarkStatusEl.textContent = `${toFollow.name} updated`;
   } else {
-    bookmarkStatusEl.textContent = `Bookmark "${active.name}" watching`;
+    bookmarkStatusEl.textContent = "";
   }
 }
 
 function wireGlobalEvents() {
   homeButton.addEventListener("click", () => {
-    if (state.reader) {
-      state.reader.stopAutoScroll();
-    }
+    if (state.reader) state.reader.stopAutoScroll();
+    autoScrollPanel.hidden = true;
+    autoScrollStart.hidden = false;
     renderHomeView();
   });
 
-  activeBookmarkSelect.addEventListener("change", () => {
-    bookmarks.setActiveBookmark(activeBookmarkSelect.value);
-    if (!homeView.hidden) {
-      renderHomeView();
-    }
-  });
-
-  newBookmarkButton.addEventListener("click", () => {
+  addBookmarkButton.addEventListener("click", () => {
     const name = window.prompt("Bookmark name:", "Reading Plan");
-    if (!name) {
-      return;
+    if (!name?.trim()) return;
+    const b = bookmarks.createBookmark(name.trim());
+    if (state.currentLocation) {
+      bookmarks.updateBookmarkLocation(b.id, state.currentLocation, "manual");
     }
-    bookmarks.createBookmark(name.trim());
-    renderActiveBookmarkSelect();
-    if (!homeView.hidden) {
-      renderHomeView();
-    }
+    renderBookmarkRibbons();
+    if (!homeView.hidden) renderHomeView();
   });
 
   showChaptersButton.addEventListener("click", () => {
-    if (state.reader) {
-      state.reader.stopAutoScroll();
-    }
+    if (state.reader) state.reader.stopAutoScroll();
+    autoScrollPanel.hidden = true;
+    autoScrollStart.hidden = false;
     renderChaptersView();
   });
 
   autoScrollStart.addEventListener("click", () => {
-    if (!state.reader) {
-      return;
-    }
+    if (!state.reader) return;
     state.reader.startAutoScroll();
     autoScrollPanel.hidden = false;
     autoScrollStart.hidden = true;
   });
 
   autoScrollStop.addEventListener("click", () => {
-    if (!state.reader) {
-      return;
-    }
+    if (!state.reader) return;
     state.reader.stopAutoScroll();
     autoScrollPanel.hidden = true;
     autoScrollStart.hidden = false;
@@ -359,21 +357,17 @@ function wireGlobalEvents() {
   autoScrollSpeed.addEventListener("input", () => {
     const speed = Number(autoScrollSpeed.value);
     autoScrollSpeedLabel.textContent = `${speed} px/s`;
-    if (state.reader) {
-      state.reader.setAutoScrollSpeed(speed);
-    }
+    if (state.reader) state.reader.setAutoScrollSpeed(speed);
   });
 
-  window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    state.deferredPrompt = event;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    state.deferredPrompt = e;
     installButton.hidden = false;
   });
 
   installButton.addEventListener("click", async () => {
-    if (!state.deferredPrompt) {
-      return;
-    }
+    if (!state.deferredPrompt) return;
     state.deferredPrompt.prompt();
     await state.deferredPrompt.userChoice;
     state.deferredPrompt = null;
@@ -382,9 +376,7 @@ function wireGlobalEvents() {
 }
 
 async function registerServiceWorker() {
-  if (!("serviceWorker" in navigator)) {
-    return;
-  }
+  if (!("serviceWorker" in navigator)) return;
   const base = import.meta.env.BASE_URL;
   const swUrl = base.endsWith("/") ? `${base}sw.js` : `${base}/sw.js`;
   await navigator.serviceWorker.register(swUrl, { scope: base });
@@ -393,16 +385,10 @@ async function registerServiceWorker() {
 async function init() {
   state.index = await loadIndex();
   wireGlobalEvents();
-  renderActiveBookmarkSelect();
   renderHomeView();
   await registerServiceWorker();
-
-  const active = bookmarks.getActiveBookmark();
-  if (active && !active.location) {
-    bookmarks.updateActiveLocation(defaultLocationFromIndex(), "init");
-  }
 }
 
-init().catch((error) => {
-  homeView.innerHTML = `<section class="panel"><h2>Failed to load app</h2><pre>${error.message}</pre></section>`;
+init().catch((err) => {
+  homeView.innerHTML = `<section class="panel"><h2>Failed to load app</h2><pre>${err.message}</pre></section>`;
 });
