@@ -2,7 +2,7 @@ import "./styles.css";
 import { loadIndex, BookCache } from "./data.js";
 import { BookmarkStore } from "./bookmarks.js";
 import { ReaderEngine } from "./readerEngine.js";
-import { logInfo, logDebug, logWarn, logError, getLogsForCopy, getAllSessions, getEntriesForSession, isDevMode, setDevMode } from "./logger.js";
+import { logInfo, logDebug, logWarn, logError, getLogsForCopy, getAllSessions, getEntriesForSession, setOnLogCallback, isDevMode, setDevMode } from "./logger.js";
 import { stateToRoute, parseRoute, pushRoute, saveRouteToStorage, loadRouteFromStorage } from "./stateRouting.js";
 
 const state = {
@@ -14,6 +14,7 @@ const state = {
   deferredPrompt: null,
   lastAutoBookmarkAt: 0,
   lastAutoReference: "",
+  lastChapterRef: "",
   velocitySamples: [],
   autoScrollActive: false,
 };
@@ -46,6 +47,12 @@ const content = document.getElementById("readerContent");
 const cache = new BookCache(2);
 const bookmarks = new BookmarkStore();
 
+let installCanShow = false;
+
+function updateInstallVisibility(viewId) {
+  installButton.hidden = !installCanShow || viewId !== "homeView";
+}
+
 function pushRouteAndSave(route) {
   pushRoute(route);
   saveRouteToStorage(route);
@@ -55,6 +62,8 @@ function setView(viewId) {
   for (const id of viewIds) {
     document.getElementById(id).hidden = id !== viewId;
   }
+  const app = document.getElementById("app");
+  if (app) app.classList.toggle("reader-active", viewId === "readerView");
   const inReader = viewId === "readerView";
   addBookmarkButton.hidden = !inReader;
   moveBookmarkButton.hidden = !inReader;
@@ -66,6 +75,7 @@ function setView(viewId) {
     autoScrollPanel.hidden = true;
   }
   updateHeader(viewId);
+  updateInstallVisibility(viewId);
   updateDevEasterEggVisibility();
 }
 
@@ -132,6 +142,7 @@ function openBook(bookId) {
   state.currentBook = state.currentWork.books.find((book) => book.id === bookId) || null;
   pushRouteAndSave(`#/b/${state.currentWork.id}/${bookId}`);
   renderChaptersView();
+  logInfo("nav:openBook", { workId: state.currentWork?.id, bookId, title: state.currentBook?.title });
 }
 
 async function openReader(location) {
@@ -151,7 +162,9 @@ async function openReader(location) {
   state.currentWork = work;
   state.currentBook = book;
   state.currentLocation = safeLocation;
+  state.lastChapterRef = "";
 
+  setView("readerView");
   if (state.reader) state.reader.destroy();
   state.reader = new ReaderEngine({
     scroller,
@@ -164,9 +177,8 @@ async function openReader(location) {
   state.reader.setAutoScrollSpeed(Number(autoScrollSpeed.value));
   await state.reader.open(safeLocation);
   pushRouteAndSave(stateToRoute(state));
-  setView("readerView");
   requestAnimationFrame(() => requestAnimationFrame(renderBookmarkRibbons));
-  logInfo("openReader", { loc: safeLocation.reference });
+  logInfo("nav:openReader", { loc: safeLocation.reference, workId: work.id, bookId: book.id, chapter: safeLocation.chapter });
 }
 
 function isBookmarkInView(bookmark) {
@@ -290,7 +302,16 @@ function renderHomeView() {
   `;
 
   homeView.querySelectorAll("[data-open-work]").forEach((el) => {
-    el.addEventListener("click", () => openWork(el.dataset.openWork));
+    el.addEventListener("click", () => {
+      const workId = el.dataset.openWork;
+      const work = state.index.works.find((w) => w.id === workId);
+      state.currentWork = work ?? null;
+      if (work?.books?.length === 1) {
+        openBook(work.books[0].id);
+      } else {
+        openWork(workId);
+      }
+    });
   });
   homeView.querySelectorAll("[data-view-history]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -354,14 +375,16 @@ function renderChaptersView() {
 
   chaptersView.querySelectorAll("[data-open-chapter]").forEach((btn) => {
     btn.addEventListener("click", async () => {
+      const chapter = Number(btn.dataset.openChapter);
+      logInfo("nav:chapterClick", { workId: state.currentWork?.id, bookId: state.currentBook?.id, chapter });
       await openReader({
         workId: state.currentWork.id,
         workTitle: state.currentWork.title,
         bookId: state.currentBook.id,
         bookTitle: state.currentBook.title,
-        chapter: Number(btn.dataset.openChapter),
+        chapter,
         verse: 1,
-        reference: `${state.currentBook.title} ${btn.dataset.openChapter}:1`,
+        reference: `${state.currentBook.title} ${chapter}:1`,
       });
     });
   });
@@ -395,6 +418,13 @@ function shouldAutoFollow(anchor, meta) {
 
 function handleAnchorChange(anchor, meta) {
   state.currentLocation = anchor;
+  const chapterRef = anchor ? `${anchor.bookTitle ?? ""} ${anchor.chapter ?? 1}` : "";
+  if (chapterRef && chapterRef !== state.lastChapterRef) {
+    state.lastChapterRef = chapterRef;
+    if (isDevMode()) {
+      logInfo("scroll:chapterChange", { ref: chapterRef, fullRef: anchor.reference });
+    }
+  }
   if (!readerView.hidden) updateHeader("readerView");
   pushRoute(stateToRoute(state));
   renderBookmarkRibbons();
@@ -431,6 +461,7 @@ function wireGlobalEvents() {
     stopAutoScrollAndUpdateUI();
     pushRouteAndSave("#/");
     renderHomeView();
+    logInfo("nav:home");
   });
 
   addBookmarkButton.addEventListener("click", () => {
@@ -502,15 +533,19 @@ function wireGlobalEvents() {
     if (!readerView.hidden) {
       pushRouteAndSave(`#/b/${state.currentWork?.id || ""}/${state.currentBook?.id || ""}`);
       renderChaptersView();
+      logInfo("nav:back", { to: "chapters", workId: state.currentWork?.id, bookId: state.currentBook?.id });
     } else if (!chaptersView.hidden) {
       pushRouteAndSave(`#/w/${state.currentWork?.id || ""}`);
       renderBooksView();
+      logInfo("nav:back", { to: "books", workId: state.currentWork?.id });
     } else if (!booksView.hidden) {
       pushRouteAndSave("#/");
       renderHomeView();
+      logInfo("nav:back", { to: "home" });
     } else if (!historyView.hidden) {
       pushRouteAndSave("#/");
       renderHomeView();
+      logInfo("nav:back", { to: "home" });
     }
   });
 
@@ -552,12 +587,19 @@ function wireGlobalEvents() {
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     state.deferredPrompt = e;
-    if (!isStandaloneOrDesktopInstall()) installButton.hidden = false;
+    installButton.textContent = "Install";
+    if (!isStandaloneOrDesktopInstall()) {
+      installCanShow = true;
+      const viewId = viewIds.find((id) => !document.getElementById(id).hidden) || "homeView";
+      updateInstallVisibility(viewId);
+    }
   });
 
   if (isIOS() && !isStandaloneOrDesktopInstall()) {
     installButton.textContent = "Add to Home Screen";
-    installButton.hidden = false;
+    installCanShow = true;
+    const viewId = viewIds.find((id) => !document.getElementById(id).hidden) || "homeView";
+    updateInstallVisibility(viewId);
   }
 
   installButton.addEventListener("click", async () => {
@@ -569,7 +611,7 @@ function wireGlobalEvents() {
       return;
     }
     if (isIOS()) {
-      const msg = "To add this app to your home screen:\n\n1. Tap the Share button (□↑)\n2. Scroll and tap \"Add to Home Screen\"\n3. Tap Add";
+      const msg = "To add this app to your home screen:\n\n1. Tap the Share button (square with arrow) at the bottom of the screen\n2. Scroll and tap \"Add to Home Screen\"\n3. Tap Add";
       alert(msg);
     }
   });
@@ -625,15 +667,23 @@ function formatStorageValue(raw) {
 
 function renderStoragePanel(container) {
   if (!container) return;
-  const parts = [];
+  const keys = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (!k) continue;
+    if (k) keys.push(k);
+  }
+  const legacyKey = "scripture-pwa-logs-v1";
+  keys.sort((a, b) => {
+    if (a === legacyKey) return 1;
+    if (b === legacyKey) return -1;
+    return a.localeCompare(b);
+  });
+  const parts = keys.map((k) => {
     const v = localStorage.getItem(k);
     const label = STORAGE_LABELS[k] ?? k;
     const pretty = v != null ? formatStorageValue(v) : "[empty]";
-    parts.push(`<section class="dev-storage-section"><h4 class="dev-storage-header">${escapeHtml(label)}</h4><pre class="dev-storage-pre">${escapeHtml(pretty)}</pre></section>`);
-  }
+    return `<section class="dev-storage-section"><h4 class="dev-storage-header">${escapeHtml(label)}</h4><pre class="dev-storage-pre">${escapeHtml(pretty)}</pre></section>`;
+  });
   container.innerHTML = parts.length ? parts.join("\n") : "<p>No localStorage keys.</p>";
 }
 
@@ -686,16 +736,21 @@ function wireDeveloperMode() {
     if (bugIcon) bugIcon.hidden = false;
   }
 
+  const sessionControls = document.getElementById("devLogSessionControls");
+
   function showStorage() {
     renderStoragePanel(storageContent);
     storagePanel.hidden = false;
     logsPanel.hidden = true;
+    if (sessionControls) sessionControls.hidden = true;
   }
 
   async function showLogs() {
     storagePanel.hidden = true;
     logsPanel.hidden = false;
+    if (sessionControls) sessionControls.hidden = false;
     await loadLogSessionsAndRender(logSelect, logEntries, copyBtn);
+    updatePrevNextButtons();
   }
 
   bugIcon?.addEventListener("click", () => {
@@ -713,9 +768,9 @@ function wireDeveloperMode() {
     drawer.hidden = true;
   });
 
-  document.querySelectorAll(".dev-tab").forEach((tab) => {
+  document.querySelectorAll(".dev-tab[data-tab]").forEach((tab) => {
     tab.addEventListener("click", () => {
-      document.querySelectorAll(".dev-tab").forEach((t) => t.classList.remove("active"));
+      document.querySelectorAll(".dev-tab[data-tab]").forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
       if (tab.dataset.tab === "storage") showStorage();
       else void showLogs();
@@ -725,6 +780,7 @@ function wireDeveloperMode() {
   logSelect?.addEventListener("change", async () => {
     const sid = logSelect.value || null;
     await renderLogEntries(sid, logEntries);
+    updatePrevNextButtons();
   });
 
   logPrev?.addEventListener("click", async () => {
@@ -734,6 +790,7 @@ function wireDeveloperMode() {
       const next = sessions[idx + 1];
       logSelect.value = next.id;
       await renderLogEntries(next.id, logEntries);
+      updatePrevNextButtons();
     }
   });
 
@@ -744,6 +801,7 @@ function wireDeveloperMode() {
       const next = sessions[idx - 1];
       logSelect.value = next.id;
       await renderLogEntries(next.id, logEntries);
+      updatePrevNextButtons();
     }
   });
 
@@ -751,8 +809,38 @@ function wireDeveloperMode() {
     const sid = logSelect?.value || null;
     const data = await getLogsForCopy(sid);
     const text = JSON.stringify(data, null, 2);
-    await navigator.clipboard?.writeText(text).catch(() => {});
+    try {
+      await navigator.clipboard.writeText(text);
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => { copyBtn.textContent = "Copy logs"; }, 1200);
+    } catch {
+      copyBtn.textContent = "Copy failed";
+      setTimeout(() => { copyBtn.textContent = "Copy logs"; }, 1200);
+    }
   });
+
+  function appendLogEntryLive(entry) {
+    if (!logsPanel || logsPanel.hidden || !logEntries) return;
+    const sid = logSelect?.value || "";
+    if (entry.sessionId !== sid) return;
+    const details = entry.details
+      ? `<code class="dev-log-details">${escapeHtml(typeof entry.details === "string" ? entry.details : JSON.stringify(entry.details, null, 2))}</code>`
+      : "";
+    const html = `<article class="dev-log-entry level-${entry.level}"><header><span class="dev-log-message">${escapeHtml(entry.message)}</span><span class="dev-log-meta"><span class="dev-log-level">${entry.level.toUpperCase()}</span> <time>${new Date().toLocaleString()}</time></span></header>${details}</article>`;
+    logEntries.insertAdjacentHTML("beforeend", html);
+    requestAnimationFrame(() => {
+      logsPanel.scrollTop = logsPanel.scrollHeight;
+    });
+  }
+
+  setOnLogCallback(appendLogEntryLive);
+
+  function updatePrevNextButtons() {
+    const sessions = JSON.parse(logSelect?.dataset.sessions || "[]");
+    const idx = sessions.findIndex((s) => s.id === logSelect?.value);
+    if (logPrev) logPrev.disabled = idx < 0 || idx >= sessions.length - 1;
+    if (logNext) logNext.disabled = idx <= 0;
+  }
 }
 
 async function restoreFromRoute(route) {

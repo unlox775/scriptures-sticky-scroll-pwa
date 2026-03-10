@@ -1,3 +1,5 @@
+import { logDebug, isDevMode } from "./logger.js";
+
 function escapeHtml(value) {
   return value
     .replaceAll("&", "&amp;")
@@ -72,6 +74,7 @@ export class ReaderEngine {
     this.autoScroll.active = true;
     this.autoScroll.lastTs = performance.now();
     this.autoScroll.accumulatedPx = 0;
+    this.autoScroll._logCount = 0;
     const step = (ts) => {
       if (!this.autoScroll.active || this.destroyed) {
         return;
@@ -81,8 +84,24 @@ export class ReaderEngine {
       this.autoScroll.accumulatedPx += this.autoScroll.speed * dt;
       const whole = Math.floor(this.autoScroll.accumulatedPx);
       if (whole >= 1) {
-        this.scroller.scrollTop += whole;
-        this.autoScroll.accumulatedPx -= whole;
+        const maxScroll = this.scroller.scrollHeight - this.scroller.clientHeight;
+        const before = this.scroller.scrollTop;
+        if (maxScroll > 0 && before < maxScroll) {
+          const delta = Math.min(whole, Math.max(0, maxScroll - before));
+          this.scroller.scrollBy({ top: delta, behavior: "auto" });
+          this.autoScroll.accumulatedPx -= whole;
+          if (isDevMode() && this.autoScroll._logCount < 3) {
+            this.autoScroll._logCount += 1;
+            logDebug("scroll:autoScroll", {
+              before,
+              delta,
+              after: this.scroller.scrollTop,
+              maxScroll,
+              scrollHeight: this.scroller.scrollHeight,
+              clientHeight: this.scroller.clientHeight,
+            });
+          }
+        }
       }
       this.autoScroll.frameId = requestAnimationFrame(step);
     };
@@ -141,6 +160,16 @@ export class ReaderEngine {
     const hit = document.elementFromPoint(probeX, probeY);
     const verseEl = hit?.closest(".verse");
     if (!verseEl) {
+      if (isDevMode() && hit) {
+        logDebug("scroll:captureAnchorMiss", {
+          probeY: Math.round(probeY),
+          scrollerTop: Math.round(rect.top),
+          scrollerHeight: rect.height,
+          hitTag: hit.tagName,
+          hitClass: hit.className || "(none)",
+          hitId: hit.id || "(none)",
+        });
+      }
       return null;
     }
     const seq = Number(verseEl.dataset.seq);
@@ -199,8 +228,8 @@ export class ReaderEngine {
       return;
     }
     this.isBuffering = true;
-    const minScreens = 5;
-    const maxScreens = 10;
+    const minScreens = 3;
+    const maxScreens = 6;
     const vh = Math.max(1, this.scroller.clientHeight);
     const minBuffer = minScreens * vh;
     const maxBuffer = maxScreens * vh;
@@ -214,6 +243,21 @@ export class ReaderEngine {
 
       let topBuffer = this.scroller.scrollTop - first.offsetTop;
       let bottomBuffer = last.offsetTop + last.offsetHeight - (this.scroller.scrollTop + vh);
+
+      if (isDevMode()) {
+        logDebug("scroll:ensureBuffer", {
+          vh,
+          minBuffer,
+          maxBuffer,
+          topBuffer,
+          bottomBuffer,
+          minSeq: this.minLoadedSeq(),
+          maxSeq: this.maxLoadedSeq(),
+          scrollTop: this.scroller.scrollTop,
+          firstOffset: first?.offsetTop,
+          lastEnd: last ? last.offsetTop + last.offsetHeight : null,
+        });
+      }
 
       while (topBuffer < minBuffer && this.minLoadedSeq() > 0) {
         await this.ensureLoaded(this.minLoadedSeq() - 1, "prepend");
@@ -261,6 +305,14 @@ export class ReaderEngine {
     if (seq < 0 || seq >= this.sequence.length || this.loaded.has(seq)) {
       return;
     }
+    const pointer = this.sequence[seq];
+    logDebug("scroll:ensureLoaded", {
+      seq,
+      mode,
+      bookId: pointer?.bookMeta?.id,
+      chapter: pointer?.chapter,
+      loadedCount: this.loaded.size,
+    });
     const chapterData = await this.loadChapter(seq);
     const chapterNode = this.renderChapter(chapterData, seq);
 
@@ -338,12 +390,38 @@ export class ReaderEngine {
       const verseSelector = `.verse[data-seq="${seq}"][data-verse="${location.verse || 1}"]`;
       const verseEl = this.content.querySelector(verseSelector);
       const target = verseEl || this.content.querySelector(`.chapter-block[data-seq="${seq}"]`);
+      const scrollBefore = this.scroller.scrollTop;
+      const vh = this.scroller.clientHeight;
+      const sh = this.scroller.scrollHeight;
+
+      if (isDevMode()) {
+        const noOverflow = sh <= vh;
+        logDebug("scroll:jumpToLocation", {
+          seq,
+          align,
+          verseSelector,
+          target: target ? target.className : null,
+          dimensions: { vh, sh, scrollBefore },
+          noOverflow: noOverflow ? "scroller cannot scroll (fix layout)" : null,
+        });
+      }
+
       if (!target) return;
       const scrollerRect = this.scroller.getBoundingClientRect();
       const targetRect = target.getBoundingClientRect();
-      const desiredTop = this.scroller.clientHeight * align;
+      const desiredTop = vh * align;
       const delta = targetRect.top - scrollerRect.top - desiredTop;
-      this.scroller.scrollTop = Math.max(0, this.scroller.scrollTop + delta);
+      const newTop = Math.max(0, scrollBefore + delta);
+      this.scroller.scrollTop = newTop;
+
+      if (isDevMode()) {
+        logDebug("scroll:jumpToLocation:after", {
+          scrollAfter: this.scroller.scrollTop,
+          delta,
+          targetRectTop: targetRect.top,
+          scrollerRectTop: scrollerRect.top,
+        });
+      }
     };
 
     await new Promise((r) => requestAnimationFrame(r));

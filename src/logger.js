@@ -25,11 +25,20 @@ export function getSessionIdOrCreate() {
   return sessionId;
 }
 
+let onLogCallback = null;
+
+export function setOnLogCallback(cb) {
+  onLogCallback = cb;
+}
+
 export function log(level, message, details = {}) {
   getSessionIdAsync().then((sid) => {
     loggerDB.appendLogEntry(sid, level, message, details).catch((e) => {
       console.warn("[Logger] Failed to persist:", e);
     });
+    if (onLogCallback) {
+      onLogCallback({ sessionId: sid, level, message, details });
+    }
   });
 }
 

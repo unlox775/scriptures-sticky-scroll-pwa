@@ -20,6 +20,15 @@ body {
   color: var(--text);
 }
 
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .app-header {
   position: sticky;
   top: 0;
@@ -60,6 +69,18 @@ body {
 
 .app-main {
   padding: 1rem;
+  flex: 1;
+}
+
+#app.reader-active .app-main {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.view[hidden] {
+  display: none !important;
 }
 
 .app-main .panel:first-child {
@@ -169,7 +190,12 @@ body {
 
 .reader-view {
   padding: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
+
 
 .ribbon-plus-btn {
   padding: 0.35rem 0.5rem;
@@ -287,7 +313,8 @@ body {
 
 .reader-scroller {
   position: relative;
-  height: calc(100vh - 12rem);
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   background: #fff;
   scroll-behavior: auto;
@@ -467,9 +494,43 @@ body {
 
 .dev-drawer-tabs {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   border-bottom: 1px solid #334155;
+}
+
+.dev-tab-action {
+  margin-left: auto;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+}
+
+.dev-log-session-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dev-log-session-controls select {
+  padding: 0.3rem 0.5rem;
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  min-width: 12rem;
+}
+
+.dev-log-session-controls button {
+  padding: 0.3rem 0.5rem;
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
 }
 
 .dev-tab {
@@ -488,10 +549,12 @@ body {
 
 .dev-panel {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 1rem;
   font-size: 0.8rem;
   font-family: ui-monospace, monospace;
+  -webkit-overflow-scrolling: touch;
 }
 
 .dev-panel pre {
@@ -522,37 +585,11 @@ body {
   overflow-x: auto;
 }
 
-.dev-log-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.dev-log-header select {
-  flex: 1;
-  padding: 0.35rem 0.5rem;
-  background: #1e293b;
-  color: #e2e8f0;
-  border: 1px solid #334155;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-}
-
-.dev-log-header button {
-  padding: 0.35rem 0.5rem;
-  background: #1e293b;
-  color: #e2e8f0;
-  border: 1px solid #334155;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-size: 1rem;
-}
-
 .dev-log-entries {
   flex: 1;
+  min-height: 0;
   overflow: auto;
-  margin-top: 0.5rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 .dev-log-entry {
@@ -600,7 +637,3 @@ body {
   word-break: break-all;
 }
 
-.dev-panel #devCopyLogs {
-  display: block;
-  margin-bottom: 0.5rem;
-}
