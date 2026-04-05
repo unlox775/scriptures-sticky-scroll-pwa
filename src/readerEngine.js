@@ -24,6 +24,8 @@ export class ReaderEngine {
     }
 
     this.loaded = new Map();
+    this.inFlightLoads = new Map();
+    this.failedLoads = new Map();
     this.lastScroll = { top: 0, ts: performance.now() };
     this.frameId = null;
     this.autoScroll = { active: false, speed: 90, frameId: null, lastTs: 0, accumulatedPx: 0 };
@@ -49,14 +51,19 @@ export class ReaderEngine {
   async open(location) {
     this.content.innerHTML = "";
     this.loaded.clear();
+    this.inFlightLoads.clear();
+    this.failedLoads.clear();
 
     const seq = this.locationToSeq(location);
-    await this.ensureLoaded(seq, "append");
+    const didLoadTarget = await this.ensureLoaded(seq, "append", { reason: "open-target" });
+    if (!didLoadTarget || !this.loaded.has(seq)) {
+      throw new Error(`Unable to load target chapter for ${location?.reference || "requested location"}`);
+    }
     if (seq > 0) {
-      await this.ensureLoaded(seq - 1, "prepend");
+      await this.ensureLoaded(seq - 1, "prepend", { reason: "open-adjacent-previous" });
     }
     if (seq < this.sequence.length - 1) {
-      await this.ensureLoaded(seq + 1, "append");
+      await this.ensureLoaded(seq + 1, "append", { reason: "open-adjacent-next" });
     }
     await this.jumpToLocation(location, 0.25);
     await this.ensureBuffer();
@@ -223,6 +230,29 @@ export class ReaderEngine {
     return max == null ? null : this.loaded.get(max);
   }
 
+  pointerForSeq(seq) {
+    if (seq == null || seq < 0 || seq >= this.sequence.length) {
+      return null;
+    }
+    return this.sequence[seq];
+  }
+
+  snapshotScrollState() {
+    const minSeq = this.minLoadedSeq();
+    const maxSeq = this.maxLoadedSeq();
+    const minPointer = this.pointerForSeq(minSeq);
+    const maxPointer = this.pointerForSeq(maxSeq);
+    return {
+      scrollTop: this.scroller.scrollTop,
+      viewportHeight: this.scroller.clientHeight,
+      scrollHeight: this.scroller.scrollHeight,
+      minLoadedSeq: minSeq,
+      maxLoadedSeq: maxSeq,
+      minLoadedRef: minPointer ? { bookId: minPointer.bookMeta.id, chapter: minPointer.chapter } : null,
+      maxLoadedRef: maxPointer ? { bookId: maxPointer.bookMeta.id, chapter: maxPointer.chapter } : null,
+    };
+  }
+
   async ensureBuffer() {
     if (this.isBuffering || this.destroyed) {
       return;
@@ -259,16 +289,73 @@ export class ReaderEngine {
         });
       }
 
+      const newlyPrepended = new Set();
+      const newlyAppended = new Set();
+
       while (topBuffer < minBuffer && this.minLoadedSeq() > 0) {
-        await this.ensureLoaded(this.minLoadedSeq() - 1, "prepend");
+        const beforeMin = this.minLoadedSeq();
+        const targetSeq = beforeMin - 1;
+        await this.ensureLoaded(targetSeq, "prepend", {
+          reason: "buffer-extend-top",
+          trigger: {
+            topBuffer,
+            minBuffer,
+          },
+        });
+        if (this.loaded.has(targetSeq)) {
+          newlyPrepended.add(targetSeq);
+        }
         first = this.firstEl();
         topBuffer = this.scroller.scrollTop - first.offsetTop;
+        if (this.minLoadedSeq() === beforeMin) {
+          if (isDevMode()) {
+            const target = this.pointerForSeq(targetSeq);
+            logDebug("scroll:ensureBuffer:blocked", {
+              direction: "prepend",
+              targetSeq,
+              targetBookId: target?.bookMeta?.id,
+              targetChapter: target?.chapter,
+              reason: "prepend made no progress",
+              topBuffer,
+              minBuffer,
+              state: this.snapshotScrollState(),
+            });
+          }
+          break;
+        }
       }
 
       while (bottomBuffer < minBuffer && this.maxLoadedSeq() < this.sequence.length - 1) {
-        await this.ensureLoaded(this.maxLoadedSeq() + 1, "append");
+        const beforeMax = this.maxLoadedSeq();
+        const targetSeq = beforeMax + 1;
+        await this.ensureLoaded(targetSeq, "append", {
+          reason: "buffer-extend-bottom",
+          trigger: {
+            bottomBuffer,
+            minBuffer,
+          },
+        });
+        if (this.loaded.has(targetSeq)) {
+          newlyAppended.add(targetSeq);
+        }
         last = this.lastEl();
         bottomBuffer = last.offsetTop + last.offsetHeight - (this.scroller.scrollTop + vh);
+        if (this.maxLoadedSeq() === beforeMax) {
+          if (isDevMode()) {
+            const target = this.pointerForSeq(targetSeq);
+            logDebug("scroll:ensureBuffer:blocked", {
+              direction: "append",
+              targetSeq,
+              targetBookId: target?.bookMeta?.id,
+              targetChapter: target?.chapter,
+              reason: "append made no progress",
+              bottomBuffer,
+              minBuffer,
+              state: this.snapshotScrollState(),
+            });
+          }
+          break;
+        }
       }
 
       while (this.loaded.size > 1) {
@@ -278,6 +365,19 @@ export class ReaderEngine {
           break;
         }
         const seq = this.minLoadedSeq();
+        if (newlyPrepended.has(seq)) {
+          if (isDevMode()) {
+            logDebug("scroll:ensureBuffer:trimSkipped", {
+              direction: "prepend",
+              seq,
+              reason: "keep newly prepended chapter this pass",
+              topBuffer,
+              maxBuffer,
+              state: this.snapshotScrollState(),
+            });
+          }
+          break;
+        }
         const removeEl = this.loaded.get(seq);
         const removedHeight = removeEl.offsetHeight;
         removeEl.remove();
@@ -292,39 +392,170 @@ export class ReaderEngine {
           break;
         }
         const seq = this.maxLoadedSeq();
+        if (newlyAppended.has(seq)) {
+          if (isDevMode()) {
+            logDebug("scroll:ensureBuffer:trimSkipped", {
+              direction: "append",
+              seq,
+              reason: "keep newly appended chapter this pass",
+              bottomBuffer,
+              maxBuffer,
+              state: this.snapshotScrollState(),
+            });
+          }
+          break;
+        }
         const removeEl = this.loaded.get(seq);
         removeEl.remove();
         this.loaded.delete(seq);
+      }
+
+      if (isDevMode()) {
+        const minSeq = this.minLoadedSeq();
+        const maxSeq = this.maxLoadedSeq();
+        if (topBuffer < minBuffer && minSeq === 0) {
+          const pointer = this.pointerForSeq(0);
+          logDebug("scroll:ensureBuffer:boundary", {
+            boundary: "start-of-work",
+            topBuffer,
+            minBuffer,
+            firstBookId: pointer?.bookMeta?.id,
+            firstChapter: pointer?.chapter,
+            state: this.snapshotScrollState(),
+          });
+        }
+        if (bottomBuffer < minBuffer && maxSeq === this.sequence.length - 1) {
+          const pointer = this.pointerForSeq(maxSeq);
+          logDebug("scroll:ensureBuffer:boundary", {
+            boundary: "end-of-work",
+            bottomBuffer,
+            minBuffer,
+            lastBookId: pointer?.bookMeta?.id,
+            lastChapter: pointer?.chapter,
+            state: this.snapshotScrollState(),
+          });
+        }
       }
     } finally {
       this.isBuffering = false;
     }
   }
 
-  async ensureLoaded(seq, mode) {
+  async ensureLoaded(seq, mode, context = {}) {
     if (seq < 0 || seq >= this.sequence.length || this.loaded.has(seq)) {
-      return;
+      if (isDevMode()) {
+        logDebug("scroll:ensureLoaded:skip", {
+          seq,
+          mode,
+          reason: seq < 0 || seq >= this.sequence.length ? "out-of-range" : "already-loaded",
+          context,
+          state: this.snapshotScrollState(),
+        });
+      }
+      return false;
+    }
+    if (this.inFlightLoads.has(seq)) {
+      if (isDevMode()) {
+        const pointer = this.sequence[seq];
+        logDebug("scroll:ensureLoaded:skip", {
+          seq,
+          mode,
+          reason: "already-in-flight",
+          bookId: pointer?.bookMeta?.id,
+          chapter: pointer?.chapter,
+          context,
+          state: this.snapshotScrollState(),
+        });
+      }
+      await this.inFlightLoads.get(seq);
+      return this.loaded.has(seq);
+    }
+    const priorFailure = this.failedLoads.get(seq);
+    if (priorFailure) {
+      const sinceMs = Date.now() - priorFailure.lastTs;
+      const backoffMs = Math.min(2000, 250 * priorFailure.attempts);
+      if (sinceMs < backoffMs) {
+        if (isDevMode()) {
+          const pointer = this.sequence[seq];
+          logDebug("scroll:ensureLoaded:skip", {
+            seq,
+            mode,
+            reason: "cooldown-after-failure",
+            bookId: pointer?.bookMeta?.id,
+            chapter: pointer?.chapter,
+            attempts: priorFailure.attempts,
+            retryInMs: backoffMs - sinceMs,
+            lastError: priorFailure.message,
+            context,
+            state: this.snapshotScrollState(),
+          });
+        }
+        return false;
+      }
     }
     const pointer = this.sequence[seq];
-    logDebug("scroll:ensureLoaded", {
+    const startedAt = performance.now();
+    logDebug("scroll:ensureLoaded:attempt", {
       seq,
       mode,
       bookId: pointer?.bookMeta?.id,
       chapter: pointer?.chapter,
       loadedCount: this.loaded.size,
+      context,
+      state: this.snapshotScrollState(),
     });
-    const chapterData = await this.loadChapter(seq);
-    const chapterNode = this.renderChapter(chapterData, seq);
+    const loadPromise = (async () => {
+      try {
+        const chapterData = await this.loadChapter(seq);
+        const chapterNode = this.renderChapter(chapterData, seq);
 
-    if (mode === "prepend" && this.content.firstChild) {
-      const before = this.content.scrollHeight;
-      this.content.insertBefore(chapterNode, this.content.firstChild);
-      const after = this.content.scrollHeight;
-      this.scroller.scrollTop += after - before;
-    } else {
-      this.content.appendChild(chapterNode);
-    }
-    this.loaded.set(seq, chapterNode);
+        if (mode === "prepend" && this.content.firstChild) {
+          const before = this.content.scrollHeight;
+          this.content.insertBefore(chapterNode, this.content.firstChild);
+          const after = this.content.scrollHeight;
+          this.scroller.scrollTop += after - before;
+        } else {
+          this.content.appendChild(chapterNode);
+        }
+        this.loaded.set(seq, chapterNode);
+        this.failedLoads.delete(seq);
+        logDebug("scroll:ensureLoaded:success", {
+          seq,
+          mode,
+          bookId: pointer?.bookMeta?.id,
+          chapter: pointer?.chapter,
+          elapsedMs: Math.round(performance.now() - startedAt),
+          loadedCount: this.loaded.size,
+          context,
+          state: this.snapshotScrollState(),
+        });
+        return true;
+      } catch (error) {
+        const prior = this.failedLoads.get(seq);
+        const attempts = (prior?.attempts || 0) + 1;
+        this.failedLoads.set(seq, {
+          attempts,
+          lastTs: Date.now(),
+          message: error?.message || String(error),
+        });
+        logDebug("scroll:ensureLoaded:failure", {
+          seq,
+          mode,
+          bookId: pointer?.bookMeta?.id,
+          chapter: pointer?.chapter,
+          attempts,
+          elapsedMs: Math.round(performance.now() - startedAt),
+          errorMessage: error?.message || String(error),
+          context,
+          state: this.snapshotScrollState(),
+        });
+        return false;
+      } finally {
+        this.inFlightLoads.delete(seq);
+      }
+    })();
+    this.inFlightLoads.set(seq, loadPromise);
+    return loadPromise;
   }
 
   async loadChapter(seq) {
@@ -377,12 +608,17 @@ export class ReaderEngine {
     if (!this.loaded.has(seq)) {
       this.content.innerHTML = "";
       this.loaded.clear();
-      await this.ensureLoaded(seq, "append");
+      this.inFlightLoads.clear();
+      this.failedLoads.clear();
+      const didLoadTarget = await this.ensureLoaded(seq, "append", { reason: "jump-target" });
+      if (!didLoadTarget || !this.loaded.has(seq)) {
+        throw new Error(`Unable to load chapter for ${location?.reference || "requested location"}`);
+      }
       if (seq > 0) {
-        await this.ensureLoaded(seq - 1, "prepend");
+        await this.ensureLoaded(seq - 1, "prepend", { reason: "jump-adjacent-previous" });
       }
       if (seq < this.sequence.length - 1) {
-        await this.ensureLoaded(seq + 1, "append");
+        await this.ensureLoaded(seq + 1, "append", { reason: "jump-adjacent-next" });
       }
     }
 

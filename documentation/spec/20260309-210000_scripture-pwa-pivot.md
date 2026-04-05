@@ -1,7 +1,7 @@
 # Scripture PWA Pivot — Iteration Log
 
 **Prompt slug:** `scripture-pwa-pivot`  
-**Last updated:** 2026-03-09
+**Last updated:** 2026-04-05
 
 **Context:** The interface-refinements work (Prompts 1–8 in `20260309-200000_scripture-pwa-interface-refinements-*`) was not making sufficient progress. This spec marks a fresh start from Prompt 9 of that series. Update this spec from here forward.
 
@@ -36,8 +36,18 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Recommended refactors document | Done | `documentation/recommended-refactors.md` |
 | Refactor plan mapped to visibility + flow goals | Done | Ordered refactors with rationale and execution sequence |
 
+### Prompt 3: Reader stalls near Jacob; improve load behavior + diagnostics
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Prevent append-then-immediate-trim oscillation in one buffer pass | Done | `src/readerEngine.js` `ensureBuffer()` now tracks newly appended/prepended seqs and skips trimming those in the same pass |
+| Add explicit load attempt/success/failure diagnostics | Done | `src/readerEngine.js` `ensureLoaded()` logs `attempt`, `success`, `failure`, and `skip` states with seq/book/chapter context |
+| Add retry guard for repeated failing loads | Done | `src/readerEngine.js` uses `failedLoads` cooldown + `inFlightLoads` dedupe to avoid hot-loop retries and duplicate concurrent loads |
+| Log boundary conditions and blocked progress with scroll state | Done | `src/readerEngine.js` logs `ensureBuffer:boundary` and `ensureBuffer:blocked` with `scrollTop`, viewport, loaded seq range, and refs |
+| Keep open/jump robust when target chapter fails to load | Done | `open()` and `jumpToLocation()` now validate target chapter load and throw explicit errors if the target cannot be loaded |
+
 ## Next Actions
 
-1. Review and refine wording/templates for the three documentation artifacts.
-2. If approved, implement selected refactors (module toggles, object browser, log filters, tests).
-3. Continue iterating from this pivot; append new prompts to the pivot PROMPT log.
+1. Capture a fresh dev-mode log run that scrolls Jacob 4 -> Jacob 5 -> Enos 1 and verify `scroll:ensureLoaded:success` and `scroll:ensureBuffer:blocked|boundary` events tell a complete story.
+2. If any specific chapter still fails to load, use the new `scroll:ensureLoaded:failure` details (`errorMessage`, `attempts`, and `state`) to identify whether the fault is data fetch, chapter lookup, or DOM render.
+3. Continue iterating from this pivot; append every new prompt to the pivot PROMPT log before code edits.
