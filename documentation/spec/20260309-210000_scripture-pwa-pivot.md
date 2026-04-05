@@ -53,6 +53,18 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Add `AI-Modularization-Standard.md` to docs unchanged from prompt content | Done | `documentation/AI-Modularization-Standard.md` |
 | Append prompt transcript before edits per collaboration rule | Done | `documentation/spec/20260309-210000_scripture-pwa-pivot-PROMPT.txt` |
 
+### Prompt 5: Narrative-first visibility + story-aligned instrumentation
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Upgrade standard to require per-module mechanism narratives (not table-only event inventories) | Done | `documentation/AI-Modularization-Standard.md` now includes mechanism-story requirement, required subsection shape, and infinite-scroller example expectations |
+| Rewrite visibility doc with module-by-module mechanism story, tricky dynamics, healthy sequences, and failure cues | Done | `documentation/ai-human-visibility.md` sections 4.1–4.11 |
+| Implement structured log envelope helper (`module`, `event`, `summary`, `refs`, `metrics`, `details`) | Done | `src/logger.js` `logEvent()` |
+| Align reader engine telemetry to narrative control-loop events | Done | `src/readerEngine.js` emits `reader_buffer_state`, `reader_chapter_load_*`, `reader_buffer_*`, `reader_jump_*`, `reader_capture_anchor_miss`, etc. |
+| Align UI/domain telemetry across app shell, routing, bookmarks, data access, and debug drawer | Done | `src/main.js`, `src/data.js`, `src/bookmarks.js`, `src/stateRouting.js` |
+| Improve log viewer readability for structured events | Done | `src/main.js` log rendering adds module/event badges when present |
+| Add adherence scoring framing in refactor doc | Done | `documentation/recommended-refactors.md` section 0 with Yes/Partial/No evidence matrix |
+
 ## Next Actions
 
 1. Capture a fresh dev-mode log run that scrolls Jacob 4 -> Jacob 5 -> Enos 1 and verify `scroll:ensureLoaded:success` and `scroll:ensureBuffer:blocked|boundary` events tell a complete story.

@@ -1,4 +1,4 @@
-import { logDebug, isDevMode } from "./logger.js";
+import { isDevMode, logEvent } from "./logger.js";
 
 function escapeHtml(value) {
   return value
@@ -49,14 +49,41 @@ export class ReaderEngine {
   }
 
   async open(location) {
+    const startedAt = performance.now();
     this.content.innerHTML = "";
     this.loaded.clear();
     this.inFlightLoads.clear();
     this.failedLoads.clear();
 
     const seq = this.locationToSeq(location);
+    logEvent({
+      level: "info",
+      module: "domain.readerEngine",
+      event: "reader_open_start",
+      summary: "Reader engine opening location",
+      refs: {
+        workId: location?.workId ?? this.workMeta.id,
+        bookId: location?.bookId,
+        chapter: location?.chapter || 1,
+        verse: location?.verse || 1,
+      },
+      details: { seq },
+    });
     const didLoadTarget = await this.ensureLoaded(seq, "append", { reason: "open-target" });
     if (!didLoadTarget || !this.loaded.has(seq)) {
+      logEvent({
+        level: "error",
+        module: "domain.readerEngine",
+        event: "reader_open_fail",
+        summary: "Reader engine could not load requested location",
+        refs: {
+          workId: location?.workId ?? this.workMeta.id,
+          bookId: location?.bookId,
+          chapter: location?.chapter || 1,
+          verse: location?.verse || 1,
+        },
+        details: { seq },
+      });
       throw new Error(`Unable to load target chapter for ${location?.reference || "requested location"}`);
     }
     if (seq > 0) {
@@ -68,6 +95,20 @@ export class ReaderEngine {
     await this.jumpToLocation(location, 0.25);
     await this.ensureBuffer();
     this.publishAnchor(0);
+    logEvent({
+      level: "info",
+      module: "domain.readerEngine",
+      event: "reader_open_ready",
+      summary: "Reader engine opened location and primed buffer",
+      refs: {
+        workId: location?.workId ?? this.workMeta.id,
+        bookId: location?.bookId,
+        chapter: location?.chapter || 1,
+        verse: location?.verse || 1,
+      },
+      metrics: { elapsedMs: Math.round(performance.now() - startedAt), loadedCount: this.loaded.size },
+      details: this.snapshotScrollState(),
+    });
   }
 
   setAutoScrollSpeed(speed) {
@@ -99,13 +140,19 @@ export class ReaderEngine {
           this.autoScroll.accumulatedPx -= whole;
           if (isDevMode() && this.autoScroll._logCount < 3) {
             this.autoScroll._logCount += 1;
-            logDebug("scroll:autoScroll", {
-              before,
-              delta,
-              after: this.scroller.scrollTop,
-              maxScroll,
-              scrollHeight: this.scroller.scrollHeight,
-              clientHeight: this.scroller.clientHeight,
+            logEvent({
+              level: "debug",
+              module: "domain.readerEngine",
+              event: "reader_autoscroll_tick",
+              summary: "Applied auto-scroll step",
+              metrics: {
+                before,
+                delta,
+                after: this.scroller.scrollTop,
+                maxScroll,
+                scrollHeight: this.scroller.scrollHeight,
+                clientHeight: this.scroller.clientHeight,
+              },
             });
           }
         }
@@ -168,13 +215,21 @@ export class ReaderEngine {
     const verseEl = hit?.closest(".verse");
     if (!verseEl) {
       if (isDevMode() && hit) {
-        logDebug("scroll:captureAnchorMiss", {
-          probeY: Math.round(probeY),
-          scrollerTop: Math.round(rect.top),
-          scrollerHeight: rect.height,
-          hitTag: hit.tagName,
-          hitClass: hit.className || "(none)",
-          hitId: hit.id || "(none)",
+        logEvent({
+          level: "debug",
+          module: "domain.readerEngine",
+          event: "reader_capture_anchor_miss",
+          summary: "Anchor probe did not hit a verse",
+          metrics: {
+            probeY: Math.round(probeY),
+            scrollerTop: Math.round(rect.top),
+            scrollerHeight: rect.height,
+          },
+          details: {
+            hitTag: hit.tagName,
+            hitClass: hit.className || "(none)",
+            hitId: hit.id || "(none)",
+          },
         });
       }
       return null;
@@ -275,18 +330,27 @@ export class ReaderEngine {
       let bottomBuffer = last.offsetTop + last.offsetHeight - (this.scroller.scrollTop + vh);
 
       if (isDevMode()) {
-        logDebug("scroll:ensureBuffer", {
-          vh,
-          minBuffer,
-          maxBuffer,
-          topBuffer,
-          bottomBuffer,
-          minSeq: this.minLoadedSeq(),
-          maxSeq: this.maxLoadedSeq(),
-          scrollTop: this.scroller.scrollTop,
-          firstOffset: first?.offsetTop,
-          lastEnd: last ? last.offsetTop + last.offsetHeight : null,
+        logEvent({
+          level: "debug",
+          module: "domain.readerEngine",
+          event: "reader_buffer_state",
+          summary: "Reader buffer state evaluated",
+          metrics: {
+            vh,
+            minBuffer,
+            maxBuffer,
+            topBuffer,
+            bottomBuffer,
+            minSeq: this.minLoadedSeq(),
+            maxSeq: this.maxLoadedSeq(),
+            scrollTop: this.scroller.scrollTop,
+          },
+          details: {
+            firstOffset: first?.offsetTop,
+            lastEnd: last ? last.offsetTop + last.offsetHeight : null,
+          },
         });
+
       }
 
       const newlyPrepended = new Set();
@@ -310,16 +374,21 @@ export class ReaderEngine {
         if (this.minLoadedSeq() === beforeMin) {
           if (isDevMode()) {
             const target = this.pointerForSeq(targetSeq);
-            logDebug("scroll:ensureBuffer:blocked", {
-              direction: "prepend",
-              targetSeq,
-              targetBookId: target?.bookMeta?.id,
-              targetChapter: target?.chapter,
-              reason: "prepend made no progress",
-              topBuffer,
-              minBuffer,
-              state: this.snapshotScrollState(),
+            logEvent({
+              level: "debug",
+              module: "domain.readerEngine",
+              event: "reader_buffer_blocked",
+              summary: "Reader buffer could not prepend chapter",
+              refs: {
+                direction: "prepend",
+                targetSeq,
+                bookId: target?.bookMeta?.id,
+                chapter: target?.chapter,
+              },
+              metrics: { topBuffer, minBuffer },
+              details: this.snapshotScrollState(),
             });
+
           }
           break;
         }
@@ -343,16 +412,21 @@ export class ReaderEngine {
         if (this.maxLoadedSeq() === beforeMax) {
           if (isDevMode()) {
             const target = this.pointerForSeq(targetSeq);
-            logDebug("scroll:ensureBuffer:blocked", {
-              direction: "append",
-              targetSeq,
-              targetBookId: target?.bookMeta?.id,
-              targetChapter: target?.chapter,
-              reason: "append made no progress",
-              bottomBuffer,
-              minBuffer,
-              state: this.snapshotScrollState(),
+            logEvent({
+              level: "debug",
+              module: "domain.readerEngine",
+              event: "reader_buffer_blocked",
+              summary: "Reader buffer could not append chapter",
+              refs: {
+                direction: "append",
+                targetSeq,
+                bookId: target?.bookMeta?.id,
+                chapter: target?.chapter,
+              },
+              metrics: { bottomBuffer, minBuffer },
+              details: this.snapshotScrollState(),
             });
+
           }
           break;
         }
@@ -367,14 +441,16 @@ export class ReaderEngine {
         const seq = this.minLoadedSeq();
         if (newlyPrepended.has(seq)) {
           if (isDevMode()) {
-            logDebug("scroll:ensureBuffer:trimSkipped", {
-              direction: "prepend",
-              seq,
-              reason: "keep newly prepended chapter this pass",
-              topBuffer,
-              maxBuffer,
-              state: this.snapshotScrollState(),
+            logEvent({
+              level: "debug",
+              module: "domain.readerEngine",
+              event: "reader_buffer_trim_skipped",
+              summary: "Skipped trimming freshly prepended chapter",
+              refs: { direction: "prepend", seq },
+              metrics: { topBuffer, maxBuffer },
+              details: this.snapshotScrollState(),
             });
+
           }
           break;
         }
@@ -394,14 +470,16 @@ export class ReaderEngine {
         const seq = this.maxLoadedSeq();
         if (newlyAppended.has(seq)) {
           if (isDevMode()) {
-            logDebug("scroll:ensureBuffer:trimSkipped", {
-              direction: "append",
-              seq,
-              reason: "keep newly appended chapter this pass",
-              bottomBuffer,
-              maxBuffer,
-              state: this.snapshotScrollState(),
+            logEvent({
+              level: "debug",
+              module: "domain.readerEngine",
+              event: "reader_buffer_trim_skipped",
+              summary: "Skipped trimming freshly appended chapter",
+              refs: { direction: "append", seq },
+              metrics: { bottomBuffer, maxBuffer },
+              details: this.snapshotScrollState(),
             });
+
           }
           break;
         }
@@ -415,25 +493,37 @@ export class ReaderEngine {
         const maxSeq = this.maxLoadedSeq();
         if (topBuffer < minBuffer && minSeq === 0) {
           const pointer = this.pointerForSeq(0);
-          logDebug("scroll:ensureBuffer:boundary", {
-            boundary: "start-of-work",
-            topBuffer,
-            minBuffer,
-            firstBookId: pointer?.bookMeta?.id,
-            firstChapter: pointer?.chapter,
-            state: this.snapshotScrollState(),
+          logEvent({
+            level: "debug",
+            module: "domain.readerEngine",
+            event: "reader_buffer_boundary",
+            summary: "Reached start boundary while evaluating top buffer",
+            refs: {
+              boundary: "start-of-work",
+              bookId: pointer?.bookMeta?.id,
+              chapter: pointer?.chapter,
+            },
+            metrics: { topBuffer, minBuffer },
+            details: this.snapshotScrollState(),
           });
+
         }
         if (bottomBuffer < minBuffer && maxSeq === this.sequence.length - 1) {
           const pointer = this.pointerForSeq(maxSeq);
-          logDebug("scroll:ensureBuffer:boundary", {
-            boundary: "end-of-work",
-            bottomBuffer,
-            minBuffer,
-            lastBookId: pointer?.bookMeta?.id,
-            lastChapter: pointer?.chapter,
-            state: this.snapshotScrollState(),
+          logEvent({
+            level: "debug",
+            module: "domain.readerEngine",
+            event: "reader_buffer_boundary",
+            summary: "Reached end boundary while evaluating bottom buffer",
+            refs: {
+              boundary: "end-of-work",
+              bookId: pointer?.bookMeta?.id,
+              chapter: pointer?.chapter,
+            },
+            metrics: { bottomBuffer, minBuffer },
+            details: this.snapshotScrollState(),
           });
+
         }
       }
     } finally {
@@ -444,28 +534,49 @@ export class ReaderEngine {
   async ensureLoaded(seq, mode, context = {}) {
     if (seq < 0 || seq >= this.sequence.length || this.loaded.has(seq)) {
       if (isDevMode()) {
-        logDebug("scroll:ensureLoaded:skip", {
-          seq,
-          mode,
-          reason: seq < 0 || seq >= this.sequence.length ? "out-of-range" : "already-loaded",
-          context,
-          state: this.snapshotScrollState(),
+        const pointer = this.pointerForSeq(seq);
+        logEvent({
+          level: "debug",
+          module: "domain.readerEngine",
+          event: "reader_chapter_load_skip",
+          summary: "Skipped chapter load attempt",
+          refs: {
+            seq,
+            mode,
+            bookId: pointer?.bookMeta?.id,
+            chapter: pointer?.chapter,
+          },
+          details: {
+            reason: seq < 0 || seq >= this.sequence.length ? "out-of-range" : "already-loaded",
+            context,
+            state: this.snapshotScrollState(),
+          },
         });
+
       }
       return false;
     }
     if (this.inFlightLoads.has(seq)) {
       if (isDevMode()) {
         const pointer = this.sequence[seq];
-        logDebug("scroll:ensureLoaded:skip", {
-          seq,
-          mode,
-          reason: "already-in-flight",
-          bookId: pointer?.bookMeta?.id,
-          chapter: pointer?.chapter,
-          context,
-          state: this.snapshotScrollState(),
+        logEvent({
+          level: "debug",
+          module: "domain.readerEngine",
+          event: "reader_chapter_load_skip",
+          summary: "Skipped chapter load because request is already in flight",
+          refs: {
+            seq,
+            mode,
+            bookId: pointer?.bookMeta?.id,
+            chapter: pointer?.chapter,
+          },
+          details: {
+            reason: "already-in-flight",
+            context,
+            state: this.snapshotScrollState(),
+          },
         });
+
       }
       await this.inFlightLoads.get(seq);
       return this.loaded.has(seq);
@@ -477,33 +588,53 @@ export class ReaderEngine {
       if (sinceMs < backoffMs) {
         if (isDevMode()) {
           const pointer = this.sequence[seq];
-          logDebug("scroll:ensureLoaded:skip", {
-            seq,
-            mode,
-            reason: "cooldown-after-failure",
-            bookId: pointer?.bookMeta?.id,
-            chapter: pointer?.chapter,
-            attempts: priorFailure.attempts,
-            retryInMs: backoffMs - sinceMs,
-            lastError: priorFailure.message,
-            context,
-            state: this.snapshotScrollState(),
+          logEvent({
+            level: "debug",
+            module: "domain.readerEngine",
+            event: "reader_chapter_load_skip",
+            summary: "Skipped chapter load because failure cooldown is active",
+            refs: {
+              seq,
+              mode,
+              bookId: pointer?.bookMeta?.id,
+              chapter: pointer?.chapter,
+            },
+            metrics: {
+              attempts: priorFailure.attempts,
+              retryInMs: backoffMs - sinceMs,
+            },
+            details: {
+              reason: "cooldown-after-failure",
+              lastError: priorFailure.message,
+              context,
+              state: this.snapshotScrollState(),
+            },
           });
+
         }
         return false;
       }
     }
     const pointer = this.sequence[seq];
     const startedAt = performance.now();
-    logDebug("scroll:ensureLoaded:attempt", {
-      seq,
-      mode,
-      bookId: pointer?.bookMeta?.id,
-      chapter: pointer?.chapter,
-      loadedCount: this.loaded.size,
-      context,
-      state: this.snapshotScrollState(),
+    logEvent({
+      level: "debug",
+      module: "domain.readerEngine",
+      event: "reader_chapter_load_attempt",
+      summary: "Attempting to load chapter into reader buffer",
+      refs: {
+        seq,
+        mode,
+        bookId: pointer?.bookMeta?.id,
+        chapter: pointer?.chapter,
+      },
+      metrics: { loadedCount: this.loaded.size },
+      details: {
+        context,
+        state: this.snapshotScrollState(),
+      },
     });
+
     const loadPromise = (async () => {
       try {
         const chapterData = await this.loadChapter(seq);
@@ -519,16 +650,27 @@ export class ReaderEngine {
         }
         this.loaded.set(seq, chapterNode);
         this.failedLoads.delete(seq);
-        logDebug("scroll:ensureLoaded:success", {
-          seq,
-          mode,
-          bookId: pointer?.bookMeta?.id,
-          chapter: pointer?.chapter,
-          elapsedMs: Math.round(performance.now() - startedAt),
-          loadedCount: this.loaded.size,
-          context,
-          state: this.snapshotScrollState(),
+        logEvent({
+          level: "debug",
+          module: "domain.readerEngine",
+          event: "reader_chapter_load_success",
+          summary: "Loaded chapter into reader buffer",
+          refs: {
+            seq,
+            mode,
+            bookId: pointer?.bookMeta?.id,
+            chapter: pointer?.chapter,
+          },
+          metrics: {
+            elapsedMs: Math.round(performance.now() - startedAt),
+            loadedCount: this.loaded.size,
+          },
+          details: {
+            context,
+            state: this.snapshotScrollState(),
+          },
         });
+
         return true;
       } catch (error) {
         const prior = this.failedLoads.get(seq);
@@ -538,17 +680,28 @@ export class ReaderEngine {
           lastTs: Date.now(),
           message: error?.message || String(error),
         });
-        logDebug("scroll:ensureLoaded:failure", {
-          seq,
-          mode,
-          bookId: pointer?.bookMeta?.id,
-          chapter: pointer?.chapter,
-          attempts,
-          elapsedMs: Math.round(performance.now() - startedAt),
-          errorMessage: error?.message || String(error),
-          context,
-          state: this.snapshotScrollState(),
+        logEvent({
+          level: "warn",
+          module: "domain.readerEngine",
+          event: "reader_chapter_load_failure",
+          summary: "Failed to load chapter into reader buffer",
+          refs: {
+            seq,
+            mode,
+            bookId: pointer?.bookMeta?.id,
+            chapter: pointer?.chapter,
+          },
+          metrics: {
+            attempts,
+            elapsedMs: Math.round(performance.now() - startedAt),
+          },
+          details: {
+            errorMessage: error?.message || String(error),
+            context,
+            state: this.snapshotScrollState(),
+          },
         });
+
         return false;
       } finally {
         this.inFlightLoads.delete(seq);
@@ -612,6 +765,19 @@ export class ReaderEngine {
       this.failedLoads.clear();
       const didLoadTarget = await this.ensureLoaded(seq, "append", { reason: "jump-target" });
       if (!didLoadTarget || !this.loaded.has(seq)) {
+        logEvent({
+          level: "error",
+          module: "domain.readerEngine",
+          event: "reader_jump_fail",
+          summary: "Failed to prepare chapter before jump",
+          refs: {
+            workId: location?.workId ?? this.workMeta.id,
+            bookId: location?.bookId,
+            chapter: location?.chapter || 1,
+            verse: location?.verse || 1,
+          },
+          details: { seq },
+        });
         throw new Error(`Unable to load chapter for ${location?.reference || "requested location"}`);
       }
       if (seq > 0) {
@@ -632,14 +798,25 @@ export class ReaderEngine {
 
       if (isDevMode()) {
         const noOverflow = sh <= vh;
-        logDebug("scroll:jumpToLocation", {
-          seq,
-          align,
-          verseSelector,
-          target: target ? target.className : null,
-          dimensions: { vh, sh, scrollBefore },
-          noOverflow: noOverflow ? "scroller cannot scroll (fix layout)" : null,
+        logEvent({
+          level: "debug",
+          module: "domain.readerEngine",
+          event: "reader_jump_attempt",
+          summary: "Attempting reader jump alignment",
+          refs: {
+            workId: location?.workId ?? this.workMeta.id,
+            bookId: location?.bookId,
+            chapter: location?.chapter || 1,
+            verse: location?.verse || 1,
+          },
+          metrics: { seq, align, vh, sh, scrollBefore },
+          details: {
+            verseSelector,
+            targetClass: target ? target.className : null,
+            noOverflow: noOverflow ? "scroller cannot scroll (fix layout)" : null,
+          },
         });
+
       }
 
       if (!target) return;
@@ -651,12 +828,27 @@ export class ReaderEngine {
       this.scroller.scrollTop = newTop;
 
       if (isDevMode()) {
-        logDebug("scroll:jumpToLocation:after", {
-          scrollAfter: this.scroller.scrollTop,
-          delta,
-          targetRectTop: targetRect.top,
-          scrollerRectTop: scrollerRect.top,
+        logEvent({
+          level: "debug",
+          module: "domain.readerEngine",
+          event: "reader_jump_done",
+          summary: "Completed reader jump alignment",
+          refs: {
+            workId: location?.workId ?? this.workMeta.id,
+            bookId: location?.bookId,
+            chapter: location?.chapter || 1,
+            verse: location?.verse || 1,
+          },
+          metrics: {
+            scrollAfter: this.scroller.scrollTop,
+            delta,
+          },
+          details: {
+            targetRectTop: targetRect.top,
+            scrollerRectTop: scrollerRect.top,
+          },
         });
+
       }
     };
 

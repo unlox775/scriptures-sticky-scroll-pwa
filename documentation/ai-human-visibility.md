@@ -1,210 +1,271 @@
 # AI-to-Human Visibility Layer — Scripture Reader PWA
 
-This document defines a practical observability and inspection strategy so a human (and AI assistant) can "tour the factory floor" of this app: see what is happening, where it is happening, and why.
+This document is the operational "factory tour" for runtime behavior. It is intentionally narrative-first: each major module explains what it is doing over time, why that is tricky, and how to verify health using concrete events.
 
-## 1) Objectives and guardrails
+## 1) Operating goals
 
-- Provide **debug visibility without changing normal user experience**.
-- Make instrumentation **module-addressable** (toggle by component/module).
-- Keep logs **compact enough to copy into AI chat** while retaining useful detail.
-- Preserve performance by default: visibility is **off unless enabled**.
-- Enable both:
-  - **Human-driven debugging** (UI controls + copy export)
-  - **Future AI-driven retrieval** (structured, filterable telemetry)
+- Give humans and AI assistants a **shared mental model** of mechanism, not only event names.
+- Keep logs **structured and filterable** (`module`, `event`, `summary`, `refs`, `metrics`, `details`).
+- Preserve normal UX by keeping high-volume diagnostics **dev-mode gated**.
+- Make every major path diagnosable from exported logs without emergency instrumentation edits.
 
-## 2) Current baseline in this repository
+## 2) Event envelope contract (implemented)
 
-Already present:
-- Global developer mode flag in localStorage (`scripture-pwa-dev-mode-v1`).
-- Debug drawer with **Storage** and **Logs** panels.
-- Persisted log sessions/entries in IndexedDB (`scripture-pwa-logs`).
-- Log copy export flow (`Copy logs`) with session selection.
-- Route/nav + reader-anchor instrumentation points already emitted.
-
-Current gaps versus target framework:
-- No per-module enable/disable matrix (only broad dev-mode behavior).
-- No object-browser panels for core domain objects (bookmark/reader/cache views).
-- No log filtering by module/component inside the viewer.
-- Log schema is message-first, not consistently tagged with module/event contracts.
-
----
-
-## 3) Visibility control model (target)
-
-### 3.1 Control layers
-
-1. **Layer A — Global visibility mode**
-   - Existing developer mode switch remains the top-level gate.
-2. **Layer B — Module toggles**
-   - Independent toggles for each major front-end component and domain module.
-3. **Layer C — Verbosity level**
-   - `minimal` (default in dev mode), `standard`, `deep` for selected modules.
-
-### 3.2 Suggested persisted toggle shape
+All new instrumentation follows this shape:
 
 ```json
 {
-  "enabled": true,
-  "verbosity": "standard",
-  "modules": {
-    "ui.homeView": false,
-    "ui.booksView": false,
-    "ui.chaptersView": false,
-    "ui.readerView": true,
-    "ui.historyView": false,
-    "ui.devDrawer": true,
-    "domain.routing": true,
-    "domain.dataAccess": false,
-    "domain.readerEngine": true,
-    "domain.bookmarks": true,
-    "domain.logging": true
+  "level": "debug",
+  "message": "Reader buffer state evaluated",
+  "details": {
+    "module": "domain.readerEngine",
+    "event": "reader_buffer_state",
+    "summary": "Reader buffer state evaluated",
+    "refs": { "bookId": "jacob", "chapter": 5 },
+    "metrics": { "topBuffer": 4121, "bottomBuffer": -37 },
+    "details": { "minLoadedSeq": 57, "maxLoadedSeq": 58 }
   }
 }
 ```
 
-Storage recommendation: `localStorage["scripture-pwa-visibility-v1"]`.
+The debug log viewer now renders `module` and `event` badges when present.
+
+## 3) Visibility controls posture
+
+Current:
+- Global dev mode (`scripture-pwa-dev-mode-v1`)
+- Sessioned logs + copy export
+- Structured events for major UI/domain behaviors
+
+Still pending:
+- Per-module on/off toggles (beyond dev-mode gate)
+- In-view module/level filter controls
+- Objects tab for direct runtime object browsing
 
 ---
 
-## 4) Factory tour map: what to log by module
+## 4) Module narratives and evidence maps
 
-Each section below defines practical event points and expected event frequency to control noise.
+### 4.1 `domain.readerEngine` (infinite scroller core)
 
-### 4.1 Front-end component telemetry
+**Mechanism story**  
+The reader keeps a moving chapter buffer around the viewport. It continuously measures top and bottom off-screen context and extends or trims content to keep a target range (minimum ~3 screens, maximum ~6 screens) while preserving the user’s visual anchor.
 
-| Module ID | Component | Events to capture | Typical frequency per screen entry | Notes/noise strategy |
-| --- | --- | --- | --- | --- |
-| `ui.homeView` | Home | `home_render_start`, `home_render_done`, `home_open_work_click`, `home_open_bookmark_click`, `home_view_history_click` | Render events: 1 each; clicks: user-driven | Avoid logging every DOM node built. Keep to user-intent actions and total render ms. |
-| `ui.booksView` | Books | `books_render_start`, `books_render_done`, `books_open_book_click` | Render events: 1 each; click: user-driven | Include work id and number of books rendered. |
-| `ui.chaptersView` | Chapters | `chapters_render_start`, `chapters_render_done`, `chapters_open_chapter_click` | Render events: 1 each; click: user-driven | Include chapter count; no per-tile logging. |
-| `ui.readerView` | Reader | `reader_open_start`, `reader_open_ready`, `reader_anchor_change`, `reader_buffer_expand`, `reader_buffer_trim`, `reader_autoscroll_start`, `reader_autoscroll_stop`, `reader_autoscroll_speed_change` | Open events: 1 each; anchor: high frequency; buffer: low/moderate | Throttle `reader_anchor_change` in standard mode (for example 1 every 500-1000 ms). |
-| `ui.historyView` | History | `history_render_start`, `history_render_done` | Usually 1 each | Include bookmark id and number of history rows. |
-| `ui.devDrawer` | Debug drawer | `debug_drawer_open`, `debug_tab_change`, `debug_session_select`, `debug_copy_logs` | User-driven | Useful for reconstructing what data was exported. |
+**Why this is tricky**  
+- Content height is dynamic (text wrapping, device width, font metrics), so chapter pixel size is unknown until rendered.
+- Prepending above the viewport changes document flow; scrollTop must be compensated to avoid apparent jumps.
+- Appending and trimming in one pass can oscillate if not guarded.
+- Sequence crosses book boundaries inside a work (for example Jacob -> Enos) and must remain seamless.
 
-### 4.2 Back-end/domain module telemetry
+**Signals to watch**
+- `reader_buffer_state` — current thresholds and loaded seq range.
+- `reader_chapter_load_attempt|success|failure|skip` — chapter load lifecycle.
+- `reader_buffer_blocked` — threshold asked to extend but no seq progress occurred.
+- `reader_buffer_trim_skipped` — anti-oscillation guard fired.
+- `reader_buffer_boundary` — hit start/end of work while evaluating thresholds.
+- `reader_jump_attempt|reader_jump_done` — alignment step around open/jump operations.
 
-| Module ID | Domain module | Events to capture | Typical frequency | What details matter |
-| --- | --- | --- | --- | --- |
-| `domain.routing` | Route/state | `route_parse`, `route_restore_start`, `route_restore_resolved`, `route_push`, `route_fallback_loaded` | Low/moderate | Include route string, parsed view, resolved work/book ids, fallback usage. |
-| `domain.dataAccess` | Index + book cache | `index_load_start`, `index_load_done`, `book_cache_hit`, `book_cache_miss`, `book_load_gzip_ok`, `book_load_json_fallback`, `book_load_fail` | Moderate while reading new books; low otherwise | Include book id, chapter count, payload size estimate (if cheap), load ms. |
-| `domain.readerEngine` | Reader engine | `reader_seq_resolve`, `reader_chapter_load`, `reader_jump_to_location`, `reader_capture_anchor_miss`, `reader_resize_realign`, `reader_buffer_state` | Moderate/high in reading sessions | Keep payload concise: seq, chapter, scrollTop, buffer lengths, velocity bucket. |
-| `domain.bookmarks` | Bookmark store | `bookmark_create`, `bookmark_move`, `bookmark_auto_follow_update`, `bookmark_follow_skipped`, `bookmark_history_snapshot` | Low/moderate | Include bookmark id/name, source (`manual`/`scroll`/`auto-scroll`), reference. |
-| `domain.logging` | Logging/session store | `log_session_create`, `log_entry_append_fail`, `log_purge_old_sessions`, `log_export_requested` | Low | Avoid recursive over-logging; reserve for warnings/errors and key lifecycle events. |
+**Healthy sequence (example)**  
+`reader_open_start` -> `reader_chapter_load_attempt/success` (target + adjacent) -> `reader_jump_done` -> repeated `reader_buffer_state` with occasional `reader_chapter_load_success` near edges, no sustained `reader_buffer_blocked`.
+
+**Failure cues and likely causes**
+- Many repeated `reader_chapter_load_attempt` for same seq with `failure` => data fetch/lookup/render problem.
+- Repeated `reader_buffer_blocked` same direction/seq => no-progress loop or guard/cooldown preventing advance.
+- Frequent `reader_buffer_boundary` at end-of-work is normal only at terminal chapter of the work.
+
+### 4.2 `ui.readerView` (reader interaction shell)
+
+**Mechanism story**  
+This module coordinates reader entry/exit and controls that influence engine behavior: open location, auto-scroll start/stop/speed, chapter-change display updates, and header navigation.
+
+**Why this is tricky**  
+- UI controls and engine loop are asynchronous.
+- Anchor changes can be high-frequency; status updates must be informative without flooding logs.
+
+**Signals to watch**
+- `reader_open_start|reader_open_ready`
+- `reader_chapter_change`
+- `reader_autoscroll_start|stop|speed_change`
+- `reader_back_to_chapters|reader_home_click`
+
+**Healthy sequence**  
+`reader_open_start` -> `reader_open_ready` -> optional auto-scroll control events -> back/home navigation events.
+
+**Failure cues**
+- `reader_open_start` without `reader_open_ready` suggests engine open failure; correlate with `domain.readerEngine` errors.
+
+### 4.3 `domain.bookmarks`
+
+**Mechanism story**  
+Bookmarks persist user reading state and maintain one-per-day history snapshots. During reading, the module selects an eligible bookmark to follow and updates it based on reading pace heuristics.
+
+**Why this is tricky**  
+- Auto-follow should update during slow reading but avoid thrashing during fast scroll.
+- Daily snapshot replacement must preserve “one line per day” semantics.
+
+**Signals to watch**
+- `bookmark_store_init`
+- `bookmark_create`
+- `bookmark_follow_candidate`
+- `bookmark_follow_skipped`
+- `bookmark_auto_follow_update`
+- `bookmark_location_updated`
+- `bookmark_history_snapshot`
+
+**Healthy sequence**
+`bookmark_follow_candidate` -> (either) `bookmark_follow_skipped` or `bookmark_auto_follow_update` -> `bookmark_location_updated` -> `bookmark_history_snapshot`.
+
+**Failure cues**
+- Candidate exists but no updates over long slow-reading windows => check follow thresholds and anchor cadence.
+
+### 4.4 `domain.dataAccess`
+
+**Mechanism story**  
+Loads index metadata and book payloads with cache-first behavior and gzip-first transport. On unsupported/failed gzip path, falls back to JSON.
+
+**Why this is tricky**  
+- Capability and network differences cause path branching (gzip vs fallback).
+- Cache size limits can hide repeated misses if eviction is too aggressive.
+
+**Signals to watch**
+- `index_load_start|done|fail`
+- `book_cache_hit|book_cache_miss|book_cache_store`
+- `book_load_gzip_ok|book_load_json_fallback|book_load_fail`
+
+**Healthy sequence**
+First visit: `book_cache_miss` -> `book_load_gzip_ok` (or fallback) -> `book_cache_store`; subsequent nearby chapter loads trend toward `book_cache_hit`.
+
+**Failure cues**
+- Persistent misses on same book in short interval => cache churn/size issue.
+- Frequent fallback on capable clients => gzip/decompression path instability.
+
+### 4.5 `domain.routing`
+
+**Mechanism story**  
+Parses hash routes, restores app state to matching view, and persists fallback route in local storage so resume is stable in PWA contexts.
+
+**Why this is tricky**  
+- Hash can point to stale/missing entities.
+- Restore path is multi-branch (reader/chapters/books/home) and can silently degrade to home without clear signals if uninstrumented.
+
+**Signals to watch**
+- `route_parse`
+- `route_push`
+- `route_persist`
+- `route_fallback_loaded`
+- `route_restore_start|route_restore_resolved|route_restore_fail`
+
+**Healthy sequence**
+`route_parse` -> `route_restore_start` -> one `route_restore_resolved` matching intended view.
+
+**Failure cues**
+- `route_restore_fail` indicates stale/invalid route or missing entities; app intentionally falls back to home.
+
+### 4.6 `ui.homeView`
+
+**Mechanism story**  
+Renders works + bookmark cards and dispatches user intent into drill-down or direct open flows.
+
+**Signals to watch**
+- `home_render_done`
+- `home_open_work_click`
+- `home_open_bookmark_click`
+- `home_view_history_click`
+
+### 4.7 `ui.booksView`
+
+**Mechanism story**  
+Renders books for selected work and routes book selection to chapter grid.
+
+**Signals to watch**
+- `books_render_done`
+- `books_open_book_click`
+- `books_back_to_home`
+
+### 4.8 `ui.chaptersView`
+
+**Mechanism story**  
+Renders chapter tile grid and launches reader at selected chapter.
+
+**Signals to watch**
+- `chapters_render_done`
+- `chapters_open_chapter_click`
+- `chapters_back_to_books`
+
+### 4.9 `ui.historyView`
+
+**Mechanism story**  
+Displays one-per-day bookmark history snapshots for audit and recovery.
+
+**Signals to watch**
+- `history_render_done`
+- `history_back_click`
+- `history_back_to_home`
+
+### 4.10 `ui.devDrawer`
+
+**Mechanism story**  
+Provides debug surface for logs and storage evidence capture.
+
+**Signals to watch**
+- `dev_mode_enabled`
+- `debug_drawer_open|debug_drawer_close`
+- `debug_tab_change`
+- `debug_session_select`
+- `debug_copy_logs|debug_copy_logs_failed`
+
+### 4.11 `ui.appShell`
+
+**Mechanism story**  
+Bootstraps the app, install prompt behavior, and service worker registration.
+
+**Signals to watch**
+- `app_init_start|app_init_complete|app_init_fail`
+- `install_prompt_available|install_prompt_accepted|install_ios_instructions_shown`
+- `service_worker_registered`
 
 ---
 
-## 5) Persisted-object visibility strategy
+## 5) Persisted object visibility strategy (still target)
 
-Humans should be able to inspect core objects directly in-app, not only infer from logs.
+Humans should inspect key objects directly (not only infer from logs):
+- Bookmarks + history
+- Route snapshot (hash + parsed + fallback)
+- Reader runtime snapshot (anchor + loaded seq range + auto-scroll state)
+- Cache snapshot
 
-### 5.1 Object families to expose
-
-1. **Bookmarks**
-   - Simplified list: name, current reference, updatedAt, history-day count.
-   - Detail action: "View raw JSON".
-2. **Bookmark history entries**
-   - Simplified list grouped by bookmark and day.
-   - Detail action: "View raw JSON" per entry.
-3. **Route state snapshot**
-   - Current hash, parsed route descriptor, storage fallback value.
-   - Detail action: "View raw JSON".
-4. **Reader runtime snapshot**
-   - Current anchor, loaded seq range, loaded chapter count, auto-scroll state/speed.
-   - Detail action: "View raw JSON".
-5. **Book cache snapshot**
-   - Cached keys, recency order, max cache size.
-   - Detail action: "View raw JSON".
-6. **Log session catalog**
-   - Session startedAt, entry count, last timestamp.
-   - Detail action: "View raw JSON" (session metadata + entries preview).
-
-### 5.2 Debug drawer layout recommendation
-
-- Add third tab: **Objects** (beside Storage and Logs).
-- Objects tab sections:
-  1. Bookmarks
-  2. Reader runtime
-  3. Route/runtime state
-  4. Cache state
-- Every row has:
-  - compact summary card
-  - `View JSON` action to reveal raw object in expandable `<pre>` panel.
-
-This keeps mobile ergonomics intact while preserving full transparency on demand.
+Recommended future UX: add **Objects** tab in debug drawer with summary rows and expandable raw JSON.
 
 ---
 
-## 6) Log viewer strategy
+## 6) Flow-level verification checklists
 
-### 6.1 Required viewer capabilities
+### Critical flow: resume and continue reading
+Expected evidence chain:
+1. `route_fallback_loaded` (if used) + `route_restore_start`
+2. `reader_open_start` / `reader_open_ready`
+3. `reader_buffer_state` cadence during scroll
+4. `bookmark_auto_follow_update` during slow reading
 
-- Session selection (already present).
-- Module filter chips / checklist (show/hide by module id).
-- Level filter (`debug/info/warn/error`).
-- Free text search (message/details).
-- Collapsible details payload.
-- Copy options:
-  - `Copy visible` (filtered subset)
-  - `Copy full session` (bounded max entries)
+### Secondary flow: drill down to reader
+Expected evidence chain:
+1. `home_open_work_click`
+2. `books_open_book_click`
+3. `chapters_open_chapter_click`
+4. `reader_open_ready`
 
-### 6.2 Event envelope contract (recommended)
-
-Use one structured envelope so logs are machine-readable and human-readable:
-
-```json
-{
-  "timestamp": 1712345678901,
-  "sessionId": "session-1712345678",
-  "level": "info",
-  "module": "domain.readerEngine",
-  "event": "reader_jump_to_location",
-  "summary": "Aligned target verse to 25% viewport",
-  "metrics": { "durationMs": 12, "scrollTopBefore": 1020, "scrollTopAfter": 1338 },
-  "refs": { "workId": "book-of-mormon", "bookId": "1-ne", "chapter": 4, "verse": 1 },
-  "details": { "seq": 3, "align": 0.25 }
-}
-```
-
-Key benefit: easy filtering, lower ambiguity, better AI ingestion.
+### Tertiary flow: diagnostics export
+Expected evidence chain:
+1. `debug_drawer_open`
+2. `debug_session_select`
+3. `debug_copy_logs`
 
 ---
 
-## 7) Performance and safety rules for visibility mode
+## 7) Performance and safety rules
 
-- Default production behavior: module instrumentation disabled.
-- In developer mode:
-  - enable only low-cost events by default;
-  - require explicit opt-in for high-frequency events.
-- Throttle and sample high-volume streams:
-  - anchor changes and scroll diagnostics should use time-based throttles.
-- Do not log full chapter payloads or entire book payloads by default.
-- Redact/omit fields not needed for diagnosis.
+- Keep high-frequency diagnostics in dev mode only.
+- Prefer concise refs/metrics; avoid full chapter payload logs.
+- Instrumentation failure must never block core reading/navigation flows.
 
----
-
-## 8) Flow-by-flow visibility checklist
-
-### Critical flow (Resume and continue reading)
-- Must see: route restore -> reader open -> anchor updates -> bookmark auto-follow updates.
-- Required modules: `domain.routing`, `ui.readerView`, `domain.readerEngine`, `domain.bookmarks`.
-
-### Secondary flow (Drill-down to reader)
-- Must see: home click -> books render -> chapter selection -> reader open ready.
-- Required modules: `ui.homeView`, `ui.booksView`, `ui.chaptersView`, `domain.routing`, `domain.readerEngine`.
-
-### Tertiary flow (Bookmark management/history)
-- Must see: bookmark create/move -> daily snapshot write -> history render/open.
-- Required modules: `domain.bookmarks`, `ui.historyView`, `ui.homeView`.
-
----
-
-## 9) Implementation status snapshot (today)
-
-- **Implemented now**
-  - Dev mode gate, log persistence, session browsing, copy export, baseline debug drawer.
-- **Partially implemented**
-  - Reader and navigation logs exist but are not fully normalized to module/event contracts.
-- **Not implemented yet**
-  - Per-module visibility toggles, object browser tab, in-view log filtering controls.
-
-This document intentionally defines the target visibility discipline so future changes remain consistent.
+This document is intentionally mechanism-first so logs can be interpreted as evidence, not just as raw event inventory.

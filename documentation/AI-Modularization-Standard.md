@@ -39,6 +39,49 @@ That is why every major part and module needs an explicit visibility posture. In
 
 This is not only about logs. It is about navigable evidence. A meaningful visibility layer tells a coherent story of behavior across time, and does so in a way that can be reused across debugging sessions rather than rebuilt from scratch for each incident.
 
+## Mechanism narrative requirement (the "why this is tricky" section)
+
+A module visibility section is incomplete if it only lists event names in a table. Tables are useful indexes, but they are not the explanation. Every major front-end part and back-end module must include a short mechanism narrative that teaches a new contributor how and why the module works.
+
+That narrative should answer:
+
+- What dynamic behavior makes this module non-trivial?
+- What control loop, thresholds, or sequencing rules does it rely on?
+- What state transitions are expected in healthy operation?
+- What failure patterns are likely and why?
+
+This requirement exists because AI-generated docs often degrade into event inventories detached from system intent. The standard requires that documentation "sell the mechanism" first, then map instrumentation to that mechanism.
+
+### Required subsection shape per module
+
+For each module in AI-to-Human Visibility, include:
+
+1. **Mechanism story**  
+   A concise narrative in domain language describing what the module is actively doing over time.
+2. **Why this is tricky**  
+   The dynamic or stateful constraints that create debugging risk.
+3. **Signals to watch**  
+   The exact events/metrics and how they correlate to state transitions.
+4. **Healthy sequence example**  
+   A short expected event timeline for normal operation.
+5. **Failure cues and likely causes**  
+   What abnormal sequences mean and where to inspect next.
+
+Without all five, observability remains descriptive but not operational.
+
+## Example expectation: infinite reader scroller
+
+For a reader module with infinite scrolling, the mechanism story should not stop at "loads previous/next chapter while scrolling." It should explain:
+
+- The viewport-relative buffer policy (for example, maintain minimum off-screen context above and below).
+- How threshold checks trigger append/prepend decisions.
+- Why content measurement must occur after insertion (actual pixel height depends on runtime layout and text wrapping).
+- Why scroll position compensation is needed when prepending/removing content above the viewport.
+- How chapter boundaries can cross book boundaries seamlessly within a work.
+- What terminal boundary means (end of the work, not merely end of a book).
+
+Then the events should be interpreted through that story (for example, buffer-state evaluations, chapter-load attempts/success/failures, trim decisions, blocked progress, boundary events). The goal is that a human can determine from logs whether the control loop is healthy, oscillating, starved, or failing.
+
 ## Performance-safe observability by default
 
 Debug power that degrades normal user experience is not acceptable architecture. The default mode for observability must be low overhead, low intrusion, and functionally transparent. If instrumentation is disabled, user-facing behavior should remain stable and performance should remain effectively unaffected.

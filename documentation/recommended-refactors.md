@@ -6,6 +6,18 @@ This document translates the goals from:
 
 into concrete refactors for this repository. It is intentionally implementation-focused and ordered for iterative delivery.
 
+## 0) Adherence snapshot (against standard + visibility narrative requirement)
+
+| Criterion | Score | Evidence | Next action |
+| --- | --- | --- | --- |
+| Structured module/event envelope exists in runtime logs | Yes | `logEvent()` in `src/logger.js`; module/event badges in debug log rendering in `src/main.js` | Maintain contract consistency for new events |
+| Visibility doc includes mechanism story + tricky dynamics + healthy/failure cues for major modules | Yes | `documentation/ai-human-visibility.md` sections 4.1–4.11 | Keep sections updated as module behavior evolves |
+| Reader infinite scroller is documented as control-loop mechanism (not just event list) | Yes | `documentation/ai-human-visibility.md` section 4.1 | Add screenshots/examples in future if needed |
+| Major UI and domain modules emit story-aligned instrumentation | Partial | `main.js`, `readerEngine.js`, `data.js`, `bookmarks.js`, `stateRouting.js` now emit structured events | Add in-view filters and per-module runtime toggles |
+| Per-module instrumentation toggles in UI | No | Global dev mode only | Implement visibility config + module toggle UI |
+| Object browser for key persisted/runtime objects | No | Storage + logs present; objects tab absent | Add Objects tab and summary/raw views |
+| Flow verification protocol (automated/manual) explicitly tied to event chains | Partial | Checklists in `ai-human-visibility.md` | Add automated e2e assertions and a manual runbook |
+
 ## 1) High-value structural refactors
 
 ### R1. Introduce explicit module boundary layer (service contracts)
