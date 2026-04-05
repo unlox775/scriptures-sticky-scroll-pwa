@@ -135,3 +135,24 @@ This order improves observability discipline early, then locks reliability, then
 - Visibility can be enabled by module without UI behavior changes.
 - Humans can inspect key objects and filtered logs in-app.
 - AI-consumable log exports are structured and bounded.
+
+## 7) Completion status (implemented)
+
+All refactors R1–R12 in this document are now implemented in this repository.
+
+### Completed items by refactor id
+
+| Refactor | Status | Implementation notes |
+| --- | --- | --- |
+| **R1** | ✅ Done | Added service contract layer in `src/services/` (`navigationService`, `readerService`, `bookmarkService`, `visibilityService`), and `main.js` now orchestrates through these boundaries. |
+| **R2** | ✅ Done | Extracted view modules in `src/views/` (`homeView`, `booksView`, `chaptersView`, `readerView`, `historyView`) and moved rendering/event mapping out of monolithic inline templates. |
+| **R3** | ✅ Done | Added canonical telemetry envelope via `src/telemetry.js` and normalized persistence in `src/logger.js` + `src/loggerDB.js` with `module/event/summary/metrics/refs/details`. |
+| **R4** | ✅ Done | Added persisted per-module visibility controls (`scripture-pwa-visibility-v1`) in `src/visibilityConfig.js` with required helpers, surfaced through `visibilityService`. |
+| **R5** | ✅ Done | Extended debug drawer with **Objects** tab in `index.html` + `src/main.js` object browser (bookmarks/history, route snapshot, reader runtime snapshot, cache snapshot). |
+| **R6** | ✅ Done | Added in-view log filtering (module chips, level filters, text search) and **Copy visible** action in debug drawer logs UI. |
+| **R7** | ✅ Done | Added explicit throttle/sampler utility in `src/eventSampler.js`; high-frequency telemetry points use throttling (anchor changes, buffer diagnostics, auto-scroll ticks). |
+| **R8** | ✅ Done | Added master critical-path regression test at `tests/e2e/master-critical-path.test.mjs` and wired `npm test`. |
+| **R9** | ✅ Done | Added contract tests for bookmarks, route round-trip, book cache LRU, and reader invariants in `tests/unit/*.test.mjs`. |
+| **R10** | ✅ Done | Added runtime metrics snapshots in `src/runtimeMetrics.js` and surfaced metrics in reader/object diagnostics. |
+| **R11** | ✅ Done | Added one-tap visibility presets (`Reader performance`, `Bookmark correctness`, `Navigation restore`) in visibility config + debug UI. |
+| **R12** | ✅ Done | Added future-facing AI retrieval export contract (`getLogsForAiShare`) and debug drawer action (`Copy AI-share`). |
