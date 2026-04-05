@@ -46,8 +46,16 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Log boundary conditions and blocked progress with scroll state | Done | `src/readerEngine.js` logs `ensureBuffer:boundary` and `ensureBuffer:blocked` with `scrollTop`, viewport, loaded seq range, and refs |
 | Keep open/jump robust when target chapter fails to load | Done | `open()` and `jumpToLocation()` now validate target chapter load and throw explicit errors if the target cannot be loaded |
 
+### Prompt 4: Add AI-Modularization standard document as-is
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Add `AI-Modularization-Standard.md` to docs unchanged from prompt content | Done | `documentation/AI-Modularization-Standard.md` |
+| Append prompt transcript before edits per collaboration rule | Done | `documentation/spec/20260309-210000_scripture-pwa-pivot-PROMPT.txt` |
+
 ## Next Actions
 
 1. Capture a fresh dev-mode log run that scrolls Jacob 4 -> Jacob 5 -> Enos 1 and verify `scroll:ensureLoaded:success` and `scroll:ensureBuffer:blocked|boundary` events tell a complete story.
 2. If any specific chapter still fails to load, use the new `scroll:ensureLoaded:failure` details (`errorMessage`, `attempts`, and `state`) to identify whether the fault is data fetch, chapter lookup, or DOM render.
-3. Continue iterating from this pivot; append every new prompt to the pivot PROMPT log before code edits.
+3. Use `documentation/AI-Modularization-Standard.md` as the top-level architecture standard when updating `flows-and-parts.md`, `ai-human-visibility.md`, and `recommended-refactors.md`.
+4. Continue iterating from this pivot; append every new prompt to the pivot PROMPT log before code edits.
