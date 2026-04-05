@@ -23,7 +23,21 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Storage explorer + Logs | Done | `wireDeveloperMode()` |
 | Logger + copy JSON | Done | `logger.js`, `getLogsForCopy()` |
 
+### Prompt 2: Flows/parts, AI-human visibility, recommended refactors docs
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Flows and parts document | Done | `documentation/flows-and-parts.md` |
+| Critical + secondary + tertiary paths | Done | Numbered story-style flow sections with front-end and back-end/domain mapping |
+| Parts catalog (front-end + back-end modules) | Done | Includes high-level API contracts and core model objects |
+| AI-to-human visibility document | Done | `documentation/ai-human-visibility.md` |
+| Visibility strategy by module | Done | Front-end and domain telemetry points with noise guidance |
+| Persisted object visibility strategy | Done | Object-browser approach and JSON drill-down guidance |
+| Recommended refactors document | Done | `documentation/recommended-refactors.md` |
+| Refactor plan mapped to visibility + flow goals | Done | Ordered refactors with rationale and execution sequence |
+
 ## Next Actions
 
-1. Validate scroller/jumpToLocation on real devices.
-2. Continue iterating from this pivot; add new prompts to the pivot PROMPT.txt.
+1. Review and refine wording/templates for the three documentation artifacts.
+2. If approved, implement selected refactors (module toggles, object browser, log filters, tests).
+3. Continue iterating from this pivot; append new prompts to the pivot PROMPT log.
