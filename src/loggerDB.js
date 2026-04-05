@@ -44,14 +44,32 @@ export async function createLogSession() {
   return record;
 }
 
-export async function appendLogEntry(sessionId, level, message, details = {}) {
+export async function appendLogEntry(sessionId, levelOrEntry, message, details = {}) {
   const db = await openDB();
+  const entry =
+    typeof levelOrEntry === "object" && levelOrEntry
+      ? levelOrEntry
+      : {
+          level: levelOrEntry,
+          message,
+          details,
+        };
   const record = {
     sessionId,
     timestamp: Date.now(),
-    level,
-    message,
-    details: Object.keys(details).length ? details : undefined,
+    level: entry.level,
+    message: entry.message,
+    module: entry.module,
+    event: entry.event,
+    summary: entry.summary,
+    metrics: entry.metrics,
+    refs: entry.refs,
+    details:
+      entry.details && typeof entry.details === "object" && Object.keys(entry.details).length
+        ? entry.details
+        : typeof entry.details === "string"
+          ? entry.details
+          : undefined,
   };
   return new Promise((resolve, reject) => {
     const t = db.transaction(ENTRY_STORE, "readwrite");
@@ -92,6 +110,11 @@ export async function getLogEntries(sessionId, limit = MAX_ENTRIES_PER_SESSION) 
           timestamp: e.timestamp,
           level: e.level,
           message: e.message,
+          module: e.module,
+          event: e.event,
+          summary: e.summary,
+          metrics: e.metrics,
+          refs: e.refs,
           details: e.details,
         })),
       );

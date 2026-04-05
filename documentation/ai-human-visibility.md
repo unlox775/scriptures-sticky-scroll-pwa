@@ -16,16 +16,14 @@ This document defines a practical observability and inspection strategy so a hum
 
 Already present:
 - Global developer mode flag in localStorage (`scripture-pwa-dev-mode-v1`).
-- Debug drawer with **Storage** and **Logs** panels.
+- Debug drawer with **Storage**, **Logs**, **Objects**, and **Visibility** panels.
 - Persisted log sessions/entries in IndexedDB (`scripture-pwa-logs`).
-- Log copy export flow (`Copy logs`) with session selection.
-- Route/nav + reader-anchor instrumentation points already emitted.
+- Log copy export flows (`Copy full`, `Copy visible`, `Copy AI-share`) with session selection.
+- Route/nav + reader-anchor instrumentation points emitted with structured module/event envelopes.
 
 Current gaps versus target framework:
-- No per-module enable/disable matrix (only broad dev-mode behavior).
-- No object-browser panels for core domain objects (bookmark/reader/cache views).
-- No log filtering by module/component inside the viewer.
-- Log schema is message-first, not consistently tagged with module/event contracts.
+- Full remote retrieval endpoint for AI log fetch is still future-facing; current AI channel is a structured manual-copy payload.
+- Browser-driven e2e UI automation (e.g. Playwright) is not yet wired; current master critical-path check is node-level integration coverage.
 
 ---
 
@@ -118,15 +116,15 @@ Humans should be able to inspect core objects directly in-app, not only infer fr
    - Session startedAt, entry count, last timestamp.
    - Detail action: "View raw JSON" (session metadata + entries preview).
 
-### 5.2 Debug drawer layout recommendation
+### 5.2 Debug drawer layout implementation
 
-- Add third tab: **Objects** (beside Storage and Logs).
-- Objects tab sections:
+- **Implemented tabs:** Storage, Logs, Objects, Visibility.
+- **Implemented Objects sections:**
   1. Bookmarks
   2. Reader runtime
   3. Route/runtime state
   4. Cache state
-- Every row has:
+- Every row provides:
   - compact summary card
   - `View JSON` action to reveal raw object in expandable `<pre>` panel.
 
@@ -136,16 +134,17 @@ This keeps mobile ergonomics intact while preserving full transparency on demand
 
 ## 6) Log viewer strategy
 
-### 6.1 Required viewer capabilities
+### 6.1 Viewer capabilities (implemented)
 
-- Session selection (already present).
+- Session selection.
 - Module filter chips / checklist (show/hide by module id).
 - Level filter (`debug/info/warn/error`).
-- Free text search (message/details).
-- Collapsible details payload.
+- Free text search (message/details/refs/event/module).
+- Structured entry details payload (summary/metrics/refs/details).
 - Copy options:
   - `Copy visible` (filtered subset)
   - `Copy full session` (bounded max entries)
+  - `Copy AI-share` (future-facing structured retrieval payload)
 
 ### 6.2 Event envelope contract (recommended)
 
@@ -201,10 +200,14 @@ Key benefit: easy filtering, lower ambiguity, better AI ingestion.
 ## 9) Implementation status snapshot (today)
 
 - **Implemented now**
-  - Dev mode gate, log persistence, session browsing, copy export, baseline debug drawer.
+  - Canonical telemetry envelope (`module/event/summary/metrics/refs/details`) with per-module visibility gating and verbosity controls.
+  - Per-module toggles and profile presets (`Reader performance`, `Bookmark correctness`, `Navigation restore`) persisted in `scripture-pwa-visibility-v1`.
+  - Debug drawer object browser for bookmarks/history, route state, reader runtime snapshot, cache snapshot, and runtime metrics.
+  - In-view log filtering (module, level, text search), visible-count feedback, and copy-visible export.
+  - Structured AI-share export contract (`getLogsForAiShare`) to prepare direct retrieval workflows.
 - **Partially implemented**
-  - Reader and navigation logs exist but are not fully normalized to module/event contracts.
+  - AI retrieval remains manual-copy contract first; direct secure fetch workflow not yet wired.
 - **Not implemented yet**
-  - Per-module visibility toggles, object browser tab, in-view log filtering controls.
+  - Full browser-driven e2e visibility walkthrough tests.
 
-This document intentionally defines the target visibility discipline so future changes remain consistent.
+This document now serves as both the target visibility discipline and a record of the implemented baseline.

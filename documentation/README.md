@@ -15,12 +15,17 @@ This directory contains technical documentation for the Scripture Reader PWA. St
 | LRU book cache (max 2) | 🟩 Ready | Per-book gzip assets; runtime cache caps decompressed books. |
 | Footnote/page references | 🟨 Partial | Current data source lacks official footnotes; links out to Gospel Library. |
 | Spec + prompt logging | 🟩 Ready | `documentation/spec/` entries; prompt transcripts stored alongside. |
+| Service/view modular boundaries | 🟩 Ready | `src/services/` contracts + `src/views/` rendering modules split from orchestration. |
+| Visibility module toggles + presets | 🟩 Ready | Per-module enablement, verbosity, and presets in debug Visibility tab. |
+| Object browser + log filtering | 🟩 Ready | Debug drawer now includes Objects tab and filtered log viewer with copy-visible export. |
+| Critical-path + contract tests | 🟩 Ready | `npm test` suite covers master critical path and core domain contracts. |
 
 ## Current Focus
 
 - Continue polishing mobile UX and long-session performance.
 - Tune bookmark auto-follow heuristics for variable scroll speeds.
 - If a footnote-capable data source becomes available, wire footnote rendering.
+- Optionally replace the node-level critical-path integration check with full browser e2e automation.
 
 ## Layout Modes
 

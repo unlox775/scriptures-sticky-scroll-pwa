@@ -1,4 +1,6 @@
-import { logDebug, isDevMode } from "./logger.js";
+import { createTelemetryEmitter } from "./telemetry.js";
+
+const emitReader = createTelemetryEmitter("domain.readerEngine");
 
 function escapeHtml(value) {
   return value
@@ -90,17 +92,22 @@ export class ReaderEngine {
           const delta = Math.min(whole, Math.max(0, maxScroll - before));
           this.scroller.scrollBy({ top: delta, behavior: "auto" });
           this.autoScroll.accumulatedPx -= whole;
-          if (isDevMode() && this.autoScroll._logCount < 3) {
-            this.autoScroll._logCount += 1;
-            logDebug("scroll:autoScroll", {
+          this.autoScroll._logCount += 1;
+          emitReader({
+            level: "debug",
+            event: "reader_autoscroll_tick",
+            summary: "Auto-scroll advanced reader",
+            metrics: {
               before,
               delta,
               after: this.scroller.scrollTop,
               maxScroll,
               scrollHeight: this.scroller.scrollHeight,
               clientHeight: this.scroller.clientHeight,
-            });
-          }
+            },
+            throttleMs: 1200,
+            minVerbosity: "standard",
+          });
         }
       }
       this.autoScroll.frameId = requestAnimationFrame(step);
@@ -160,14 +167,21 @@ export class ReaderEngine {
     const hit = document.elementFromPoint(probeX, probeY);
     const verseEl = hit?.closest(".verse");
     if (!verseEl) {
-      if (isDevMode() && hit) {
-        logDebug("scroll:captureAnchorMiss", {
-          probeY: Math.round(probeY),
-          scrollerTop: Math.round(rect.top),
-          scrollerHeight: rect.height,
-          hitTag: hit.tagName,
-          hitClass: hit.className || "(none)",
-          hitId: hit.id || "(none)",
+      if (hit) {
+        emitReader({
+          level: "debug",
+          event: "reader_capture_anchor_miss",
+          summary: "Anchor probe missed verse element",
+          details: {
+            probeY: Math.round(probeY),
+            scrollerTop: Math.round(rect.top),
+            scrollerHeight: rect.height,
+            hitTag: hit.tagName,
+            hitClass: hit.className || "(none)",
+            hitId: hit.id || "(none)",
+          },
+          throttleMs: 1000,
+          minVerbosity: "deep",
         });
       }
       return null;
@@ -244,8 +258,11 @@ export class ReaderEngine {
       let topBuffer = this.scroller.scrollTop - first.offsetTop;
       let bottomBuffer = last.offsetTop + last.offsetHeight - (this.scroller.scrollTop + vh);
 
-      if (isDevMode()) {
-        logDebug("scroll:ensureBuffer", {
+      emitReader({
+        level: "debug",
+        event: "reader_buffer_state",
+        summary: "Buffer state evaluated",
+        metrics: {
           vh,
           minBuffer,
           maxBuffer,
@@ -254,10 +271,14 @@ export class ReaderEngine {
           minSeq: this.minLoadedSeq(),
           maxSeq: this.maxLoadedSeq(),
           scrollTop: this.scroller.scrollTop,
+        },
+        details: {
           firstOffset: first?.offsetTop,
           lastEnd: last ? last.offsetTop + last.offsetHeight : null,
-        });
-      }
+        },
+        throttleMs: 900,
+        minVerbosity: "deep",
+      });
 
       while (topBuffer < minBuffer && this.minLoadedSeq() > 0) {
         await this.ensureLoaded(this.minLoadedSeq() - 1, "prepend");
@@ -306,12 +327,20 @@ export class ReaderEngine {
       return;
     }
     const pointer = this.sequence[seq];
-    logDebug("scroll:ensureLoaded", {
-      seq,
-      mode,
-      bookId: pointer?.bookMeta?.id,
-      chapter: pointer?.chapter,
-      loadedCount: this.loaded.size,
+    emitReader({
+      level: "debug",
+      event: "reader_chapter_load",
+      summary: "Loading chapter into reader buffer",
+      refs: {
+        bookId: pointer?.bookMeta?.id,
+        chapter: pointer?.chapter,
+      },
+      details: {
+        seq,
+        mode,
+        loadedCount: this.loaded.size,
+      },
+      minVerbosity: "standard",
     });
     const chapterData = await this.loadChapter(seq);
     const chapterNode = this.renderChapter(chapterData, seq);
@@ -394,17 +423,21 @@ export class ReaderEngine {
       const vh = this.scroller.clientHeight;
       const sh = this.scroller.scrollHeight;
 
-      if (isDevMode()) {
-        const noOverflow = sh <= vh;
-        logDebug("scroll:jumpToLocation", {
+      const noOverflow = sh <= vh;
+      emitReader({
+        level: "debug",
+        event: "reader_jump_to_location",
+        summary: "Jumping reader to requested location",
+        details: {
           seq,
           align,
           verseSelector,
           target: target ? target.className : null,
           dimensions: { vh, sh, scrollBefore },
           noOverflow: noOverflow ? "scroller cannot scroll (fix layout)" : null,
-        });
-      }
+        },
+        minVerbosity: "standard",
+      });
 
       if (!target) return;
       const scrollerRect = this.scroller.getBoundingClientRect();
@@ -414,14 +447,18 @@ export class ReaderEngine {
       const newTop = Math.max(0, scrollBefore + delta);
       this.scroller.scrollTop = newTop;
 
-      if (isDevMode()) {
-        logDebug("scroll:jumpToLocation:after", {
+      emitReader({
+        level: "debug",
+        event: "reader_jump_to_location_after",
+        summary: "Reader jump applied",
+        metrics: {
           scrollAfter: this.scroller.scrollTop,
           delta,
           targetRectTop: targetRect.top,
           scrollerRectTop: scrollerRect.top,
-        });
-      }
+        },
+        minVerbosity: "deep",
+      });
     };
 
     await new Promise((r) => requestAnimationFrame(r));
