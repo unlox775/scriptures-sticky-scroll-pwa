@@ -1,22 +1,40 @@
 import "./styles.css";
 import { loadIndex, BookCache } from "./data.js";
 import { BookmarkStore } from "./bookmarks.js";
-import { ReaderEngine } from "./readerEngine.js";
-import { logInfo, logDebug, logWarn, logError, getLogsForCopy, getAllSessions, getEntriesForSession, setOnLogCallback, isDevMode, setDevMode } from "./logger.js";
-import { stateToRoute, parseRoute, pushRoute, saveRouteToStorage, loadRouteFromStorage } from "./stateRouting.js";
+import { getLogsForCopy, getLogsForAiShare, getAllSessions, getEntriesForSession, setOnLogCallback, logInfo } from "./logger.js";
+import { createNavigationService } from "./services/navigationService.js";
+import { createBookmarkService } from "./services/bookmarkService.js";
+import { createReaderService } from "./services/readerService.js";
+import { createVisibilityService } from "./services/visibilityService.js";
+import { createTelemetryEmitter } from "./telemetry.js";
+import { renderHomeView as renderHomeTemplate } from "./views/homeView.js";
+import { renderBooksView as renderBooksTemplate } from "./views/booksView.js";
+import { renderChaptersView as renderChaptersTemplate } from "./views/chaptersView.js";
+import { renderHistoryView as renderHistoryTemplate } from "./views/historyView.js";
+import { renderBookmarkRibbons as renderBookmarkRibbonsTemplate } from "./views/readerView.js";
+import { escapeHtml } from "./viewUtils.js";
 
 const state = {
   index: null,
   currentWork: null,
   currentBook: null,
   currentLocation: null,
-  reader: null,
   deferredPrompt: null,
   lastAutoBookmarkAt: 0,
   lastAutoReference: "",
   lastChapterRef: "",
   velocitySamples: [],
   autoScrollActive: false,
+  historyBookmarkName: "History",
+  devTapCount: 0,
+  devTapResetTimer: null,
+  activeLogFilters: {
+    modules: new Set(),
+    levels: new Set(),
+    search: "",
+  },
+  lastRenderedLogEntries: [],
+  lastRenderedSessionId: null,
 };
 
 const viewIds = ["homeView", "booksView", "chaptersView", "historyView", "readerView"];
@@ -33,29 +51,72 @@ const addBookmarkButton = document.getElementById("addBookmarkButton");
 const moveBookmarkButton = document.getElementById("moveBookmarkButton");
 const readerStatusEl = document.getElementById("readerStatus");
 const bookmarkStatusEl = document.getElementById("bookmarkStatus");
-const bookmarkRibbonsEl = document.getElementById("bookmarkRibbons");
 const readerRibbonsOverlay = document.getElementById("readerRibbonsOverlay");
 const autoScrollStart = document.getElementById("autoScrollStart");
 const autoScrollPanel = document.getElementById("autoScrollPanel");
 const autoScrollStop = document.getElementById("autoScrollStop");
 const autoScrollSpeed = document.getElementById("autoScrollSpeed");
 const autoScrollSpeedLabel = document.getElementById("autoScrollSpeedLabel");
-
 const scroller = document.getElementById("readerScroller");
 const content = document.getElementById("readerContent");
 
-const cache = new BookCache(2);
-const bookmarks = new BookmarkStore();
+const navigationService = createNavigationService();
+const visibilityService = createVisibilityService();
+const visibilityEmit = createTelemetryEmitter("ui.devDrawer");
+const dataEmit = createTelemetryEmitter("domain.dataAccess");
+const uiEmit = {
+  home: createTelemetryEmitter("ui.homeView"),
+  books: createTelemetryEmitter("ui.booksView"),
+  chapters: createTelemetryEmitter("ui.chaptersView"),
+  reader: createTelemetryEmitter("ui.readerView"),
+  history: createTelemetryEmitter("ui.historyView"),
+};
 
+let readerService = null;
 let installCanShow = false;
+
+const cache = new BookCache(2, {
+  onHit(bookMeta, snapshot) {
+    readerService?.recordCacheHit?.();
+    dataEmit({
+      level: "debug",
+      event: "book_cache_hit",
+      summary: "Book cache hit",
+      refs: { workId: bookMeta.workId, bookId: bookMeta.id },
+      details: { snapshot },
+      minVerbosity: "standard",
+    });
+  },
+  onMiss(bookMeta, snapshot) {
+    readerService?.recordCacheMiss?.();
+    dataEmit({
+      level: "info",
+      event: "book_cache_miss",
+      summary: "Book cache miss",
+      refs: { workId: bookMeta.workId, bookId: bookMeta.id },
+      details: { snapshot },
+      minVerbosity: "minimal",
+    });
+  },
+});
+const bookmarkService = createBookmarkService(new BookmarkStore());
+
+function defaultLocationFromIndex() {
+  const defaultWork = state.index.works.find((work) => work.id === "book-of-mormon") || state.index.works[0];
+  const defaultBook = defaultWork.books[0];
+  return {
+    workId: defaultWork.id,
+    workTitle: defaultWork.title,
+    bookId: defaultBook.id,
+    bookTitle: defaultBook.title,
+    chapter: 1,
+    verse: 1,
+    reference: `${defaultBook.title} 1:1`,
+  };
+}
 
 function updateInstallVisibility(viewId) {
   installButton.hidden = !installCanShow || viewId !== "homeView";
-}
-
-function pushRouteAndSave(route) {
-  pushRoute(route);
-  saveRouteToStorage(route);
 }
 
 function setView(viewId) {
@@ -68,22 +129,11 @@ function setView(viewId) {
   addBookmarkButton.hidden = !inReader;
   moveBookmarkButton.hidden = !inReader;
   autoScrollStart.hidden = !inReader;
-  if (inReader) {
-    autoScrollStart.textContent = state.autoScrollActive ? "Stop" : "Auto-scroll";
-    autoScrollPanel.hidden = !state.autoScrollActive;
-  } else {
-    autoScrollPanel.hidden = true;
-  }
+  autoScrollPanel.hidden = inReader ? !state.autoScrollActive : true;
+  autoScrollStart.textContent = state.autoScrollActive ? "Stop" : "Auto-scroll";
   updateHeader(viewId);
   updateInstallVisibility(viewId);
   updateDevEasterEggVisibility();
-}
-
-function stopAutoScrollAndUpdateUI() {
-  if (state.reader) state.reader.stopAutoScroll();
-  state.autoScrollActive = false;
-  autoScrollPanel.hidden = true;
-  autoScrollStart.textContent = "Auto-scroll";
 }
 
 function updateHeader(viewId) {
@@ -112,23 +162,37 @@ function updateHeader(viewId) {
   }
 }
 
-function defaultLocationFromIndex() {
-  const defaultWork = state.index.works.find((work) => work.id === "book-of-mormon") || state.index.works[0];
-  const defaultBook = defaultWork.books[0];
-  return {
-    workId: defaultWork.id,
-    workTitle: defaultWork.title,
-    bookId: defaultBook.id,
-    bookTitle: defaultBook.title,
-    chapter: 1,
-    verse: 1,
-    reference: `${defaultBook.title} 1:1`,
-  };
+function stopAutoScrollAndUpdateUI() {
+  readerService?.stopAutoScroll?.();
+  state.autoScrollActive = false;
+  autoScrollPanel.hidden = true;
+  autoScrollStart.textContent = "Auto-scroll";
 }
 
-function formatTimestamp(value) {
-  if (!value) return "Never";
-  return new Date(value).toLocaleString();
+function routeFromState() {
+  return navigationService.routeFromState({
+    currentLocation: state.currentLocation,
+    currentWork: state.currentWork,
+    currentBook: state.currentBook,
+  });
+}
+
+function pushRouteAndSave(route) {
+  navigationService.push(route, { save: true });
+}
+
+function ensureReaderService() {
+  if (readerService) return readerService;
+  readerService = createReaderService({
+    scroller,
+    content,
+    getWorkMeta(location) {
+      return state.index.works.find((item) => item.id === location.workId) || state.index.works[0];
+    },
+    bookCache: cache,
+    onAnchorChange: handleAnchorChange,
+  });
+  return readerService;
 }
 
 function openWork(workId) {
@@ -139,10 +203,16 @@ function openWork(workId) {
 }
 
 function openBook(bookId) {
+  if (!state.currentWork) return;
   state.currentBook = state.currentWork.books.find((book) => book.id === bookId) || null;
   pushRouteAndSave(`#/b/${state.currentWork.id}/${bookId}`);
   renderChaptersView();
-  logInfo("nav:openBook", { workId: state.currentWork?.id, bookId, title: state.currentBook?.title });
+  uiEmit.books({
+    level: "info",
+    event: "books_open_book_click",
+    summary: "Book selected from books view",
+    refs: { workId: state.currentWork.id, bookId },
+  });
 }
 
 async function openReader(location) {
@@ -163,169 +233,118 @@ async function openReader(location) {
   state.currentBook = book;
   state.currentLocation = safeLocation;
   state.lastChapterRef = "";
-
   setView("readerView");
-  if (state.reader) state.reader.destroy();
-  state.reader = new ReaderEngine({
-    scroller,
-    content,
-    workMeta: work,
-    bookCache: cache,
-    onAnchorChange: handleAnchorChange,
+  uiEmit.reader({
+    level: "info",
+    event: "reader_open_start",
+    summary: "Reader open started",
+    refs: { workId: safeLocation.workId, bookId: safeLocation.bookId, chapter: safeLocation.chapter, verse: safeLocation.verse },
   });
-  autoScrollSpeedLabel.textContent = `${autoScrollSpeed.value} px/s`;
-  state.reader.setAutoScrollSpeed(Number(autoScrollSpeed.value));
-  await state.reader.open(safeLocation);
-  pushRouteAndSave(stateToRoute(state));
-  requestAnimationFrame(() => requestAnimationFrame(renderBookmarkRibbons));
-  logInfo("nav:openReader", { loc: safeLocation.reference, workId: work.id, bookId: book.id, chapter: safeLocation.chapter });
-}
 
-function isBookmarkInView(bookmark) {
-  if (!bookmark.location || !state.currentLocation) return false;
-  if (bookmark.location.workId !== state.currentLocation.workId) return false;
-  if (bookmark.location.bookId !== state.currentLocation.bookId) return false;
-  const ch = state.currentLocation.chapter || 0;
-  const bCh = bookmark.location.chapter || 0;
-  return Math.abs(ch - bCh) <= 3;
+  const reader = ensureReaderService();
+  autoScrollSpeedLabel.textContent = `${autoScrollSpeed.value} px/s`;
+  reader.setAutoScrollSpeed(Number(autoScrollSpeed.value));
+  await reader.open(safeLocation);
+  uiEmit.reader({
+    level: "info",
+    event: "reader_open_ready",
+    summary: "Reader open complete",
+    refs: { workId: safeLocation.workId, bookId: safeLocation.bookId, chapter: safeLocation.chapter, verse: safeLocation.verse },
+  });
+  pushRouteAndSave(routeFromState());
+  requestAnimationFrame(() => requestAnimationFrame(renderBookmarkRibbons));
 }
 
 function renderBookmarkRibbons() {
-  const inView = bookmarks.getBookmarks().filter(isBookmarkInView);
-  if (!readerRibbonsOverlay || !scroller) return;
-
-  const scrollerRect = scroller.getBoundingClientRect();
-  const items = [];
-
-  for (const b of inView) {
-    const loc = b.location;
-    if (!loc) continue;
-    const bookId = loc.bookId;
-    const chapter = String(loc.chapter || 1);
-    const verse = String(loc.verse || 1);
-    const verseEl = content.querySelector(
-      `.verse[data-book-id="${CSS.escape(bookId)}"][data-chapter="${chapter}"][data-verse="${verse}"]`,
-    );
-    if (!verseEl) continue;
-    const verseRect = verseEl.getBoundingClientRect();
-    const top = verseRect.top - scrollerRect.top + verseRect.height / 2;
-    if (top < -20 || top > scrollerRect.height + 20) continue;
-    items.push({
-      b,
-      top,
-    });
-  }
-
-  readerRibbonsOverlay.innerHTML = items
-    .map(
-      ({ b, top }) =>
-        `<span class="bookmark-ribbon" data-bookmark-id="${b.id}" title="${(b.location?.reference || b.name).replace(/"/g, "&quot;")}" style="top: ${Math.round(top)}px">${escapeHtml(b.name)}</span>`,
-    )
-    .join("");
-
-  readerRibbonsOverlay.querySelectorAll(".bookmark-ribbon").forEach((el) => {
-    el.addEventListener("click", () => {
-      const b = bookmarks.getBookmarks().find((x) => x.id === el.dataset.bookmarkId);
-      if (b?.location) openReader(b.location);
-    });
+  renderBookmarkRibbonsTemplate({
+    overlay: readerRibbonsOverlay,
+    scroller,
+    content,
+    bookmarks: bookmarkService.getBookmarks(),
+    currentLocation: state.currentLocation,
+    onOpenBookmarkLocation: (location) => openReader(location),
   });
-}
-
-function escapeHtml(value) {
-  if (typeof value !== "string") return "";
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
 }
 
 function renderHistoryView(bookmark) {
   state.historyBookmarkName = `History: ${bookmark.name}`;
   setView("historyView");
-  const entries = bookmarks.getHistoryOnePerDay(bookmark);
-  const lines =
-    entries.length === 0
-      ? "<p>No history yet.</p>"
-      : entries.map((h) => `<div class="history-line">${h.day}: ${h.reference}</div>`).join("");
-  historyView.innerHTML = `
-    <section class="panel">
-      <h2>${bookmark.name}</h2>
-      <p>One line per day, newest first.</p>
-      <div class="history-lines">${lines}</div>
-      <button id="historyBackButton" class="secondary-btn">Back</button>
-    </section>
-  `;
-  historyView.querySelector("#historyBackButton").addEventListener("click", () => {
-    renderHomeView();
+  uiEmit.history({
+    level: "info",
+    event: "history_render_start",
+    summary: "Rendering history view",
+    refs: { bookmarkId: bookmark.id },
+  });
+  const entries = bookmarkService.getHistoryOnePerDay(bookmark);
+  renderHistoryTemplate({
+    container: historyView,
+    bookmark,
+    entries,
+    onBack: () => renderHomeView(),
+  });
+  uiEmit.history({
+    level: "info",
+    event: "history_render_done",
+    summary: "History view rendered",
+    refs: { bookmarkId: bookmark.id },
+    metrics: { rows: entries.length },
   });
 }
 
 function renderHomeView() {
   setView("homeView");
-  const works = state.index.works
-    .map(
-      (work) => `
-      <article class="card card-clickable" data-open-work="${work.id}">
-        <h3>${work.title}</h3>
-      </article>
-    `,
-    )
-    .join("");
-
-  const bookmarkItems = bookmarks
-    .getBookmarks()
-    .map(
-      (bookmark) => `
-      <article class="bookmark-item">
-        <div>
-          <strong>${bookmark.name}</strong>
-          <div class="bookmark-meta">${bookmark.location?.reference || "No location yet"}</div>
-        </div>
-        <div class="bookmark-actions">
-          <button data-view-history="${bookmark.id}">View History</button>
-          <button data-open-bookmark="${bookmark.id}">Open</button>
-        </div>
-      </article>`,
-    )
-    .join("");
-
-  homeView.innerHTML = `
-    <section class="panel">
-      <div class="grid works">${works}</div>
-    </section>
-    <section class="panel" style="margin-top: 1rem;">
-      <h2>Bookmarks</h2>
-      <p>Scroll slowly and a bookmark at your location will auto-follow. Tap to open.</p>
-      <div class="bookmark-list">${bookmarkItems}</div>
-    </section>
-  `;
-
-  homeView.querySelectorAll("[data-open-work]").forEach((el) => {
-    el.addEventListener("click", () => {
-      const workId = el.dataset.openWork;
-      const work = state.index.works.find((w) => w.id === workId);
-      state.currentWork = work ?? null;
-      if (work?.books?.length === 1) {
-        openBook(work.books[0].id);
-      } else {
-        openWork(workId);
-      }
-    });
+  const bookmarks = bookmarkService.getBookmarks();
+  uiEmit.home({
+    level: "info",
+    event: "home_render_start",
+    summary: "Rendering home view",
+    metrics: { works: state.index.works.length, bookmarks: bookmarks.length },
   });
-  homeView.querySelectorAll("[data-view-history]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const b = bookmarks.getBookmarks().find((x) => x.id === btn.dataset.viewHistory);
-      if (b) renderHistoryView(b);
-    });
-  });
-  homeView.querySelectorAll("[data-open-bookmark]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const b = bookmarks.getBookmarks().find((x) => x.id === btn.dataset.openBookmark);
-      if (!b) return;
-      const loc = b.location || defaultLocationFromIndex();
+  renderHomeTemplate({
+    container: homeView,
+    works: state.index.works,
+    bookmarks,
+    onOpenWork: (workId) => {
+      uiEmit.home({
+        level: "info",
+        event: "home_open_work_click",
+        summary: "Work selected from home",
+        refs: { workId },
+      });
+      openWork(workId);
+    },
+    onOpenSingleBook: (work, bookId) => {
+      state.currentWork = work;
+      openBook(bookId);
+    },
+    onViewHistory: (bookmarkId) => {
+      uiEmit.home({
+        level: "info",
+        event: "home_view_history_click",
+        summary: "History opened from home",
+        refs: { bookmarkId },
+      });
+      const bookmark = bookmarkService.getBookmarks().find((x) => x.id === bookmarkId);
+      if (bookmark) renderHistoryView(bookmark);
+    },
+    onOpenBookmark: async (bookmarkId) => {
+      uiEmit.home({
+        level: "info",
+        event: "home_open_bookmark_click",
+        summary: "Bookmark opened from home",
+        refs: { bookmarkId },
+      });
+      const bookmark = bookmarkService.getBookmarks().find((x) => x.id === bookmarkId);
+      if (!bookmark) return;
+      const loc = bookmark.location || defaultLocationFromIndex();
       await openReader(loc);
-    });
+    },
+  });
+  uiEmit.home({
+    level: "info",
+    event: "home_render_done",
+    summary: "Home view rendered",
+    metrics: { works: state.index.works.length, bookmarks: bookmarks.length },
   });
 }
 
@@ -335,24 +354,23 @@ function renderBooksView() {
     renderHomeView();
     return;
   }
-  const booksHtml = state.currentWork.books
-    .map(
-      (book) => `
-        <article class="card card-clickable" data-open-book="${book.id}">
-          <h3>${book.title}</h3>
-        </article>
-      `,
-    )
-    .join("");
-
-  booksView.innerHTML = `
-    <section class="panel">
-      <div class="grid books">${booksHtml}</div>
-    </section>
-  `;
-
-  booksView.querySelectorAll("[data-open-book]").forEach((el) => {
-    el.addEventListener("click", () => openBook(el.dataset.openBook));
+  uiEmit.books({
+    level: "info",
+    event: "books_render_start",
+    summary: "Rendering books view",
+    refs: { workId: state.currentWork.id },
+  });
+  renderBooksTemplate({
+    container: booksView,
+    work: state.currentWork,
+    onOpenBook: (bookId) => openBook(bookId),
+  });
+  uiEmit.books({
+    level: "info",
+    event: "books_render_done",
+    summary: "Books view rendered",
+    refs: { workId: state.currentWork.id },
+    metrics: { count: state.currentWork.books.length },
   });
 }
 
@@ -362,21 +380,22 @@ function renderChaptersView() {
     renderBooksView();
     return;
   }
-  const chapterButtons = Array.from({ length: state.currentBook.chapterCount }, (_, i) => i + 1)
-    .map((ch) => `<button class="chapter-tile" data-open-chapter="${ch}">${ch}</button>`)
-    .join("");
-
-  chaptersView.innerHTML = `
-    <section class="panel">
-      <p class="chapter-hint">Tap a chapter tile to enter continuous reading mode.</p>
-      <div class="grid chapters">${chapterButtons}</div>
-    </section>
-  `;
-
-  chaptersView.querySelectorAll("[data-open-chapter]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const chapter = Number(btn.dataset.openChapter);
-      logInfo("nav:chapterClick", { workId: state.currentWork?.id, bookId: state.currentBook?.id, chapter });
+  uiEmit.chapters({
+    level: "info",
+    event: "chapters_render_start",
+    summary: "Rendering chapters view",
+    refs: { workId: state.currentWork.id, bookId: state.currentBook.id },
+  });
+  renderChaptersTemplate({
+    container: chaptersView,
+    book: state.currentBook,
+    onOpenChapter: async (chapter) => {
+      uiEmit.chapters({
+        level: "info",
+        event: "chapters_open_chapter_click",
+        summary: "Chapter selected",
+        refs: { workId: state.currentWork.id, bookId: state.currentBook.id, chapter },
+      });
       await openReader({
         workId: state.currentWork.id,
         workTitle: state.currentWork.title,
@@ -386,7 +405,14 @@ function renderChaptersView() {
         verse: 1,
         reference: `${state.currentBook.title} ${chapter}:1`,
       });
-    });
+    },
+  });
+  uiEmit.chapters({
+    level: "info",
+    event: "chapters_render_done",
+    summary: "Chapters view rendered",
+    refs: { workId: state.currentWork.id, bookId: state.currentBook.id },
+    metrics: { count: state.currentBook.chapterCount },
   });
 }
 
@@ -403,13 +429,9 @@ function getAverageVelocityOverWindow() {
 }
 
 function shouldAutoFollow(anchor, meta) {
-  const speed = Math.abs(meta.velocity);
   const now = meta.timestamp;
   state.velocitySamples.push({ v: meta.velocity, ts: now });
   const avg = getAverageVelocityOverWindow();
-  if (isDevMode() && avg > SLOW_READING_THRESHOLD) {
-    logDebug("autoFollow skip", { reason: "scrolled too fast", avg: avg.toFixed(1), threshold: SLOW_READING_THRESHOLD });
-  }
   if (avg > SLOW_READING_THRESHOLD) return false;
   if (anchor.reference === state.lastAutoReference && now - state.lastAutoBookmarkAt < 2200) return false;
   if (now - state.lastAutoBookmarkAt < 1200) return false;
@@ -421,169 +443,68 @@ function handleAnchorChange(anchor, meta) {
   const chapterRef = anchor ? `${anchor.bookTitle ?? ""} ${anchor.chapter ?? 1}` : "";
   if (chapterRef && chapterRef !== state.lastChapterRef) {
     state.lastChapterRef = chapterRef;
-    if (isDevMode()) {
-      logInfo("scroll:chapterChange", { ref: chapterRef, fullRef: anchor.reference });
-    }
-  }
-  if (!readerView.hidden) updateHeader("readerView");
-  pushRoute(stateToRoute(state));
-  renderBookmarkRibbons();
-  if (isDevMode()) {
-    logDebug("anchor", {
-      ref: anchor?.reference,
-      velocity: meta?.velocity?.toFixed(1),
-      avgVel: getAverageVelocityOverWindow().toFixed(1),
-      autoScroll: meta?.autoScrolling,
+    uiEmit.reader({
+      level: "info",
+      event: "reader_chapter_change",
+      summary: "Reader chapter changed",
+      refs: { reference: anchor.reference, chapterRef },
+      minVerbosity: "minimal",
     });
   }
+  if (!readerView.hidden) updateHeader("readerView");
+  navigationService.push(routeFromState());
+  renderBookmarkRibbons();
+  uiEmit.reader({
+    level: "debug",
+    event: "reader_anchor_change",
+    summary: "Reader anchor changed",
+    refs: {
+      reference: anchor?.reference,
+      workId: anchor?.workId,
+      bookId: anchor?.bookId,
+      chapter: anchor?.chapter,
+      verse: anchor?.verse,
+    },
+    metrics: {
+      velocity: Number((meta?.velocity ?? 0).toFixed(1)),
+      averageVelocity: Number(getAverageVelocityOverWindow().toFixed(1)),
+      autoScrolling: Boolean(meta?.autoScrolling),
+    },
+    throttleMs: 650,
+    minVerbosity: "standard",
+  });
 
-  const toFollow = bookmarks.getBookmarkToFollow(anchor);
+  const toFollow = bookmarkService.getBookmarkToFollow(anchor);
   if (!toFollow) {
     bookmarkStatusEl.textContent = "";
     readerStatusEl.hidden = true;
     return;
   }
   if (shouldAutoFollow(anchor, meta)) {
-    bookmarks.updateBookmarkLocation(toFollow.id, anchor, meta.autoScrolling ? "auto-scroll" : "scroll");
+    bookmarkService.updateBookmarkLocation(toFollow.id, anchor, meta.autoScrolling ? "auto-scroll" : "scroll");
     state.lastAutoBookmarkAt = meta.timestamp;
     state.lastAutoReference = anchor.reference;
     bookmarkStatusEl.textContent = `${toFollow.name} updated`;
     readerStatusEl.hidden = false;
-    if (isDevMode()) logInfo("autoFollow", { name: toFollow.name, ref: anchor.reference });
   } else {
     bookmarkStatusEl.textContent = "";
     readerStatusEl.hidden = true;
   }
 }
 
-function wireGlobalEvents() {
-  homeButton.addEventListener("click", () => {
-    stopAutoScrollAndUpdateUI();
-    pushRouteAndSave("#/");
-    renderHomeView();
-    logInfo("nav:home");
-  });
+function isStandaloneOrDesktopInstall() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true ||
+    document.referrer.includes("android-app://")
+  );
+}
 
-  addBookmarkButton.addEventListener("click", () => {
-    if (state.autoScrollActive) stopAutoScrollAndUpdateUI();
-    const name = window.prompt("Bookmark name:", "Reading Plan");
-    if (!name?.trim()) return;
-    const b = bookmarks.createBookmark(name.trim());
-    if (state.currentLocation) {
-      bookmarks.updateBookmarkLocation(b.id, state.currentLocation, "manual");
-    }
-    renderBookmarkRibbons();
-    if (!homeView.hidden) renderHomeView();
-  });
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
 
-  moveBookmarkButton.addEventListener("click", () => {
-    if (state.autoScrollActive) stopAutoScrollAndUpdateUI();
-    const list = bookmarks.getBookmarks();
-    if (list.length === 0) {
-      bookmarkStatusEl.textContent = "No bookmarks to move";
-      return;
-    }
-    if (!state.currentLocation) {
-      bookmarkStatusEl.textContent = "No current location";
-      return;
-    }
-    if (list.length === 1) {
-      bookmarks.updateBookmarkLocation(list[0].id, state.currentLocation, "manual");
-      bookmarkStatusEl.textContent = `Moved ${list[0].name} to ${state.currentLocation.reference}`;
-      readerStatusEl.hidden = false;
-      renderBookmarkRibbons();
-      return;
-    }
-    const picker = document.createElement("div");
-    picker.className = "move-bookmark-picker";
-    picker.innerHTML = `<p>Move which bookmark to ${escapeHtml(state.currentLocation.reference)}?</p>`;
-    const btnWrap = document.createElement("div");
-    btnWrap.className = "move-bookmark-buttons";
-    for (const b of list) {
-      const btn = document.createElement("button");
-      btn.className = "secondary-btn";
-      btn.textContent = b.name;
-      btn.addEventListener("click", () => {
-        bookmarks.updateBookmarkLocation(b.id, state.currentLocation, "manual");
-        bookmarkStatusEl.textContent = `Moved ${b.name} to ${state.currentLocation.reference}`;
-        readerStatusEl.hidden = false;
-        picker.remove();
-        renderBookmarkRibbons();
-      });
-      btnWrap.append(btn);
-    }
-    const cancel = document.createElement("button");
-    cancel.className = "secondary-btn";
-    cancel.textContent = "Cancel";
-    cancel.addEventListener("click", () => picker.remove());
-    btnWrap.append(cancel);
-    picker.append(btnWrap);
-    picker.style.cssText =
-      "position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;";
-    picker.querySelector("p").style.cssText = "background:#fff;padding:1rem;border-radius:0.5rem;margin:0 0 0.5rem;";
-    btnWrap.style.cssText = "display:flex;flex-wrap:wrap;gap:0.5rem;background:#fff;padding:1rem;border-radius:0.5rem;";
-    document.body.append(picker);
-    picker.addEventListener("click", (e) => {
-      if (e.target === picker) picker.remove();
-    });
-  });
-
-  backButton.addEventListener("click", () => {
-    stopAutoScrollAndUpdateUI();
-    if (!readerView.hidden) {
-      pushRouteAndSave(`#/b/${state.currentWork?.id || ""}/${state.currentBook?.id || ""}`);
-      renderChaptersView();
-      logInfo("nav:back", { to: "chapters", workId: state.currentWork?.id, bookId: state.currentBook?.id });
-    } else if (!chaptersView.hidden) {
-      pushRouteAndSave(`#/w/${state.currentWork?.id || ""}`);
-      renderBooksView();
-      logInfo("nav:back", { to: "books", workId: state.currentWork?.id });
-    } else if (!booksView.hidden) {
-      pushRouteAndSave("#/");
-      renderHomeView();
-      logInfo("nav:back", { to: "home" });
-    } else if (!historyView.hidden) {
-      pushRouteAndSave("#/");
-      renderHomeView();
-      logInfo("nav:back", { to: "home" });
-    }
-  });
-
-  autoScrollStart.addEventListener("click", () => {
-    if (!state.reader) return;
-    if (state.autoScrollActive) {
-      stopAutoScrollAndUpdateUI();
-      return;
-    }
-    state.reader.startAutoScroll();
-    state.autoScrollActive = true;
-    autoScrollPanel.hidden = false;
-    autoScrollStart.textContent = "Stop";
-  });
-
-  autoScrollStop.addEventListener("click", () => {
-    if (!state.reader) return;
-    stopAutoScrollAndUpdateUI();
-  });
-
-  autoScrollSpeed.addEventListener("input", () => {
-    const speed = Number(autoScrollSpeed.value);
-    autoScrollSpeedLabel.textContent = `${speed} px/s`;
-    if (state.reader) state.reader.setAutoScrollSpeed(speed);
-  });
-
-  function isStandaloneOrDesktopInstall() {
-    return (
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true ||
-      document.referrer.includes("android-app://")
-    );
-  }
-
-  function isIOS() {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  }
-
+function wireInstallFlow() {
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     state.deferredPrompt = e;
@@ -611,7 +532,8 @@ function wireGlobalEvents() {
       return;
     }
     if (isIOS()) {
-      const msg = "To add this app to your home screen:\n\n1. Tap the Share button (square with arrow) at the bottom of the screen\n2. Scroll and tap \"Add to Home Screen\"\n3. Tap Add";
+      const msg =
+        "To add this app to your home screen:\n\n1. Tap the Share button (square with arrow) at the bottom of the screen\n2. Scroll and tap \"Add to Home Screen\"\n3. Tap Add";
       alert(msg);
     }
   });
@@ -643,8 +565,8 @@ function wireScrollerRibbonUpdates() {
 function updateDevEasterEggVisibility() {
   const egg = document.getElementById("devEasterEgg");
   if (!egg) return;
-  egg.hidden = document.getElementById("homeView").hidden || isDevMode();
-  if (isDevMode() && document.getElementById("devBugIcon")) {
+  egg.hidden = document.getElementById("homeView").hidden || visibilityService.isDevMode();
+  if (visibilityService.isDevMode() && document.getElementById("devBugIcon")) {
     document.getElementById("devBugIcon").hidden = false;
   }
 }
@@ -654,6 +576,7 @@ const STORAGE_LABELS = {
   "scripture-pwa-route-v1": "Route",
   "scripture-pwa-dev-mode-v1": "Developer Mode",
   "scripture-pwa-logs-v1": "Legacy Logs",
+  "scripture-pwa-visibility-v1": "Visibility Config",
 };
 
 function formatStorageValue(raw) {
@@ -668,97 +591,327 @@ function formatStorageValue(raw) {
 function renderStoragePanel(container) {
   if (!container) return;
   const keys = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
-    if (k) keys.push(k);
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    if (key) keys.push(key);
   }
-  const legacyKey = "scripture-pwa-logs-v1";
-  keys.sort((a, b) => {
-    if (a === legacyKey) return 1;
-    if (b === legacyKey) return -1;
-    return a.localeCompare(b);
-  });
+  keys.sort((a, b) => a.localeCompare(b));
   const parts = keys.map((k) => {
-    const v = localStorage.getItem(k);
+    const value = localStorage.getItem(k);
     const label = STORAGE_LABELS[k] ?? k;
-    const pretty = v != null ? formatStorageValue(v) : "[empty]";
+    const pretty = value != null ? formatStorageValue(value) : "[empty]";
     return `<section class="dev-storage-section"><h4 class="dev-storage-header">${escapeHtml(label)}</h4><pre class="dev-storage-pre">${escapeHtml(pretty)}</pre></section>`;
   });
   container.innerHTML = parts.length ? parts.join("\n") : "<p>No localStorage keys.</p>";
 }
 
-async function loadLogSessionsAndRender(selectEl, entriesEl, copyBtn) {
-  const sessions = await getAllSessions();
-  selectEl.innerHTML = sessions.length === 0
-    ? '<option value="">No sessions</option>'
-    : sessions.map((s) => `<option value="${escapeHtml(s.id)}">${new Date(s.startedAt).toLocaleString()}</option>`).join("");
-  const first = sessions[0] ?? null;
-  selectEl.value = first?.id ?? "";
-  await renderLogEntries(first?.id ?? null, entriesEl);
-  selectEl.dataset.sessions = JSON.stringify(sessions);
+function matchesFilters(entry) {
+  const { modules, levels, search } = state.activeLogFilters;
+  if (modules.size > 0 && !modules.has(entry.module || "domain.logging")) return false;
+  if (levels.size > 0 && !levels.has(entry.level)) return false;
+  if (search) {
+    const haystack = JSON.stringify({
+      message: entry.message,
+      summary: entry.summary,
+      details: entry.details,
+      refs: entry.refs,
+      event: entry.event,
+      module: entry.module,
+    }).toLowerCase();
+    if (!haystack.includes(search.toLowerCase())) return false;
+  }
+  return true;
 }
 
-async function renderLogEntries(sessionId, container) {
+function renderLogFilterControls(filtersEl, entries) {
+  if (!filtersEl) return;
+  const modules = [...new Set(entries.map((e) => e.module || "domain.logging"))].sort();
+  const levelOptions = ["debug", "info", "warn", "error"];
+  const moduleChecks = modules
+    .map(
+      (moduleId) => `
+      <label class="dev-filter-chip">
+        <input type="checkbox" data-filter-module="${moduleId}" ${state.activeLogFilters.modules.has(moduleId) ? "checked" : ""} />
+        <span>${escapeHtml(moduleId)}</span>
+      </label>`,
+    )
+    .join("");
+  const levelChecks = levelOptions
+    .map(
+      (level) => `
+      <label class="dev-filter-chip">
+        <input type="checkbox" data-filter-level="${level}" ${state.activeLogFilters.levels.has(level) ? "checked" : ""} />
+        <span>${level.toUpperCase()}</span>
+      </label>`,
+    )
+    .join("");
+
+  filtersEl.innerHTML = `
+    <div class="dev-filter-block">
+      <strong>Modules</strong>
+      <div class="dev-filter-list">${moduleChecks || "<em>No modules in this session</em>"}</div>
+    </div>
+    <div class="dev-filter-block">
+      <strong>Levels</strong>
+      <div class="dev-filter-list">${levelChecks}</div>
+    </div>
+  `;
+}
+
+function renderLogEntries(entries, container, countEl) {
   if (!container) return;
-  if (!sessionId) {
-    container.innerHTML = "<p>No session selected.</p>";
+  const filtered = entries.filter(matchesFilters);
+  state.lastRenderedLogEntries = filtered;
+  if (countEl) {
+    countEl.textContent = `${filtered.length}/${entries.length} visible`;
+  }
+  if (filtered.length === 0) {
+    container.innerHTML = "<p>No entries match the current filters.</p>";
     return;
   }
-  const entries = await getEntriesForSession(sessionId);
-  if (entries.length === 0) {
-    container.innerHTML = "<p>No entries for this session.</p>";
-    return;
-  }
-  container.innerHTML = entries
+  container.innerHTML = filtered
     .map((e) => {
       const details = e.details
         ? `<code class="dev-log-details">${escapeHtml(typeof e.details === "string" ? e.details : JSON.stringify(e.details, null, 2))}</code>`
         : "";
-      return `<article class="dev-log-entry level-${e.level}"><header><span class="dev-log-message">${escapeHtml(e.message)}</span><span class="dev-log-meta"><span class="dev-log-level">${e.level.toUpperCase()}</span> <time>${new Date(e.timestamp).toLocaleString()}</time></span></header>${details}</article>`;
+      const metaParts = [
+        `<span class="dev-log-level">${e.level.toUpperCase()}</span>`,
+        e.module ? `<span>${escapeHtml(e.module)}</span>` : "",
+        e.event ? `<span>${escapeHtml(e.event)}</span>` : "",
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      const metrics = e.metrics ? `<code class="dev-log-details">${escapeHtml(JSON.stringify(e.metrics, null, 2))}</code>` : "";
+      const refs = e.refs ? `<code class="dev-log-details">${escapeHtml(JSON.stringify(e.refs, null, 2))}</code>` : "";
+      return `<article class="dev-log-entry level-${e.level}"><header><span class="dev-log-message">${escapeHtml(e.summary || e.message)}</span><span class="dev-log-meta">${metaParts} <time>${new Date(e.timestamp).toLocaleString()}</time></span></header>${metrics}${refs}${details}</article>`;
     })
     .join("");
 }
 
-function wireDeveloperMode() {
+async function loadLogSessionsAndRender(selectEl, entriesEl, filtersEl, countEl) {
+  const sessions = await getAllSessions();
+  selectEl.innerHTML =
+    sessions.length === 0
+      ? '<option value="">No sessions</option>'
+      : sessions.map((s) => `<option value="${escapeHtml(s.id)}">${new Date(s.startedAt).toLocaleString()}</option>`).join("");
+  const first = sessions[0] ?? null;
+  selectEl.value = first?.id ?? "";
+  selectEl.dataset.sessions = JSON.stringify(sessions);
+  state.lastRenderedSessionId = first?.id ?? null;
+  if (!first) {
+    entriesEl.innerHTML = "<p>No entries for this session.</p>";
+    filtersEl.innerHTML = "";
+    if (countEl) countEl.textContent = "0/0 visible";
+    return;
+  }
+  const entries = await getEntriesForSession(first.id);
+  renderLogFilterControls(filtersEl, entries);
+  renderLogEntries(entries, entriesEl, countEl);
+}
+
+function renderObjectsPanel(container) {
+  if (!container) return;
+  const bookmarkList = bookmarkService.getBookmarks();
+  const route = window.location.hash || "#/";
+  const parsedRoute = navigationService.parse(route);
+  const fallbackRoute = navigationService.loadFallbackRoute();
+  const readerSnapshot = readerService?.captureRuntimeSnapshot?.() ?? null;
+  const cacheSnapshot = cache.snapshot();
+  const metricsSnapshot = readerService?.getMetricsSnapshot?.() ?? null;
+
+  const bookmarkRows = bookmarkList
+    .map((b) => {
+      const summary = `${escapeHtml(b.name)} — ${escapeHtml(b.location?.reference || "No location")}`;
+      const raw = escapeHtml(JSON.stringify(b, null, 2));
+      return `<details class="dev-object-row"><summary>${summary}</summary><pre class="dev-storage-pre">${raw}</pre></details>`;
+    })
+    .join("");
+
+  container.innerHTML = `
+    <section class="dev-object-section">
+      <h4>Bookmarks + History (${bookmarkList.length})</h4>
+      ${bookmarkRows || "<p>No bookmarks found.</p>"}
+    </section>
+    <section class="dev-object-section">
+      <h4>Route State</h4>
+      <details class="dev-object-row"><summary>Current / Parsed / Fallback route</summary><pre class="dev-storage-pre">${escapeHtml(JSON.stringify({ route, parsedRoute, fallbackRoute }, null, 2))}</pre></details>
+    </section>
+    <section class="dev-object-section">
+      <h4>Reader Runtime Snapshot</h4>
+      <details class="dev-object-row"><summary>Reader runtime state</summary><pre class="dev-storage-pre">${escapeHtml(JSON.stringify(readerSnapshot, null, 2))}</pre></details>
+      <details class="dev-object-row"><summary>Runtime metrics snapshot</summary><pre class="dev-storage-pre">${escapeHtml(JSON.stringify(metricsSnapshot, null, 2))}</pre></details>
+    </section>
+    <section class="dev-object-section">
+      <h4>Book Cache Snapshot</h4>
+      <details class="dev-object-row"><summary>Cache state</summary><pre class="dev-storage-pre">${escapeHtml(JSON.stringify(cacheSnapshot, null, 2))}</pre></details>
+    </section>
+  `;
+}
+
+function renderVisibilityPanel(container) {
+  if (!container) return;
+  const config = visibilityService.getConfig();
+  const modules = visibilityService.getCatalog();
+  const presets = visibilityService.getPresets();
+  const moduleControls = modules
+    .map(
+      (m) => `
+      <label class="dev-filter-chip">
+        <input type="checkbox" data-visibility-module="${m.id}" ${config.modules[m.id] ? "checked" : ""} />
+        <span>${escapeHtml(m.id)}</span>
+      </label>`,
+    )
+    .join("");
+  const presetOptions = presets.map((p) => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+
+  container.innerHTML = `
+    <section class="dev-object-section">
+      <h4>Visibility Controls</h4>
+      <label class="dev-filter-chip"><input type="checkbox" id="devVisibilityEnabled" ${config.enabled ? "checked" : ""} /><span>Global visibility enabled</span></label>
+      <label class="dev-inline-label">Verbosity:
+        <select id="devVisibilityVerbosity">
+          <option value="minimal" ${config.verbosity === "minimal" ? "selected" : ""}>minimal</option>
+          <option value="standard" ${config.verbosity === "standard" ? "selected" : ""}>standard</option>
+          <option value="deep" ${config.verbosity === "deep" ? "selected" : ""}>deep</option>
+        </select>
+      </label>
+      <label class="dev-inline-label">Preset:
+        <select id="devVisibilityPreset">
+          <option value="">Select preset...</option>
+          ${presetOptions}
+        </select>
+      </label>
+      <div class="dev-filter-list">${moduleControls}</div>
+    </section>
+  `;
+
+  container.querySelector("#devVisibilityEnabled")?.addEventListener("change", (e) => {
+    visibilityService.setGlobalEnabled(Boolean(e.target.checked));
+    renderVisibilityPanel(container);
+  });
+
+  container.querySelector("#devVisibilityVerbosity")?.addEventListener("change", (e) => {
+    visibilityService.setVerbosity(e.target.value);
+    renderVisibilityPanel(container);
+  });
+
+  container.querySelector("#devVisibilityPreset")?.addEventListener("change", (e) => {
+    if (!e.target.value) return;
+    visibilityService.applyPreset(e.target.value);
+    renderVisibilityPanel(container);
+  });
+
+  container.querySelectorAll("[data-visibility-module]").forEach((input) => {
+    input.addEventListener("change", (e) => {
+      visibilityService.setModule(e.target.dataset.visibilityModule, Boolean(e.target.checked));
+      renderVisibilityPanel(container);
+    });
+  });
+}
+
+function wireDevEasterEgg() {
   const egg = document.getElementById("devEasterEgg");
+  if (!egg) return;
+  egg.addEventListener("click", () => {
+    if (visibilityService.isDevMode()) return;
+    state.devTapCount += 1;
+    if (state.devTapResetTimer) window.clearTimeout(state.devTapResetTimer);
+    state.devTapResetTimer = window.setTimeout(() => {
+      state.devTapCount = 0;
+    }, 1800);
+    if (state.devTapCount >= 10) {
+      visibilityService.setDevMode(true);
+      state.devTapCount = 0;
+      const bug = document.getElementById("devBugIcon");
+      if (bug) bug.hidden = false;
+      egg.hidden = true;
+      visibilityEmit({
+        level: "info",
+        event: "debug_easter_egg_enabled",
+        summary: "Developer mode enabled via easter egg tap zone",
+      });
+    }
+  });
+}
+
+function wireDeveloperMode() {
   const bugIcon = document.getElementById("devBugIcon");
   const drawer = document.getElementById("devDrawer");
   const storageContent = document.getElementById("devStorageContent");
   const logsPanel = document.getElementById("devLogsPanel");
   const storagePanel = document.getElementById("devStoragePanel");
-  const copyBtn = document.getElementById("devCopyLogs");
+  const objectsPanel = document.getElementById("devObjectsPanel");
+  const visibilityPanel = document.getElementById("devVisibilityPanel");
+  const copyVisibleBtn = document.getElementById("devCopyVisibleLogs");
+  const copyFullBtn = document.getElementById("devCopyLogs");
+  const copyAiShareBtn = document.getElementById("devCopyAiShare");
   const logEntries = document.getElementById("devLogEntries");
   const logSelect = document.getElementById("devLogSessionSelect");
   const logPrev = document.getElementById("devLogPrev");
   const logNext = document.getElementById("devLogNext");
+  const logSearch = document.getElementById("devLogSearch");
+  const logFilters = document.getElementById("devLogFilters");
+  const logCount = document.getElementById("devLogVisibleCount");
 
-  if (isDevMode()) {
-    if (bugIcon) bugIcon.hidden = false;
+  if (visibilityService.isDevMode() && bugIcon) {
+    bugIcon.hidden = false;
   }
-
   const sessionControls = document.getElementById("devLogSessionControls");
 
   function showStorage() {
     renderStoragePanel(storageContent);
     storagePanel.hidden = false;
     logsPanel.hidden = true;
+    if (objectsPanel) objectsPanel.hidden = true;
+    if (visibilityPanel) visibilityPanel.hidden = true;
     if (sessionControls) sessionControls.hidden = true;
   }
 
   async function showLogs() {
     storagePanel.hidden = true;
     logsPanel.hidden = false;
+    if (objectsPanel) objectsPanel.hidden = true;
+    if (visibilityPanel) visibilityPanel.hidden = true;
     if (sessionControls) sessionControls.hidden = false;
-    await loadLogSessionsAndRender(logSelect, logEntries, copyBtn);
+    await loadLogSessionsAndRender(logSelect, logEntries, logFilters, logCount);
     updatePrevNextButtons();
+  }
+
+  function showObjects() {
+    storagePanel.hidden = true;
+    logsPanel.hidden = true;
+    if (objectsPanel) {
+      objectsPanel.hidden = false;
+      renderObjectsPanel(objectsPanel);
+    }
+    if (visibilityPanel) visibilityPanel.hidden = true;
+    if (sessionControls) sessionControls.hidden = true;
+  }
+
+  function showVisibility() {
+    storagePanel.hidden = true;
+    logsPanel.hidden = true;
+    if (objectsPanel) objectsPanel.hidden = true;
+    if (visibilityPanel) {
+      visibilityPanel.hidden = false;
+      renderVisibilityPanel(visibilityPanel);
+    }
+    if (sessionControls) sessionControls.hidden = true;
   }
 
   bugIcon?.addEventListener("click", () => {
     if (drawer.hidden) {
       drawer.hidden = false;
+      visibilityEmit({
+        level: "info",
+        event: "debug_drawer_open",
+        summary: "Debug drawer opened",
+      });
       const tab = document.querySelector(".dev-tab.active")?.dataset.tab || "storage";
       if (tab === "storage") showStorage();
-      else void showLogs();
+      else if (tab === "logs") void showLogs();
+      else if (tab === "objects") showObjects();
+      else showVisibility();
     } else {
       drawer.hidden = true;
     }
@@ -772,16 +925,41 @@ function wireDeveloperMode() {
     tab.addEventListener("click", () => {
       document.querySelectorAll(".dev-tab[data-tab]").forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
-      if (tab.dataset.tab === "storage") showStorage();
-      else void showLogs();
+      const tabName = tab.dataset.tab;
+      visibilityEmit({
+        level: "info",
+        event: "debug_tab_change",
+        summary: "Debug tab changed",
+        refs: { tab: tabName },
+      });
+      if (tabName === "storage") showStorage();
+      else if (tabName === "logs") void showLogs();
+      else if (tabName === "objects") showObjects();
+      else showVisibility();
     });
   });
 
   logSelect?.addEventListener("change", async () => {
     const sid = logSelect.value || null;
-    await renderLogEntries(sid, logEntries);
+    state.lastRenderedSessionId = sid;
+    const entries = sid ? await getEntriesForSession(sid) : [];
+    renderLogFilterControls(logFilters, entries);
+    renderLogEntries(entries, logEntries, logCount);
     updatePrevNextButtons();
+    visibilityEmit({
+      level: "info",
+      event: "debug_session_select",
+      summary: "Log session selected",
+      refs: { sessionId: sid },
+    });
   });
+
+  function updatePrevNextButtons() {
+    const sessions = JSON.parse(logSelect?.dataset.sessions || "[]");
+    const idx = sessions.findIndex((s) => s.id === logSelect?.value);
+    if (logPrev) logPrev.disabled = idx < 0 || idx >= sessions.length - 1;
+    if (logNext) logNext.disabled = idx <= 0;
+  }
 
   logPrev?.addEventListener("click", async () => {
     const sessions = JSON.parse(logSelect.dataset.sessions || "[]");
@@ -789,8 +967,11 @@ function wireDeveloperMode() {
     if (idx < sessions.length - 1) {
       const next = sessions[idx + 1];
       logSelect.value = next.id;
-      await renderLogEntries(next.id, logEntries);
+      const entries = await getEntriesForSession(next.id);
+      renderLogFilterControls(logFilters, entries);
+      renderLogEntries(entries, logEntries, logCount);
       updatePrevNextButtons();
+      state.lastRenderedSessionId = next.id;
     }
   });
 
@@ -800,22 +981,108 @@ function wireDeveloperMode() {
     if (idx > 0) {
       const next = sessions[idx - 1];
       logSelect.value = next.id;
-      await renderLogEntries(next.id, logEntries);
+      const entries = await getEntriesForSession(next.id);
+      renderLogFilterControls(logFilters, entries);
+      renderLogEntries(entries, logEntries, logCount);
       updatePrevNextButtons();
+      state.lastRenderedSessionId = next.id;
     }
   });
 
-  copyBtn?.addEventListener("click", async () => {
+  logSearch?.addEventListener("input", async () => {
+    state.activeLogFilters.search = logSearch.value.trim();
+    const sid = logSelect?.value || null;
+    const entries = sid ? await getEntriesForSession(sid) : [];
+    renderLogEntries(entries, logEntries, logCount);
+  });
+
+  logFilters?.addEventListener("change", async (e) => {
+    const moduleId = e.target.dataset.filterModule;
+    const level = e.target.dataset.filterLevel;
+    if (moduleId) {
+      if (e.target.checked) state.activeLogFilters.modules.add(moduleId);
+      else state.activeLogFilters.modules.delete(moduleId);
+    }
+    if (level) {
+      if (e.target.checked) state.activeLogFilters.levels.add(level);
+      else state.activeLogFilters.levels.delete(level);
+    }
+    const sid = logSelect?.value || null;
+    const entries = sid ? await getEntriesForSession(sid) : [];
+    renderLogEntries(entries, logEntries, logCount);
+  });
+
+  copyFullBtn?.addEventListener("click", async () => {
     const sid = logSelect?.value || null;
     const data = await getLogsForCopy(sid);
     const text = JSON.stringify(data, null, 2);
     try {
       await navigator.clipboard.writeText(text);
-      copyBtn.textContent = "Copied!";
-      setTimeout(() => { copyBtn.textContent = "Copy logs"; }, 1200);
+      copyFullBtn.textContent = "Copied!";
+      setTimeout(() => {
+        copyFullBtn.textContent = "Copy full";
+      }, 1200);
+      visibilityEmit({
+        level: "info",
+        event: "debug_copy_logs",
+        summary: "Copied full session logs",
+        refs: { sessionId: sid },
+      });
     } catch {
-      copyBtn.textContent = "Copy failed";
-      setTimeout(() => { copyBtn.textContent = "Copy logs"; }, 1200);
+      copyFullBtn.textContent = "Copy failed";
+      setTimeout(() => {
+        copyFullBtn.textContent = "Copy full";
+      }, 1200);
+    }
+  });
+
+  copyVisibleBtn?.addEventListener("click", async () => {
+    const payload = {
+      sessionId: state.lastRenderedSessionId,
+      visibleEntries: state.lastRenderedLogEntries.map((e) => ({
+        time: new Date(e.timestamp).toISOString(),
+        level: e.level,
+        module: e.module,
+        event: e.event,
+        summary: e.summary || e.message,
+        metrics: e.metrics,
+        refs: e.refs,
+        details: e.details,
+      })),
+      filters: {
+        modules: Array.from(state.activeLogFilters.modules),
+        levels: Array.from(state.activeLogFilters.levels),
+        search: state.activeLogFilters.search,
+      },
+    };
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+      copyVisibleBtn.textContent = "Copied!";
+      setTimeout(() => {
+        copyVisibleBtn.textContent = "Copy visible";
+      }, 1200);
+    } catch {
+      copyVisibleBtn.textContent = "Copy failed";
+      setTimeout(() => {
+        copyVisibleBtn.textContent = "Copy visible";
+      }, 1200);
+    }
+  });
+
+  copyAiShareBtn?.addEventListener("click", async () => {
+    const sid = logSelect?.value || null;
+    const payload = await getLogsForAiShare(sid);
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+      copyAiShareBtn.textContent = "Copied!";
+      setTimeout(() => {
+        copyAiShareBtn.textContent = "Copy AI-share";
+      }, 1200);
+    } catch {
+      copyAiShareBtn.textContent = "Copy failed";
+      setTimeout(() => {
+        copyAiShareBtn.textContent = "Copy AI-share";
+      }, 1200);
     }
   });
 
@@ -823,10 +1090,14 @@ function wireDeveloperMode() {
     if (!logsPanel || logsPanel.hidden || !logEntries) return;
     const sid = logSelect?.value || "";
     if (entry.sessionId !== sid) return;
+    const synthetic = { ...entry, timestamp: Date.now() };
+    if (!matchesFilters(synthetic)) return;
     const details = entry.details
       ? `<code class="dev-log-details">${escapeHtml(typeof entry.details === "string" ? entry.details : JSON.stringify(entry.details, null, 2))}</code>`
       : "";
-    const html = `<article class="dev-log-entry level-${entry.level}"><header><span class="dev-log-message">${escapeHtml(entry.message)}</span><span class="dev-log-meta"><span class="dev-log-level">${entry.level.toUpperCase()}</span> <time>${new Date().toLocaleString()}</time></span></header>${details}</article>`;
+    const refs = entry.refs ? `<code class="dev-log-details">${escapeHtml(JSON.stringify(entry.refs, null, 2))}</code>` : "";
+    const metrics = entry.metrics ? `<code class="dev-log-details">${escapeHtml(JSON.stringify(entry.metrics, null, 2))}</code>` : "";
+    const html = `<article class="dev-log-entry level-${entry.level}"><header><span class="dev-log-message">${escapeHtml(entry.summary || entry.message)}</span><span class="dev-log-meta"><span class="dev-log-level">${entry.level.toUpperCase()}</span> ${escapeHtml(entry.module || "")} ${escapeHtml(entry.event || "")} <time>${new Date().toLocaleString()}</time></span></header>${metrics}${refs}${details}</article>`;
     logEntries.insertAdjacentHTML("beforeend", html);
     requestAnimationFrame(() => {
       logsPanel.scrollTop = logsPanel.scrollHeight;
@@ -834,18 +1105,117 @@ function wireDeveloperMode() {
   }
 
   setOnLogCallback(appendLogEntryLive);
+}
 
-  function updatePrevNextButtons() {
-    const sessions = JSON.parse(logSelect?.dataset.sessions || "[]");
-    const idx = sessions.findIndex((s) => s.id === logSelect?.value);
-    if (logPrev) logPrev.disabled = idx < 0 || idx >= sessions.length - 1;
-    if (logNext) logNext.disabled = idx <= 0;
-  }
+function wireGlobalEvents() {
+  homeButton.addEventListener("click", () => {
+    stopAutoScrollAndUpdateUI();
+    pushRouteAndSave("#/");
+    renderHomeView();
+  });
+
+  addBookmarkButton.addEventListener("click", () => {
+    if (state.autoScrollActive) stopAutoScrollAndUpdateUI();
+    const name = window.prompt("Bookmark name:", "Reading Plan");
+    if (!name?.trim()) return;
+    const bookmark = bookmarkService.createBookmark(name.trim());
+    if (state.currentLocation) {
+      bookmarkService.updateBookmarkLocation(bookmark.id, state.currentLocation, "manual");
+    }
+    renderBookmarkRibbons();
+    if (!homeView.hidden) renderHomeView();
+  });
+
+  moveBookmarkButton.addEventListener("click", () => {
+    if (state.autoScrollActive) stopAutoScrollAndUpdateUI();
+    const list = bookmarkService.getBookmarks();
+    if (list.length === 0) {
+      bookmarkStatusEl.textContent = "No bookmarks to move";
+      return;
+    }
+    if (!state.currentLocation) {
+      bookmarkStatusEl.textContent = "No current location";
+      return;
+    }
+    if (list.length === 1) {
+      bookmarkService.updateBookmarkLocation(list[0].id, state.currentLocation, "manual");
+      bookmarkStatusEl.textContent = `Moved ${list[0].name} to ${state.currentLocation.reference}`;
+      readerStatusEl.hidden = false;
+      renderBookmarkRibbons();
+      return;
+    }
+    const picker = document.createElement("div");
+    picker.className = "move-bookmark-picker";
+    picker.innerHTML = `<p>Move which bookmark to ${escapeHtml(state.currentLocation.reference)}?</p>`;
+    const btnWrap = document.createElement("div");
+    btnWrap.className = "move-bookmark-buttons";
+    for (const b of list) {
+      const btn = document.createElement("button");
+      btn.className = "secondary-btn";
+      btn.textContent = b.name;
+      btn.addEventListener("click", () => {
+        bookmarkService.updateBookmarkLocation(b.id, state.currentLocation, "manual");
+        bookmarkStatusEl.textContent = `Moved ${b.name} to ${state.currentLocation.reference}`;
+        readerStatusEl.hidden = false;
+        picker.remove();
+        renderBookmarkRibbons();
+      });
+      btnWrap.append(btn);
+    }
+    const cancel = document.createElement("button");
+    cancel.className = "secondary-btn";
+    cancel.textContent = "Cancel";
+    cancel.addEventListener("click", () => picker.remove());
+    btnWrap.append(cancel);
+    picker.append(btnWrap);
+    picker.style.cssText =
+      "position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;";
+    picker.querySelector("p").style.cssText = "background:#fff;padding:1rem;border-radius:0.5rem;margin:0 0 0.5rem;";
+    btnWrap.style.cssText = "display:flex;flex-wrap:wrap;gap:0.5rem;background:#fff;padding:1rem;border-radius:0.5rem;";
+    document.body.append(picker);
+    picker.addEventListener("click", (e) => {
+      if (e.target === picker) picker.remove();
+    });
+  });
+
+  backButton.addEventListener("click", () => {
+    stopAutoScrollAndUpdateUI();
+    if (!readerView.hidden) {
+      pushRouteAndSave(`#/b/${state.currentWork?.id || ""}/${state.currentBook?.id || ""}`);
+      renderChaptersView();
+    } else if (!chaptersView.hidden) {
+      pushRouteAndSave(`#/w/${state.currentWork?.id || ""}`);
+      renderBooksView();
+    } else if (!booksView.hidden || !historyView.hidden) {
+      pushRouteAndSave("#/");
+      renderHomeView();
+    }
+  });
+
+  autoScrollStart.addEventListener("click", () => {
+    if (state.autoScrollActive) {
+      stopAutoScrollAndUpdateUI();
+      return;
+    }
+    ensureReaderService().startAutoScroll();
+    state.autoScrollActive = true;
+    autoScrollPanel.hidden = false;
+    autoScrollStart.textContent = "Stop";
+  });
+
+  autoScrollStop.addEventListener("click", () => {
+    stopAutoScrollAndUpdateUI();
+  });
+
+  autoScrollSpeed.addEventListener("input", () => {
+    const speed = Number(autoScrollSpeed.value);
+    autoScrollSpeedLabel.textContent = `${speed} px/s`;
+    ensureReaderService().setAutoScrollSpeed(speed);
+  });
 }
 
 async function restoreFromRoute(route) {
-  const parsed = parseRoute(route);
-  logInfo("restoreFromRoute", { route, parsed });
+  const parsed = navigationService.parse(route);
   if (parsed.view === "reader" && parsed.workId && parsed.bookId) {
     const work = state.index.works.find((w) => w.id === parsed.workId);
     const book = work?.books.find((b) => b.id === parsed.bookId);
@@ -888,18 +1258,32 @@ async function restoreFromRoute(route) {
 
 async function init() {
   logInfo("init start");
+  dataEmit({
+    level: "info",
+    event: "index_load_start",
+    summary: "Loading scripture index",
+  });
   state.index = await loadIndex();
+  dataEmit({
+    level: "info",
+    event: "index_load_done",
+    summary: "Loaded scripture index",
+    metrics: { works: state.index.works.length },
+  });
+
   wireGlobalEvents();
   wireScrollerRibbonUpdates();
+  wireDevEasterEgg();
   wireDeveloperMode();
+  wireInstallFlow();
 
-  const hash = window.location.hash || loadRouteFromStorage();
+  const hash = window.location.hash || navigationService.loadFallbackRoute();
   if (hash && hash !== "#/") {
     await restoreFromRoute(hash);
   } else {
     renderHomeView();
   }
-  pushRoute(stateToRoute(state));
+  navigationService.push(routeFromState());
 
   window.addEventListener("hashchange", () => {
     const h = window.location.hash;
@@ -913,5 +1297,5 @@ async function init() {
 }
 
 init().catch((err) => {
-  homeView.innerHTML = `<section class="panel"><h2>Failed to load app</h2><pre>${err.message}</pre></section>`;
+  homeView.innerHTML = `<section class="panel"><h2>Failed to load app</h2><pre>${escapeHtml(err.message)}</pre></section>`;
 });
