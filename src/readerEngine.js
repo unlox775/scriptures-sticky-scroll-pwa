@@ -308,6 +308,15 @@ export class ReaderEngine {
     };
   }
 
+  estimateChapterPixelHeight(chapter) {
+    if (!chapter?.verses) {
+      return null;
+    }
+    const totalChars = chapter.verses.reduce((sum, verse) => sum + (verse?.text?.length || 0), 0);
+    // Heuristic for docs/debug correlation only; runtime layout remains source of truth.
+    return Math.round(totalChars * 0.27 + chapter.verses.length * 18 + 120);
+  }
+
   async ensureBuffer() {
     if (this.isBuffering || this.destroyed) {
       return;
@@ -359,6 +368,28 @@ export class ReaderEngine {
       while (topBuffer < minBuffer && this.minLoadedSeq() > 0) {
         const beforeMin = this.minLoadedSeq();
         const targetSeq = beforeMin - 1;
+        const thresholdDistance = minBuffer - topBuffer;
+        if (isDevMode()) {
+          const target = this.pointerForSeq(targetSeq);
+          logEvent({
+            level: "debug",
+            module: "domain.readerEngine",
+            event: "reader_buffer_threshold_crossed",
+            summary: "Top threshold crossed; requesting prepend chapter load",
+            refs: {
+              direction: "prepend",
+              targetSeq,
+              bookId: target?.bookMeta?.id,
+              chapter: target?.chapter,
+            },
+            metrics: {
+              thresholdDistance,
+              topBuffer,
+              minBuffer,
+            },
+            details: this.snapshotScrollState(),
+          });
+        }
         await this.ensureLoaded(targetSeq, "prepend", {
           reason: "buffer-extend-top",
           trigger: {
@@ -397,6 +428,28 @@ export class ReaderEngine {
       while (bottomBuffer < minBuffer && this.maxLoadedSeq() < this.sequence.length - 1) {
         const beforeMax = this.maxLoadedSeq();
         const targetSeq = beforeMax + 1;
+        const thresholdDistance = minBuffer - bottomBuffer;
+        if (isDevMode()) {
+          const target = this.pointerForSeq(targetSeq);
+          logEvent({
+            level: "debug",
+            module: "domain.readerEngine",
+            event: "reader_buffer_threshold_crossed",
+            summary: "Bottom threshold crossed; requesting append chapter load",
+            refs: {
+              direction: "append",
+              targetSeq,
+              bookId: target?.bookMeta?.id,
+              chapter: target?.chapter,
+            },
+            metrics: {
+              thresholdDistance,
+              bottomBuffer,
+              minBuffer,
+            },
+            details: this.snapshotScrollState(),
+          });
+        }
         await this.ensureLoaded(targetSeq, "append", {
           reason: "buffer-extend-bottom",
           trigger: {
@@ -459,6 +512,23 @@ export class ReaderEngine {
         removeEl.remove();
         this.loaded.delete(seq);
         this.scroller.scrollTop -= removedHeight;
+        if (isDevMode()) {
+          const pointer = this.pointerForSeq(seq);
+          logEvent({
+            level: "debug",
+            module: "domain.readerEngine",
+            event: "reader_chunk_trimmed",
+            summary: "Trimmed chapter from top buffer",
+            refs: {
+              direction: "prepend-side",
+              seq,
+              bookId: pointer?.bookMeta?.id,
+              chapter: pointer?.chapter,
+            },
+            metrics: { removedHeight },
+            details: this.snapshotScrollState(),
+          });
+        }
       }
 
       while (this.loaded.size > 1) {
@@ -484,8 +554,26 @@ export class ReaderEngine {
           break;
         }
         const removeEl = this.loaded.get(seq);
+        const removedHeight = removeEl.offsetHeight;
         removeEl.remove();
         this.loaded.delete(seq);
+        if (isDevMode()) {
+          const pointer = this.pointerForSeq(seq);
+          logEvent({
+            level: "debug",
+            module: "domain.readerEngine",
+            event: "reader_chunk_trimmed",
+            summary: "Trimmed chapter from bottom buffer",
+            refs: {
+              direction: "append-side",
+              seq,
+              bookId: pointer?.bookMeta?.id,
+              chapter: pointer?.chapter,
+            },
+            metrics: { removedHeight },
+            details: this.snapshotScrollState(),
+          });
+        }
       }
 
       if (isDevMode()) {
@@ -639,6 +727,7 @@ export class ReaderEngine {
       try {
         const chapterData = await this.loadChapter(seq);
         const chapterNode = this.renderChapter(chapterData, seq);
+        const chapterPixelHeight = chapterNode.offsetHeight || this.estimateChapterPixelHeight(chapterData.chapter);
 
         if (mode === "prepend" && this.content.firstChild) {
           const before = this.content.scrollHeight;
@@ -664,6 +753,8 @@ export class ReaderEngine {
           metrics: {
             elapsedMs: Math.round(performance.now() - startedAt),
             loadedCount: this.loaded.size,
+            chapterPixelHeight,
+            verseCount: chapterData.chapter.verses.length,
           },
           details: {
             context,

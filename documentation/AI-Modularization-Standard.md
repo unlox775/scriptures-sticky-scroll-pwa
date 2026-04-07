@@ -94,11 +94,20 @@ Observability failures must also be isolated from core value delivery. If log pe
 
 - Read this standard first and confirm that product purpose has not shifted in a way that changes flow priorities.
 - Produce or update Flows and Parts as the implementation-agnostic source of value journeys and module intent.
-- Produce or update AI-to-Human Visibility as the source of instrumentation, object inspection, filtering, and export expectations.
+- Produce or update AI-to-Human Visibility as a **folder of module stories** (not a single summary page), with one document per major module plus an index README.
 - Produce or update Recommended Refactors as an adherence report that scores current reality against the first two documents.
 - Implement code changes and then re-score adherence so architectural claims remain evidence-based.
 
 The three companion documents have distinct jobs. Flows and Parts defines architectural intent in domain language. AI-to-Human Visibility defines what evidence exists and how humans can use it. Recommended Refactors defines the gap between intended architecture and current implementation. Keeping those roles distinct prevents confusion between strategy, telemetry design, and execution backlog.
+
+### Folder requirement for AI-to-Human Visibility
+
+The AI-to-Human Visibility artifact must be structured as:
+
+- `documentation/ai-human-visibility/README.md` — goals, envelope contract, how to read/use logs.
+- `documentation/ai-human-visibility/<module-id>.md` — one deep narrative per major module/part.
+
+This prevents shallow, table-only writeups and forces mechanism-level explanation where complexity is highest.
 
 ## Adherence over wish-listing
 
