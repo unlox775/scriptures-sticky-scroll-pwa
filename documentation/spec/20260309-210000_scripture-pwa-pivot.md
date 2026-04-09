@@ -28,10 +28,10 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Item | Status | Where / Notes |
 |------|--------|---------------|
 | Flows and parts document | Done | `documentation/flows-and-parts.md` |
-| Critical + secondary + tertiary paths | Done | Numbered story-style flow sections with front-end and back-end/domain mapping |
-| Parts catalog (front-end + back-end modules) | Done | Includes high-level API contracts and core model objects |
+| Critical + secondary + tertiary paths | Done | Numbered story-style flow sections with front-end and backend mapping |
+| Parts catalog (front-end UI + backend modules) | Done | Includes high-level API contracts, core model objects, and hard UI-vs-backend classification rules |
 | AI-to-human visibility document | Done | `documentation/ai-human-visibility/README.md` + per-module docs |
-| Visibility strategy by module | Done | Front-end and domain telemetry points with noise guidance |
+| Visibility strategy by module | Done | Front-end UI and backend telemetry points with noise guidance |
 | Persisted object visibility strategy | Done | Object-browser approach and JSON drill-down guidance |
 | Recommended refactors document | Done | `documentation/recommended-refactors.md` |
 | Refactor plan mapped to visibility + flow goals | Done | Ordered refactors with rationale and execution sequence |
@@ -61,7 +61,7 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Rewrite visibility doc with module-by-module mechanism story, tricky dynamics, healthy sequences, and failure cues | Done | `documentation/ai-human-visibility/README.md` + module files |
 | Implement structured log envelope helper (`module`, `event`, `summary`, `refs`, `metrics`, `details`) | Done | `src/logger.js` `logEvent()` |
 | Align reader engine telemetry to narrative control-loop events | Done | `src/readerEngine.js` emits `reader_buffer_state`, `reader_chapter_load_*`, `reader_buffer_*`, `reader_jump_*`, `reader_capture_anchor_miss`, etc. |
-| Align UI/domain telemetry across app shell, routing, bookmarks, data access, and debug drawer | Done | `src/main.js`, `src/data.js`, `src/bookmarks.js`, `src/stateRouting.js` |
+| Align UI/backend telemetry across app shell, routing, bookmarks, data access, and debug drawer | Done | `src/main.js`, `src/data.js`, `src/bookmarks.js`, `src/stateRouting.js` |
 | Improve log viewer readability for structured events | Done | `src/main.js` log rendering adds module/event badges when present |
 | Add adherence scoring framing in refactor doc | Done | `documentation/recommended-refactors.md` section 0 with Yes/Partial/No evidence matrix |
 
@@ -71,14 +71,25 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 |------|--------|---------------|
 | Convert AI-to-human visibility from single file to subfolder with module-level docs | Done | `documentation/ai-human-visibility/` |
 | Add visibility folder README with contract and module index | Done | `documentation/ai-human-visibility/README.md` |
-| Add in-depth reader-engine scenario walkthrough with concrete chapter/viewport/buffer examples | Done | `documentation/ai-human-visibility/domain-reader-engine.md` |
-| Add per-module visibility stories for UI and domain modules | Done | `documentation/ai-human-visibility/*.md` (11 module files + README) |
+| Add in-depth reader-engine scenario walkthrough with concrete chapter/viewport/buffer examples | Done | `documentation/ai-human-visibility/ui-reader-engine.md` |
+| Add per-module visibility stories for UI and backend modules | Done | `documentation/ai-human-visibility/*.md` (11 module files + README) |
 | Add threshold crossing and chunk geometry events for reader control loop | Done | `src/readerEngine.js` emits `reader_buffer_threshold_crossed`, `reader_chapter_load_success` metrics (`chapterPixelHeight`, `verseCount`), and `reader_chunk_trimmed` (`removedHeight`) |
 | Update standard and refactor docs to reference folder-based visibility corpus | Done | `documentation/AI-Modularization-Standard.md`, `documentation/recommended-refactors.md` |
 
+### Prompt 7: Clarify UI vs backend taxonomy and deepen all module stories
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Add hard UI-vs-backend classification rules to standard | Done | `documentation/AI-Modularization-Standard.md` now defines mandatory `ui.*` and `backend.*` classes and separation rule |
+| Rework Flows and Parts to use explicit UI/backend taxonomy and classify reader engine correctly as UI in current architecture | Done | `documentation/flows-and-parts.md` section 2.0 + reader-engine classification note |
+| Rename AI-to-human visibility docs to avoid ambiguous `domain-*` naming | Done | `documentation/ai-human-visibility/backend-*.md` plus `ui-reader-engine.md` |
+| Expand shallow module docs into full story format (mechanism, tricky parts, scenario, healthy chain, failures, checklist) | Done | All module docs under `documentation/ai-human-visibility/` now follow deep narrative structure |
+| Align runtime telemetry module namespaces with UI/backend taxonomy | Done | `src/main.js`, `src/readerEngine.js`, `src/stateRouting.js`, `src/data.js`, `src/bookmarks.js` now emit `ui.*` / `backend.*` |
+| Update adherence/refactor references to renamed visibility docs | Done | `documentation/recommended-refactors.md` and visibility README now reference `ui-reader-engine.md` |
+
 ## Next Actions
 
-1. Capture a fresh dev-mode log run that scrolls Jacob 4 -> Jacob 5 -> Enos 1 and verify `scroll:ensureLoaded:success` and `scroll:ensureBuffer:blocked|boundary` events tell a complete story.
-2. If any specific chapter still fails to load, use the new `scroll:ensureLoaded:failure` details (`errorMessage`, `attempts`, and `state`) to identify whether the fault is data fetch, chapter lookup, or DOM render.
-3. Use `documentation/AI-Modularization-Standard.md` as the top-level architecture standard when updating `flows-and-parts.md`, `documentation/ai-human-visibility/`, and `recommended-refactors.md`.
+1. Capture a fresh dev-mode log run that scrolls Jacob 4 -> Jacob 5 -> Enos 1 and verify `reader_chapter_load_success` plus `reader_buffer_blocked|reader_buffer_boundary` events tell a complete story using new `ui.*` and `backend.*` module namespaces.
+2. If any specific chapter still fails to load, use `reader_chapter_load_failure` details (`errorMessage`, `attempts`, and `state`) to isolate fetch vs lookup vs render faults.
+3. Keep `documentation/AI-Modularization-Standard.md` as the gating contract: reject new module docs that do not meet full deep-story depth requirements.
 4. Continue iterating from this pivot; append every new prompt to the pivot PROMPT log before code edits.

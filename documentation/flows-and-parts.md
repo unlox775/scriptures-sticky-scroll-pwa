@@ -1,12 +1,12 @@
 # Flows and Parts — Scripture Reader PWA
 
-This document defines the user-critical flows and the major system parts (front-end components and back-end/domain modules) using a shared, stable vocabulary.
+This document defines the user-critical flows and the major system parts (front-end UI modules and back-end modules) using a shared, stable vocabulary.
 
 ## Scope and intent
 
 - Focus on the paths that provide the most user value.
 - Describe major components and modules only (not button-level detail).
-- Keep environmental plumbing distinct from domain modules.
+- Keep environmental plumbing distinct from back-end modules.
 - Provide a single language that both humans and AI agents can reuse.
 
 ## Ubiquitous language (core nouns)
@@ -47,7 +47,8 @@ This document defines the user-critical flows and the major system parts (front-
    User starts auto-scroll from the reader controls. The same anchor and auto-follow pipeline stays active, so manual and automated reading paths share one domain behavior and one telemetry story.
 
 **Primary front-end components touched:** `homeView`, `readerView`, auto-scroll panel, bookmark ribbons/status.  
-**Primary back-end/domain modules touched:** Routing/state (`stateRouting` + navigation coordinator), `ReaderEngine`, `BookmarkStore`, data access (`loadIndex` + `BookCache`), telemetry logger.
+**Primary back-end modules touched:** Routing/state (`stateRouting` + navigation coordinator), `BookmarkStore`, data access (`loadIndex` + `BookCache`), telemetry logger.  
+**Primary UI module touched for reader mechanics:** `ReaderEngine` (current implementation is UI-coupled due to pixel/scroll DOM dependencies).
 
 ---
 
@@ -66,7 +67,8 @@ This document defines the user-critical flows and the major system parts (front-
    Reader loads nearby chapters and keeps continuity while scrolling, identical to the critical flow internals. The user can now continue normally, including bookmark movement, auto-follow, and auto-scroll if desired.
 
 **Primary front-end components touched:** `homeView`, `booksView`, `chaptersView`, `readerView`.  
-**Primary back-end/domain modules touched:** Routing/state, `ReaderEngine`, data access (`BookCache`), telemetry logger.
+**Primary back-end modules touched:** Routing/state, data access (`BookCache`), telemetry logger.  
+**Primary UI module touched for reader mechanics:** `ReaderEngine` (current implementation is UI-coupled due to pixel/scroll DOM dependencies).
 
 ---
 
@@ -85,25 +87,57 @@ This document defines the user-critical flows and the major system parts (front-
    User taps bookmark **Open** to return into `readerView`. System reuses the same reader initialization and route persistence pipeline, ensuring that bookmark management and actual reading remain one connected domain lifecycle.
 
 **Primary front-end components touched:** `readerView`, bookmark picker overlay, `homeView`, `historyView`.  
-**Primary back-end/domain modules touched:** `BookmarkStore`, routing/state, `ReaderEngine`, telemetry logger.
+**Primary back-end modules touched:** `BookmarkStore`, routing/state, telemetry logger.  
+**Primary UI module touched for reader mechanics:** `ReaderEngine` (current implementation is UI-coupled due to pixel/scroll DOM dependencies).
 
 ---
 
-## 2) Parts catalog (front-end + back-end/domain)
+## 2) Parts catalog (front-end UI modules + back-end modules)
+
+## 2.0 Classification rules (razor-sharp split)
+
+This project uses exactly two architecture part types:
+
+1. **Front-end UI module**
+2. **Back-end module**
+
+### 2.0.1 Front-end UI module rule
+
+A module is **front-end UI** if it directly depends on browser/UI primitives such as:
+
+- DOM nodes (`document`, `element`, `innerHTML`, `offsetHeight`, `getBoundingClientRect`)
+- viewport/pixel geometry (`scrollTop`, `clientHeight`, `scrollHeight`, offsets, CSS/render timing)
+- browser events (`scroll`, `resize`, `hashchange`, click handlers)
+
+If a module contains any of these concerns, it is **not backend-agnostic** and must be classified as front-end UI.
+
+### 2.0.2 Back-end module rule
+
+A module is **back-end** if it can be executed and unit-tested without browser layout/DOM concerns. Back-end modules may be in-browser runtime modules, but they should remain agnostic to pixel geometry and visual rendering primitives.
+
+Back-end modules should operate in terms of domain/application state and pure contracts rather than viewport mechanics.
+
+### 2.0.3 Why this matters
+
+This split prevents accidental architecture blur where UI layout mechanics leak into back-end modules. It also makes module contracts clearer and test strategy straightforward:
+
+- UI modules -> integration/UI tests
+- Back-end modules -> unit/contract tests without browser layout dependencies
 
 ### 2.1 Major front-end components
 
-| Component | Responsibility | Key subparts | Back-end/domain modules it uses |
+| Component | Responsibility | Key subparts | Back-end modules it uses |
 | --- | --- | --- | --- |
 | **App Shell/Header** | Global navigation, install entry, context title | home/back buttons, install button, reader action buttons | Routing/state, bookmark lifecycle, reader session |
 | **Home View (`homeView`)** | Entry page for works and bookmarks | works grid, bookmark list, history/open actions | Data access (index), bookmark lifecycle, routing/state |
 | **Books View (`booksView`)** | Book selection within a work | book cards grid | Routing/state |
 | **Chapters View (`chaptersView`)** | Chapter entry point selection | chapter tile grid | Routing/state |
-| **Reader View (`readerView`)** | Primary reading surface | scroller/content, ribbons overlay, status, auto-scroll panel | Reader session engine, bookmark lifecycle, routing/state, data access |
+| **Reader View (`readerView`)** | Primary reading surface | scroller/content, ribbons overlay, status, auto-scroll panel | bookmark lifecycle, routing/state, data access |
+| **Reader Engine (`ReaderEngine`)** | UI-coupled infinite scroller control loop (current architecture) | buffer thresholds, chunk insert/remove, anchor probe, auto-scroll tick | data access, routing-state updates via orchestrator |
 | **History View (`historyView`)** | Daily bookmark history display | history line list, back control | Bookmark lifecycle |
 | **Developer Drawer (`devDrawer`)** | Debug storage/log inspection and copy export | storage tab, logs tab, session selector, copy logs | Telemetry logger/session store, localStorage inspector |
 
-### 2.2 Back-end/domain modules (non-environmental)
+### 2.2 Back-end modules (non-environmental)
 
 #### A) Navigation and Route State Module
 - **Files:** `src/stateRouting.js` + route orchestration in `src/main.js`
@@ -124,9 +158,11 @@ This document defines the user-critical flows and the major system parts (front-
   - cache helpers: `key`, `has`, `touch` (LRU behavior)
 - **Primary model objects:** Work metadata, Book metadata (paths/chapter counts), Book payload, Chapter payload, Verse payload.
 
-#### C) Reader Session Engine Module
+#### C) Reader Session Engine Module (**front-end UI module in current architecture**)
 - **Files:** `src/readerEngine.js`
-- **Domain role:** Owns continuous reading mechanics: loading window, anchor capture, virtualization, resize resilience, auto-scroll loop.
+- **Role:** Owns continuous reading mechanics: loading window, anchor capture, virtualization, resize resilience, auto-scroll loop.
+- **Classification note:** This is currently a **front-end UI module**, not a backend module, because it directly uses DOM and viewport pixel APIs (`scrollTop`, offsets, element geometry, insertion/removal with layout compensation).  
+  A future backend split could extract a browser-agnostic planning module, but that split does not exist yet.
 - **Main contract (high-level):**
   - lifecycle: `open(location)`, `destroy()`
   - navigation: `jumpToLocation(location, align)`

@@ -558,7 +558,7 @@ function shouldAutoFollow(anchor, meta) {
   if (isDevMode() && avg > SLOW_READING_THRESHOLD) {
     uiEvent({
       level: "debug",
-      module: "domain.bookmarks",
+      module: "backend.bookmarks",
       event: "bookmark_follow_skipped",
       summary: "Skipped auto-follow because reading speed is too high",
       refs: { reference: anchor.reference },
@@ -600,7 +600,7 @@ function handleAnchorChange(anchor, meta) {
   if (isDevMode()) {
     uiEvent({
       level: "debug",
-      module: "domain.readerEngine",
+      module: "ui.readerEngine",
       event: "reader_anchor_change",
       summary: "Anchor changed from viewport probe",
       refs: {
@@ -634,7 +634,7 @@ function handleAnchorChange(anchor, meta) {
     if (isDevMode()) {
       uiEvent({
         level: "debug",
-        module: "domain.bookmarks",
+        module: "backend.bookmarks",
         event: "bookmark_auto_follow_update",
         summary: "Auto-follow updated bookmark location",
         refs: { bookmarkId: toFollow.id },
@@ -1222,7 +1222,7 @@ async function restoreFromRoute(route) {
   if (isDevMode()) {
     uiEvent({
       level: "debug",
-      module: "domain.routing",
+      module: "backend.routing",
       event: "route_parse",
       summary: "Parsed route before restore",
       refs: { route },
@@ -1232,7 +1232,7 @@ async function restoreFromRoute(route) {
   }
   uiEvent({
     level: "info",
-    module: "domain.routing",
+    module: "backend.routing",
     event: "route_restore_start",
     summary: "Restoring app state from route",
     refs: { route },
@@ -1255,7 +1255,7 @@ async function restoreFromRoute(route) {
       });
       uiEvent({
         level: "info",
-        module: "domain.routing",
+        module: "backend.routing",
         event: "route_restore_resolved",
         summary: "Route restored to reader view",
         refs: { route, workId: work.id, bookId: book.id, chapter: parsed.chapter || 1, verse: parsed.verse || 1 },
@@ -1272,7 +1272,7 @@ async function restoreFromRoute(route) {
       renderChaptersView();
       uiEvent({
         level: "info",
-        module: "domain.routing",
+        module: "backend.routing",
         event: "route_restore_resolved",
         summary: "Route restored to chapters view",
         refs: { route, workId: work.id, bookId: book.id },
@@ -1288,7 +1288,7 @@ async function restoreFromRoute(route) {
       renderBooksView();
       uiEvent({
         level: "info",
-        module: "domain.routing",
+        module: "backend.routing",
         event: "route_restore_resolved",
         summary: "Route restored to books view",
         refs: { route, workId: work.id },
@@ -1299,7 +1299,7 @@ async function restoreFromRoute(route) {
   if (route && route !== "#/") {
     uiEvent({
       level: "warn",
-      module: "domain.routing",
+      module: "backend.routing",
       event: "route_restore_fail",
       summary: "Route could not be fully resolved; falling back to home",
       refs: { route },
@@ -1309,7 +1309,7 @@ async function restoreFromRoute(route) {
   renderHomeView();
   uiEvent({
     level: "info",
-    module: "domain.routing",
+    module: "backend.routing",
     event: "route_restore_resolved",
     summary: "Route restored to home view",
     refs: { route },

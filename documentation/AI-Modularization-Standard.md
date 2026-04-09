@@ -29,6 +29,26 @@ In AI-assisted development, boundary erosion happens quietly. A module starts wi
 
 Each major module should be able to answer four stable questions: what it owns, what it exposes, what it depends on, and what it does not own. Back-end modules should align with business or use-case domains, while shared infrastructure should remain infrastructure rather than becoming accidental domain owners. This prevents hidden coupling and keeps interfaces meaningful.
 
+### Mandatory module classes and naming
+
+All module docs and telemetry should use an explicit two-class naming scheme:
+
+- `ui.<moduleName>` for front-end/UI modules
+- `backend.<moduleName>` for back-end modules
+
+Avoid ambiguous prefixes like `domain.*` in final-facing architecture docs, because they blur the concrete UI-vs-backend split this standard requires.
+
+### Hard separation rule (UI vs backend)
+
+- **UI modules** may own pixels, viewport math, DOM measurements, scrollTop, event listeners, and rendering orchestration.
+- **Backend modules** must be UI-agnostic and testable without a browser runtime. Backend contracts should not require pixel units, DOM elements, or browser layout APIs.
+
+If a module currently mixes both concerns, the architecture docs must:
+
+1. explicitly mark it as mixed,
+2. define the target split (`ui.*` wrapper + `backend.*` core), and
+3. track that split as an adherence gap in Recommended Refactors.
+
 When boundaries are clear, diagnostics improves automatically. A failure in a flow step can be mapped quickly to a likely contract boundary. That shortens incident resolution loops and lowers the cognitive burden for both humans and AI assistants.
 
 ## Visibility philosophy: a guided factory tour
@@ -51,6 +71,17 @@ That narrative should answer:
 - What failure patterns are likely and why?
 
 This requirement exists because AI-generated docs often degrade into event inventories detached from system intent. The standard requires that documentation "sell the mechanism" first, then map instrumentation to that mechanism.
+
+### Depth requirement (non-negotiable)
+
+A module visibility document fails this standard if it is only a short paragraph plus a list of signal names. Every module document (UI and backend) must contain:
+
+- complete runtime story of how that module is entered, does work, and exits
+- concrete trigger actions a human can perform
+- expected event timeline tied to those actions
+- interpretation guidance for healthy vs unhealthy sequences
+
+Complex modules (like infinite readers, synchronization engines, or caching controllers) must include numeric walkthrough examples and not just conceptual text.
 
 ### Required subsection shape per module
 

@@ -17,7 +17,7 @@ export async function loadIndex() {
   if (isDevMode()) {
     logEvent({
       level: "debug",
-      module: "domain.dataAccess",
+      module: "backend.dataAccess",
       event: "index_load_start",
       summary: "Loading scripture index",
       refs: { path: INDEX_PATH },
@@ -27,7 +27,7 @@ export async function loadIndex() {
   if (!response.ok) {
     logEvent({
       level: "error",
-      module: "domain.dataAccess",
+      module: "backend.dataAccess",
       event: "index_load_fail",
       summary: "Failed to load scripture index",
       refs: { path: INDEX_PATH },
@@ -38,7 +38,7 @@ export async function loadIndex() {
   const data = await response.json();
   logEvent({
     level: "info",
-    module: "domain.dataAccess",
+    module: "backend.dataAccess",
     event: "index_load_done",
     summary: "Scripture index loaded",
     metrics: {
@@ -81,7 +81,7 @@ export class BookCache {
       if (isDevMode()) {
         logEvent({
           level: "debug",
-          module: "domain.dataAccess",
+          module: "backend.dataAccess",
           event: "book_cache_hit",
           summary: "Using cached book payload",
           refs: { workId: bookMeta.workId, bookId: bookMeta.id },
@@ -93,7 +93,7 @@ export class BookCache {
     if (isDevMode()) {
       logEvent({
         level: "debug",
-        module: "domain.dataAccess",
+        module: "backend.dataAccess",
         event: "book_cache_miss",
         summary: "Book payload not in cache",
         refs: { workId: bookMeta.workId, bookId: bookMeta.id },
@@ -111,7 +111,7 @@ export class BookCache {
       if (isDevMode()) {
         logEvent({
           level: "debug",
-          module: "domain.dataAccess",
+          module: "backend.dataAccess",
           event: "book_load_gzip_ok",
           summary: "Loaded book from gzip payload",
           refs: { workId: bookMeta.workId, bookId: bookMeta.id },
@@ -124,7 +124,7 @@ export class BookCache {
       if (!jsonResponse.ok) {
         logEvent({
           level: "error",
-          module: "domain.dataAccess",
+          module: "backend.dataAccess",
           event: "book_load_fail",
           summary: "Failed to load book payload",
           refs: { workId: bookMeta.workId, bookId: bookMeta.id },
@@ -139,7 +139,7 @@ export class BookCache {
       payload = await jsonResponse.json();
       logEvent({
         level: "warn",
-        module: "domain.dataAccess",
+        module: "backend.dataAccess",
         event: "book_load_json_fallback",
         summary: "Loaded book from JSON fallback",
         refs: { workId: bookMeta.workId, bookId: bookMeta.id },
@@ -151,7 +151,7 @@ export class BookCache {
     if (isDevMode()) {
       logEvent({
         level: "debug",
-        module: "domain.dataAccess",
+        module: "backend.dataAccess",
         event: "book_cache_store",
         summary: "Stored book payload in cache",
         refs: { workId: bookMeta.workId, bookId: bookMeta.id },

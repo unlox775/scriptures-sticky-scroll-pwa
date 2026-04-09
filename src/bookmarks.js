@@ -51,7 +51,7 @@ export class BookmarkStore {
     if (isDevMode()) {
       logEvent({
         level: "debug",
-        module: "domain.bookmarks",
+        module: "backend.bookmarks",
         event: "bookmark_store_init",
         summary: "Bookmark store initialized",
         metrics: {
@@ -93,7 +93,7 @@ export class BookmarkStore {
     if (isDevMode()) {
       logEvent({
         level: "debug",
-        module: "domain.bookmarks",
+        module: "backend.bookmarks",
         event: "bookmark_active_set",
         summary: "Changed active bookmark",
         refs: { bookmarkId },
@@ -113,7 +113,7 @@ export class BookmarkStore {
     this.save();
     logEvent({
       level: "info",
-      module: "domain.bookmarks",
+      module: "backend.bookmarks",
       event: "bookmark_create",
       summary: "Created new bookmark",
       refs: { bookmarkId: bookmark.id },
@@ -158,7 +158,7 @@ export class BookmarkStore {
     if (isDevMode()) {
       logEvent({
         level: "debug",
-        module: "domain.bookmarks",
+        module: "backend.bookmarks",
         event: "bookmark_follow_candidate",
         summary: best ? "Selected bookmark to auto-follow" : "No bookmark eligible for auto-follow",
         refs: {
@@ -197,7 +197,7 @@ export class BookmarkStore {
     this.save();
     logEvent({
       level: source === "manual" ? "info" : "debug",
-      module: "domain.bookmarks",
+      module: "backend.bookmarks",
       event: "bookmark_location_updated",
       summary: "Updated bookmark location",
       refs: {
@@ -212,7 +212,7 @@ export class BookmarkStore {
     if (isDevMode()) {
       logEvent({
         level: "debug",
-        module: "domain.bookmarks",
+        module: "backend.bookmarks",
         event: "bookmark_history_snapshot",
         summary: "Recorded one-per-day bookmark history snapshot",
         refs: { bookmarkId, day },

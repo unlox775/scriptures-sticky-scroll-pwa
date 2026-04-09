@@ -58,7 +58,7 @@ export class ReaderEngine {
     const seq = this.locationToSeq(location);
     logEvent({
       level: "info",
-      module: "domain.readerEngine",
+      module: "ui.readerEngine",
       event: "reader_open_start",
       summary: "Reader engine opening location",
       refs: {
@@ -73,7 +73,7 @@ export class ReaderEngine {
     if (!didLoadTarget || !this.loaded.has(seq)) {
       logEvent({
         level: "error",
-        module: "domain.readerEngine",
+        module: "ui.readerEngine",
         event: "reader_open_fail",
         summary: "Reader engine could not load requested location",
         refs: {
@@ -97,7 +97,7 @@ export class ReaderEngine {
     this.publishAnchor(0);
     logEvent({
       level: "info",
-      module: "domain.readerEngine",
+      module: "ui.readerEngine",
       event: "reader_open_ready",
       summary: "Reader engine opened location and primed buffer",
       refs: {
@@ -142,7 +142,7 @@ export class ReaderEngine {
             this.autoScroll._logCount += 1;
             logEvent({
               level: "debug",
-              module: "domain.readerEngine",
+              module: "ui.readerEngine",
               event: "reader_autoscroll_tick",
               summary: "Applied auto-scroll step",
               metrics: {
@@ -217,7 +217,7 @@ export class ReaderEngine {
       if (isDevMode() && hit) {
         logEvent({
           level: "debug",
-          module: "domain.readerEngine",
+          module: "ui.readerEngine",
           event: "reader_capture_anchor_miss",
           summary: "Anchor probe did not hit a verse",
           metrics: {
@@ -341,7 +341,7 @@ export class ReaderEngine {
       if (isDevMode()) {
         logEvent({
           level: "debug",
-          module: "domain.readerEngine",
+          module: "ui.readerEngine",
           event: "reader_buffer_state",
           summary: "Reader buffer state evaluated",
           metrics: {
@@ -373,7 +373,7 @@ export class ReaderEngine {
           const target = this.pointerForSeq(targetSeq);
           logEvent({
             level: "debug",
-            module: "domain.readerEngine",
+            module: "ui.readerEngine",
             event: "reader_buffer_threshold_crossed",
             summary: "Top threshold crossed; requesting prepend chapter load",
             refs: {
@@ -407,7 +407,7 @@ export class ReaderEngine {
             const target = this.pointerForSeq(targetSeq);
             logEvent({
               level: "debug",
-              module: "domain.readerEngine",
+              module: "ui.readerEngine",
               event: "reader_buffer_blocked",
               summary: "Reader buffer could not prepend chapter",
               refs: {
@@ -433,7 +433,7 @@ export class ReaderEngine {
           const target = this.pointerForSeq(targetSeq);
           logEvent({
             level: "debug",
-            module: "domain.readerEngine",
+            module: "ui.readerEngine",
             event: "reader_buffer_threshold_crossed",
             summary: "Bottom threshold crossed; requesting append chapter load",
             refs: {
@@ -467,7 +467,7 @@ export class ReaderEngine {
             const target = this.pointerForSeq(targetSeq);
             logEvent({
               level: "debug",
-              module: "domain.readerEngine",
+              module: "ui.readerEngine",
               event: "reader_buffer_blocked",
               summary: "Reader buffer could not append chapter",
               refs: {
@@ -496,7 +496,7 @@ export class ReaderEngine {
           if (isDevMode()) {
             logEvent({
               level: "debug",
-              module: "domain.readerEngine",
+              module: "ui.readerEngine",
               event: "reader_buffer_trim_skipped",
               summary: "Skipped trimming freshly prepended chapter",
               refs: { direction: "prepend", seq },
@@ -516,7 +516,7 @@ export class ReaderEngine {
           const pointer = this.pointerForSeq(seq);
           logEvent({
             level: "debug",
-            module: "domain.readerEngine",
+            module: "ui.readerEngine",
             event: "reader_chunk_trimmed",
             summary: "Trimmed chapter from top buffer",
             refs: {
@@ -542,7 +542,7 @@ export class ReaderEngine {
           if (isDevMode()) {
             logEvent({
               level: "debug",
-              module: "domain.readerEngine",
+              module: "ui.readerEngine",
               event: "reader_buffer_trim_skipped",
               summary: "Skipped trimming freshly appended chapter",
               refs: { direction: "append", seq },
@@ -561,7 +561,7 @@ export class ReaderEngine {
           const pointer = this.pointerForSeq(seq);
           logEvent({
             level: "debug",
-            module: "domain.readerEngine",
+            module: "ui.readerEngine",
             event: "reader_chunk_trimmed",
             summary: "Trimmed chapter from bottom buffer",
             refs: {
@@ -583,7 +583,7 @@ export class ReaderEngine {
           const pointer = this.pointerForSeq(0);
           logEvent({
             level: "debug",
-            module: "domain.readerEngine",
+            module: "ui.readerEngine",
             event: "reader_buffer_boundary",
             summary: "Reached start boundary while evaluating top buffer",
             refs: {
@@ -600,7 +600,7 @@ export class ReaderEngine {
           const pointer = this.pointerForSeq(maxSeq);
           logEvent({
             level: "debug",
-            module: "domain.readerEngine",
+            module: "ui.readerEngine",
             event: "reader_buffer_boundary",
             summary: "Reached end boundary while evaluating bottom buffer",
             refs: {
@@ -625,7 +625,7 @@ export class ReaderEngine {
         const pointer = this.pointerForSeq(seq);
         logEvent({
           level: "debug",
-          module: "domain.readerEngine",
+          module: "ui.readerEngine",
           event: "reader_chapter_load_skip",
           summary: "Skipped chapter load attempt",
           refs: {
@@ -649,7 +649,7 @@ export class ReaderEngine {
         const pointer = this.sequence[seq];
         logEvent({
           level: "debug",
-          module: "domain.readerEngine",
+          module: "ui.readerEngine",
           event: "reader_chapter_load_skip",
           summary: "Skipped chapter load because request is already in flight",
           refs: {
@@ -678,7 +678,7 @@ export class ReaderEngine {
           const pointer = this.sequence[seq];
           logEvent({
             level: "debug",
-            module: "domain.readerEngine",
+            module: "ui.readerEngine",
             event: "reader_chapter_load_skip",
             summary: "Skipped chapter load because failure cooldown is active",
             refs: {
@@ -707,7 +707,7 @@ export class ReaderEngine {
     const startedAt = performance.now();
     logEvent({
       level: "debug",
-      module: "domain.readerEngine",
+      module: "ui.readerEngine",
       event: "reader_chapter_load_attempt",
       summary: "Attempting to load chapter into reader buffer",
       refs: {
@@ -741,7 +741,7 @@ export class ReaderEngine {
         this.failedLoads.delete(seq);
         logEvent({
           level: "debug",
-          module: "domain.readerEngine",
+          module: "ui.readerEngine",
           event: "reader_chapter_load_success",
           summary: "Loaded chapter into reader buffer",
           refs: {
@@ -773,7 +773,7 @@ export class ReaderEngine {
         });
         logEvent({
           level: "warn",
-          module: "domain.readerEngine",
+          module: "ui.readerEngine",
           event: "reader_chapter_load_failure",
           summary: "Failed to load chapter into reader buffer",
           refs: {
@@ -858,7 +858,7 @@ export class ReaderEngine {
       if (!didLoadTarget || !this.loaded.has(seq)) {
         logEvent({
           level: "error",
-          module: "domain.readerEngine",
+          module: "ui.readerEngine",
           event: "reader_jump_fail",
           summary: "Failed to prepare chapter before jump",
           refs: {
@@ -891,7 +891,7 @@ export class ReaderEngine {
         const noOverflow = sh <= vh;
         logEvent({
           level: "debug",
-          module: "domain.readerEngine",
+          module: "ui.readerEngine",
           event: "reader_jump_attempt",
           summary: "Attempting reader jump alignment",
           refs: {
@@ -921,7 +921,7 @@ export class ReaderEngine {
       if (isDevMode()) {
         logEvent({
           level: "debug",
-          module: "domain.readerEngine",
+          module: "ui.readerEngine",
           event: "reader_jump_done",
           summary: "Completed reader jump alignment",
           refs: {

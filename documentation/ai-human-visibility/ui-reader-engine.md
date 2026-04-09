@@ -1,8 +1,12 @@
-# AI-to-Human Visibility: `domain.readerEngine`
+# Module Visibility Story: `ui.readerEngine`
 
-This document is the deep mechanism walkthrough for the infinite scripture scroller.
+This document is the deep mechanism walkthrough for the reader engine that currently lives on the UI side of the architecture.
 
-## 1) What this module owns
+## 1) UI module role and boundary
+
+This is a **UI module** because it directly owns browser geometry and scroll behavior (`scrollTop`, pixel thresholds, layout measurements, DOM insert/remove compensation).
+
+### Owns
 
 - Chapter sequence within a single work (for example Book of Mormon only).
 - Which chapter chunks are currently rendered.
@@ -11,9 +15,29 @@ This document is the deep mechanism walkthrough for the infinite scripture scrol
   - maximum: ~6 viewport heights before trimming (`maxScreens = 6`)
 - Chapter load lifecycle:
   - attempt / success / failure / skip (cooldown, already-loaded, in-flight)
-- Scroll anchor capture and jump alignment.
+- Scroll anchor capture and jump alignment orchestration.
 
-## 2) Why this is technically tricky
+### Depends on
+- UI-provided scroller/content handles.
+- Data access/book cache module.
+
+### Does not own
+- Header buttons, user prompts, install UX, bookmark picker UX.
+- Home/books/chapters/history view composition.
+
+## 2) Why this module is still called out separately from `ui.readerView`
+
+`ui.readerView` owns user-facing controls and panel composition. `ui.readerEngine` owns the continuous-scroll control loop and chapter window mechanics.
+
+Both are UI modules today, but their responsibilities differ:
+
+- `ui.readerView`: interaction shell and controls (open/start/stop/speed/navigation)
+- `ui.readerEngine`: threshold checks, load/prepend/append/trim, anchor capture, continuity compensation
+
+### Target split (future)
+The long-term architecture can extract a browser-agnostic `backend.readerPlanner` (sequence planning/state transitions) and keep pixel/layout work in `ui.readerEngine`. That split does not exist yet and is tracked in refactors.
+
+## 3) Why this is technically tricky
 
 The reader is not just "append next chapter while scrolling." It is a control loop:
 
@@ -33,7 +57,7 @@ The hard parts are:
 
 ---
 
-## 3) Concrete scenario walkthrough (1 Nephi 4 -> 5 -> 6)
+## 4) Concrete scenario walkthrough (1 Nephi 4 -> 5 -> 6)
 
 The numbers below are realistic example values for explanation. Actual values vary by device/font.
 
@@ -135,7 +159,7 @@ At true start/end limits, module emits:
 
 ---
 
-## 4) Event glossary for this module
+## 5) Event glossary for this module
 
 - `reader_open_start` / `reader_open_ready` / `reader_open_fail`
 - `reader_buffer_state`
@@ -154,7 +178,7 @@ At true start/end limits, module emits:
 
 ---
 
-## 5) Healthy vs unhealthy signatures
+## 6) Healthy vs unhealthy signatures
 
 ### Healthy
 
@@ -172,7 +196,7 @@ Use `refs.seq`, `refs.bookId`, `refs.chapter`, and `details.state` to isolate wh
 
 ---
 
-## 6) Actionable debug checklist (layman walkthrough)
+## 7) Actionable debug checklist (layman walkthrough)
 
 1. Open reader at `1 Nephi 4`, scroll near middle.
 2. Confirm `reader_buffer_state` appears with:

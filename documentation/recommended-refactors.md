@@ -12,8 +12,8 @@ into concrete refactors for this repository. It is intentionally implementation-
 | --- | --- | --- | --- |
 | Structured module/event envelope exists in runtime logs | Yes | `logEvent()` in `src/logger.js`; module/event badges in debug log rendering in `src/main.js` | Maintain contract consistency for new events |
 | Visibility docs include mechanism story + tricky dynamics + healthy/failure cues for major modules | Yes | `documentation/ai-human-visibility/` module docs | Keep sections updated as module behavior evolves |
-| Reader infinite scroller is documented as control-loop mechanism (not just event list) | Yes | `documentation/ai-human-visibility/domain-reader-engine.md` | Add screenshots/examples in future if needed |
-| Major UI and domain modules emit story-aligned instrumentation | Partial | `main.js`, `readerEngine.js`, `data.js`, `bookmarks.js`, `stateRouting.js` now emit structured events | Add in-view filters and per-module runtime toggles |
+| Reader infinite scroller is documented as control-loop mechanism (not just event list) | Yes | `documentation/ai-human-visibility/ui-reader-engine.md` | Add screenshots/examples in future if needed |
+| Major UI and backend modules emit story-aligned instrumentation | Partial | `main.js`, `readerEngine.js`, `data.js`, `bookmarks.js`, `stateRouting.js` now emit structured events | Add in-view filters and per-module runtime toggles |
 | Per-module instrumentation toggles in UI | No | Global dev mode only | Implement visibility config + module toggle UI |
 | Object browser for key persisted/runtime objects | No | Storage + logs present; objects tab absent | Add Objects tab and summary/raw views |
 | Flow verification protocol (automated/manual) explicitly tied to event chains | Partial | Checklists in `documentation/ai-human-visibility/README.md` | Add automated e2e assertions and a manual runbook |
@@ -21,27 +21,27 @@ into concrete refactors for this repository. It is intentionally implementation-
 ## 1) High-value structural refactors
 
 ### R1. Introduce explicit module boundary layer (service contracts)
-- **Current state:** `main.js` directly orchestrates most domain calls and view rendering.
+- **Current state:** `main.js` directly orchestrates most backend calls and view rendering.
 - **Refactor:** Create service adapters (for example under `src/services/`) for:
   - `navigationService`
   - `readerService`
   - `bookmarkService`
   - `visibilityService`
-- **Goal:** Front-end components and view orchestration call stable service contracts instead of reaching into domain internals ad hoc.
+- **Goal:** Front-end components and view orchestration call stable service contracts instead of reaching into backend internals ad hoc.
 - **Why this matters:** Makes contracts explicit, easier to test, and aligns with your “module interfaces must not be violated” requirement.
 
-### R2. Separate view rendering from domain orchestration
-- **Current state:** `main.js` intermixes HTML construction, event wiring, and domain behavior.
+### R2. Separate view rendering from backend orchestration
+- **Current state:** `main.js` intermixes HTML construction, event wiring, and backend behavior.
 - **Refactor:** Extract view modules:
   - `views/homeView.js`
   - `views/booksView.js`
   - `views/chaptersView.js`
   - `views/readerView.js`
   - `views/historyView.js`
-- **Goal:** Keep each view focused on rendering + local event mapping; route domain actions through services.
+- **Goal:** Keep each view focused on rendering + local event mapping; route backend actions through services.
 - **Why this matters:** Improves maintainability and clarifies front-end component ownership in critical-path docs.
 
-### R3. Define canonical domain event schema
+### R3. Define canonical module event schema
 - **Current state:** Logging messages are useful but inconsistent in event identity/shape.
 - **Refactor:** Introduce a shared telemetry envelope utility:
   - `module`, `event`, `summary`, `metrics`, `refs`, `details`.
@@ -98,8 +98,8 @@ into concrete refactors for this repository. It is intentionally implementation-
 - **Goal:** Guarantee the app’s core promise survives future changes.
 - **Why this matters:** This is the single highest-value regression guard.
 
-### R9. Add contract tests for domain modules
-- **Current state:** Domain behaviors are coupled in runtime orchestration.
+### R9. Add contract tests for backend modules
+- **Current state:** Backend behaviors are coupled in runtime orchestration.
 - **Refactor:** Add targeted tests for:
   - `BookmarkStore.getBookmarkToFollow` (ordering + edge cases)
   - `stateRouting.parseRoute/stateToRoute` round-trip

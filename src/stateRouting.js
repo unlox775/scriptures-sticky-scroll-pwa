@@ -48,7 +48,7 @@ export function parseRoute(hash) {
   if (isDevMode()) {
     logEvent({
       level: "debug",
-      module: "domain.routing",
+      module: "backend.routing",
       event: "route_parse",
       summary: "Parsed route string",
       refs: {
@@ -66,7 +66,7 @@ export function pushRoute(route) {
     if (isDevMode()) {
       logEvent({
         level: "debug",
-        module: "domain.routing",
+        module: "backend.routing",
         event: "route_push",
         summary: "Updating browser hash route",
         refs: { route: h },
@@ -82,7 +82,7 @@ export function saveRouteToStorage(route) {
     if (isDevMode()) {
       logEvent({
         level: "debug",
-        module: "domain.routing",
+        module: "backend.routing",
         event: "route_persist",
         summary: "Saved route fallback in local storage",
         refs: { storageKey: ROUTE_KEY, route },
@@ -97,7 +97,7 @@ export function loadRouteFromStorage() {
     if (isDevMode()) {
       logEvent({
         level: "debug",
-        module: "domain.routing",
+        module: "backend.routing",
         event: "route_fallback_loaded",
         summary: "Loaded route fallback from local storage",
         refs: { storageKey: ROUTE_KEY, route },
