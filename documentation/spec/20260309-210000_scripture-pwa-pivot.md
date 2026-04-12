@@ -87,3 +87,10 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Implement missing bookmark follow-skip telemetry | Done | Added explicit `bookmark_follow_skipped` emission path in `handleAnchorChange` (`src/main.js`) |
 | Preserve existing stateful refresh/debug-drawer behavior while adding telemetry | Done | Session restore behavior retained; telemetry augmentation added without removing resume UX |
 | Re-verify build/test after remediation | Done | `npm test` and `npm run build` both pass after event parity updates |
+
+### Prompt 14: Debug drawer resume persistence follow-up
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Ensure debug drawer open/closed state restores on refresh | Done | Moved `restoreUiSessionState()` to run before `wireDeveloperMode()` in `src/main.js`, so initial drawer render consumes restored state |
+| Ensure active debug drawer tab restores on refresh | Done | Same sequencing fix ensures `applyDebugDrawerState(...persist:false)` applies restored `state.devDrawerTab` during startup wire-up |

@@ -1640,13 +1640,12 @@ async function init() {
       metrics: { works: state.index.works.length },
     });
 
+    const restoredUiSession = restoreUiSessionState();
     wireGlobalEvents();
     wireScrollerRibbonUpdates();
     wireDevEasterEgg();
     wireDeveloperMode();
     wireInstallFlow();
-
-    const restoredUiSession = restoreUiSessionState();
     const initialRoute =
       window.location.hash ||
       restoredUiSession?.route ||

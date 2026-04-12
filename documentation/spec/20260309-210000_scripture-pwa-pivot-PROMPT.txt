@@ -42,3 +42,9 @@ All right. Well, I've been spending some time with another agent putting togethe
 <user_query>
 really saying that all of the events for all of the modules are in place and functioning as documented in there? I highly doubt that. It is as if I spent a week with the architect  a whole bunch of new plans and then I went to the builder to go build it, and the builder tells me yes that is already what we built. There’s nothing in the architect plan that has not already been built today.
 </user_query>
+
+=== Prompt 14 (debug panel state persistence follow-up) ===
+
+<user_query>
+Also, it was supposed to remember whether I had the debugger panel open across refresh, including which section I was on in the  panel
+</user_query>
