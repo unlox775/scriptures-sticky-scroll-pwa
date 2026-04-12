@@ -32,14 +32,50 @@ export function setOnLogCallback(cb) {
 }
 
 export function log(level, message, details = {}) {
+  const structuredPayload = normalizeToStructuredPayload(level, message, details);
   getSessionIdAsync().then((sid) => {
-    loggerDB.appendLogEntry(sid, level, message, details).catch((e) => {
+    loggerDB.appendLogEntry(sid, structuredPayload).catch((e) => {
       console.warn("[Logger] Failed to persist:", e);
     });
     if (onLogCallback) {
-      onLogCallback({ sessionId: sid, level, message, details });
+      onLogCallback({
+        sessionId: sid,
+        level: structuredPayload.level,
+        message: structuredPayload.message,
+        module: structuredPayload.module,
+        event: structuredPayload.event,
+        summary: structuredPayload.summary,
+        metrics: structuredPayload.metrics,
+        refs: structuredPayload.refs,
+        details: structuredPayload.details,
+      });
     }
   });
+}
+
+function normalizeToStructuredPayload(level, message, details) {
+  const candidate = details && typeof details === "object" ? details : {};
+  const isStructured = typeof candidate.module === "string" && typeof candidate.event === "string";
+  if (isStructured) {
+    return {
+      level,
+      message: candidate.summary || message,
+      module: candidate.module,
+      event: candidate.event,
+      summary: candidate.summary || message,
+      metrics: candidate.metrics,
+      refs: candidate.refs,
+      details: candidate.details,
+    };
+  }
+  return {
+    level,
+    message,
+    module: "domain.logging",
+    event: "legacy_log",
+    summary: message,
+    details: Object.keys(candidate).length ? candidate : undefined,
+  };
 }
 
 export function logDebug(msg, details) {
@@ -100,8 +136,25 @@ export async function getLogsForCopy(sessionIdOverride = null) {
       time: new Date(e.timestamp).toISOString(),
       level: e.level,
       message: e.message,
+      ...(e.module ? { module: e.module } : {}),
+      ...(e.event ? { event: e.event } : {}),
+      ...(e.summary ? { summary: e.summary } : {}),
+      ...(e.metrics ? { metrics: e.metrics } : {}),
+      ...(e.refs ? { refs: e.refs } : {}),
       ...(e.details ? { details: e.details } : {}),
     })),
+  };
+}
+
+export async function getLogsForAiShare(sessionIdOverride = null) {
+  const data = await getLogsForCopy(sessionIdOverride);
+  return {
+    version: 1,
+    channel: "manual-copy",
+    retrievalReady: false,
+    sessionId: data.sessionId,
+    startedAt: data.startedAt,
+    entries: data.entries,
   };
 }
 

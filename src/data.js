@@ -50,9 +50,10 @@ export async function loadIndex() {
 }
 
 export class BookCache {
-  constructor(maxBooks = 2) {
+  constructor(maxBooks = 2, hooks = {}) {
     this.maxBooks = maxBooks;
     this.cache = new Map();
+    this.hooks = hooks;
   }
 
   key(workId, bookId) {
@@ -72,12 +73,21 @@ export class BookCache {
     }
   }
 
+  snapshot() {
+    return {
+      maxBooks: this.maxBooks,
+      size: this.cache.size,
+      keysByRecency: Array.from(this.cache.keys()),
+    };
+  }
+
   async getBook(bookMeta) {
     const startedAt = performance.now();
     const key = this.key(bookMeta.workId, bookMeta.id);
     if (this.cache.has(key)) {
       const existing = this.cache.get(key);
       this.touch(key, existing);
+      this.hooks.onHit?.(bookMeta, this.snapshot());
       if (isDevMode()) {
         logEvent({
           level: "debug",
@@ -90,6 +100,7 @@ export class BookCache {
       }
       return existing;
     }
+    this.hooks.onMiss?.(bookMeta, this.snapshot());
     if (isDevMode()) {
       logEvent({
         level: "debug",

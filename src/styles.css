@@ -533,6 +533,89 @@ body {
   font-size: 1rem;
 }
 
+.dev-log-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.dev-log-toolbar input[type="search"] {
+  flex: 1;
+  min-width: 0;
+  padding: 0.35rem 0.55rem;
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.dev-log-visible-count {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.dev-log-filters {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.dev-filter-block {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.dev-filter-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.dev-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  padding: 0.2rem 0.45rem;
+  background: #1e293b;
+  font-size: 0.75rem;
+}
+
+.dev-filter-chip input {
+  margin: 0;
+}
+
+.dev-inline-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.dev-inline-label select {
+  padding: 0.25rem 0.45rem;
+  border: 1px solid #334155;
+  border-radius: 0.4rem;
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.dev-object-section {
+  margin-bottom: 0.75rem;
+}
+
+.dev-object-row {
+  margin-bottom: 0.35rem;
+}
+
+.dev-object-row summary {
+  cursor: pointer;
+}
+
 .dev-tab {
   padding: 0.35rem 0.75rem;
   background: transparent;

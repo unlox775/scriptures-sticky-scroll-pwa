@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#0f172a" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>Scripture Reader PWA</title>
-    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/index-VIEizswx.js"></script>
-    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/index-npSGhr1A.css">
+    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/index-CJnGpTBa.js"></script>
+    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/index-BVej5KF_.css">
   </head>
   <body>
     <div id="app">
@@ -60,7 +60,11 @@
       <div class="dev-drawer-tabs">
         <button class="dev-tab active" data-tab="storage">Storage</button>
         <button class="dev-tab" data-tab="logs">Logs</button>
-        <button id="devCopyLogs" class="dev-tab-action secondary-btn" type="button">Copy logs</button>
+        <button class="dev-tab" data-tab="objects">Objects</button>
+        <button class="dev-tab" data-tab="visibility">Visibility</button>
+        <button id="devCopyVisibleLogs" class="dev-tab-action secondary-btn" type="button">Copy visible</button>
+        <button id="devCopyLogs" class="dev-tab-action secondary-btn" type="button">Copy full</button>
+        <button id="devCopyAiShare" class="dev-tab-action secondary-btn" type="button">Copy AI-share</button>
         <div class="dev-log-session-controls" id="devLogSessionControls" hidden>
           <button id="devLogPrev" type="button" title="Previous session">←</button>
           <select id="devLogSessionSelect">
@@ -73,8 +77,15 @@
         <div id="devStorageContent"></div>
       </div>
       <div id="devLogsPanel" class="dev-panel" hidden>
+        <div class="dev-log-toolbar">
+          <input id="devLogSearch" type="search" placeholder="Search logs..." />
+          <span id="devLogVisibleCount" class="dev-log-visible-count">0/0 visible</span>
+        </div>
+        <div id="devLogFilters" class="dev-log-filters"></div>
         <div id="devLogEntries" class="dev-log-entries"></div>
       </div>
+      <div id="devObjectsPanel" class="dev-panel" hidden></div>
+      <div id="devVisibilityPanel" class="dev-panel" hidden></div>
     </div>
 
   </body>

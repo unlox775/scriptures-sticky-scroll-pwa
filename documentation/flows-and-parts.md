@@ -210,3 +210,15 @@ The minimum always-pass acceptance path for this product:
 5. Reload app -> route/state restore returns to same reader context.
 
 If this path regresses, the app’s primary value proposition is degraded.
+
+### 2.5 Current automation coverage
+
+- Master critical-path integration check is implemented at:
+  - `tests/e2e/master-critical-path.test.mjs`
+- Contract tests for module interfaces are implemented at:
+  - `tests/unit/bookmarks.test.mjs`
+  - `tests/unit/stateRouting.test.mjs`
+  - `tests/unit/bookCache.test.mjs`
+  - `tests/unit/readerEngine.test.mjs`
+
+These tests are executed via `npm test`.
