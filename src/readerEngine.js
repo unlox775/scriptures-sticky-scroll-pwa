@@ -1,6 +1,6 @@
 import { createTelemetryEmitter } from "./telemetry.js";
 
-const emitReader = createTelemetryEmitter("domain.readerEngine");
+const emitReader = createTelemetryEmitter("ui.readerEngine");
 
 function escapeHtml(value) {
   return value

@@ -9,12 +9,23 @@ const SESSION_EXPIRY_DAYS = 7;
 const MAX_ENTRIES_PER_SESSION = 500;
 
 let dbPromise = null;
+let indexedDbUnavailable = false;
 
 function openDB() {
+  if (indexedDbUnavailable) {
+    return Promise.reject(new Error("IndexedDB unavailable in this runtime"));
+  }
+  if (typeof indexedDB === "undefined") {
+    indexedDbUnavailable = true;
+    return Promise.reject(new Error("IndexedDB unavailable in this runtime"));
+  }
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onerror = () => reject(req.error);
+    req.onerror = () => {
+      indexedDbUnavailable = true;
+      reject(req.error);
+    };
     req.onsuccess = () => resolve(req.result);
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
@@ -94,6 +105,9 @@ export async function listLogSessions() {
 
 export async function getLogEntries(sessionId, limit = MAX_ENTRIES_PER_SESSION) {
   const db = await openDB();
+  if (typeof IDBKeyRange === "undefined") {
+    return [];
+  }
   return new Promise((resolve, reject) => {
     const t = db.transaction(ENTRY_STORE, "readonly");
     const index = t.objectStore(ENTRY_STORE).index("sessionId");

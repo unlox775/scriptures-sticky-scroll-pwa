@@ -25,3 +25,11 @@ test("stateToRoute emits home when empty state", () => {
   assert.equal(route, "#/");
   assert.deepEqual(parseRoute(route), { view: "home" });
 });
+
+test("parseRoute supports history bookmark route", () => {
+  const parsed = parseRoute("#/history/abc-123");
+  assert.deepEqual(parsed, {
+    view: "history",
+    bookmarkId: "abc-123",
+  });
+});

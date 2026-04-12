@@ -42,6 +42,11 @@ export function parseRoute(hash) {
       view: "books",
       workId: parts[1],
     };
+  } else if (parts[0] === "history" && parts.length >= 2) {
+    parsed = {
+      view: "history",
+      bookmarkId: parts[1],
+    };
   } else {
     parsed = { view: "home" };
   }

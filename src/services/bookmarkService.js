@@ -1,7 +1,7 @@
 import { createTelemetryEmitter } from "../telemetry.js";
 
 export function createBookmarkService(bookmarkStore) {
-  const emit = createTelemetryEmitter("domain.bookmarks");
+  const emit = createTelemetryEmitter("backend.bookmarks");
 
   return {
     getBookmarks() {

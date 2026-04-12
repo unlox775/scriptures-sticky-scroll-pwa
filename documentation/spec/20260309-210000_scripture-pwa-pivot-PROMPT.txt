@@ -30,3 +30,9 @@ There are merge conflicts with the `main` branch. Review them and classify wheth
 <user_query>
 I don’t know what happened on    I think I am OK with you looking at the changes and just picking whatever you want on the actual code change the main thing I want to get committed are the documentation files themselves so I would say save the merge conflict  in a directory that we commit for later  if we want to, but I just want you to get it ready to commit so that I can merge our documentation  in and then I will begin a complete pass on a full rewrite of all of the code
 </user_query>
+
+=== Prompt 12 (AI Modulization Standard alignment + reader persistence) ===
+
+<user_query>
+All right. Well, I've been spending some time with another agent putting together a the AI Modulization Standard. Specifically, the piece I want to focus on debug is the UI Reader Engine. The AI Modularization Standard is defining things in an idyllic way that it should be done. And it may not have anything to do with what the current code implemented on this is. It may be broken out into different modules, the modules might be different names. I need you to compute the full list of to-dos to try and get the code to line up with the documentation for the AI Modulization Standard. I need you to then go through and complete. everything on that to-do list unless there's anything you get stuck on. Get it all completed. And then one other feature I want you to add to the user interface. I want you to have it remember statefully the last screen that it was at. and even remember whether or not the debugging drawer was open and what panel the debugging drawer was on. That way I can just hit refresh on the page. Whenever you make a code change and I could be right where I left off right ready to debug where I was Get all that completed and let me know where to get Thank you.
+</user_query>

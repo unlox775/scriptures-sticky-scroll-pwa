@@ -2,7 +2,7 @@ import { parseRoute, pushRoute, saveRouteToStorage, loadRouteFromStorage, stateT
 import { createTelemetryEmitter } from "../telemetry.js";
 
 export function createNavigationService() {
-  const emit = createTelemetryEmitter("domain.routing");
+  const emit = createTelemetryEmitter("backend.routing");
 
   function push(route, options = {}) {
     const save = options.save === true;

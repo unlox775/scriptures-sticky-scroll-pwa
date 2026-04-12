@@ -19,6 +19,7 @@ const state = {
   currentWork: null,
   currentBook: null,
   currentLocation: null,
+  currentHistoryBookmarkId: null,
   deferredPrompt: null,
   lastAutoBookmarkAt: 0,
   lastAutoReference: "",
@@ -35,7 +36,13 @@ const state = {
   },
   lastRenderedLogEntries: [],
   lastRenderedSessionId: null,
+  devDrawerOpen: false,
+  devDrawerTab: "storage",
+  historyBookmarkId: null,
 };
+
+const UI_SESSION_KEY = "scripture-pwa-ui-session-v1";
+const DEBUG_DRAWER_TABS = new Set(["storage", "logs", "objects", "visibility"]);
 
 const viewIds = ["homeView", "booksView", "chaptersView", "historyView", "readerView"];
 const homeView = document.getElementById("homeView");
@@ -63,7 +70,7 @@ const content = document.getElementById("readerContent");
 const navigationService = createNavigationService();
 const visibilityService = createVisibilityService();
 const visibilityEmit = createTelemetryEmitter("ui.devDrawer");
-const dataEmit = createTelemetryEmitter("domain.dataAccess");
+const dataEmit = createTelemetryEmitter("backend.dataAccess");
 const uiEmit = {
   home: createTelemetryEmitter("ui.homeView"),
   books: createTelemetryEmitter("ui.booksView"),
@@ -115,6 +122,75 @@ function defaultLocationFromIndex() {
   };
 }
 
+function getVisibleViewId() {
+  return viewIds.find((id) => !document.getElementById(id).hidden) || "homeView";
+}
+
+function sanitizeDebugDrawerTab(value) {
+  return DEBUG_DRAWER_TABS.has(value) ? value : "storage";
+}
+
+function readUiSessionState() {
+  try {
+    const raw = localStorage.getItem(UI_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return {
+      viewId: viewIds.includes(parsed?.viewId) ? parsed.viewId : "homeView",
+      route: typeof parsed?.route === "string" ? parsed.route : "#/",
+      devDrawerOpen: parsed?.devDrawerOpen === true,
+      devDrawerTab: sanitizeDebugDrawerTab(parsed?.devDrawerTab),
+      historyBookmarkId: typeof parsed?.historyBookmarkId === "string" ? parsed.historyBookmarkId : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function persistUiSessionState(nextState = {}) {
+  const current = readUiSessionState() || {};
+  const merged = {
+    ...current,
+    ...nextState,
+  };
+  try {
+    localStorage.setItem(
+      UI_SESSION_KEY,
+      JSON.stringify({
+        viewId: viewIds.includes(merged.viewId) ? merged.viewId : "homeView",
+        route: typeof merged.route === "string" ? merged.route : "#/",
+        devDrawerOpen: merged.devDrawerOpen === true,
+        devDrawerTab: sanitizeDebugDrawerTab(merged.devDrawerTab),
+        historyBookmarkId: typeof merged.historyBookmarkId === "string" ? merged.historyBookmarkId : null,
+      }),
+    );
+  } catch {}
+}
+
+function persistUiSessionFromActiveView(partial = {}) {
+  persistUiSessionState({
+    viewId: getVisibleViewId(),
+    route: window.location.hash || navigationService.loadFallbackRoute() || "#/",
+    devDrawerOpen: state.devDrawerOpen,
+    devDrawerTab: state.devDrawerTab,
+    historyBookmarkId: state.historyBookmarkId,
+    ...partial,
+  });
+}
+
+function restoreUiSessionState() {
+  const restored = readUiSessionState();
+  if (!restored) return null;
+  state.devDrawerOpen = restored.devDrawerOpen;
+  state.devDrawerTab = restored.devDrawerTab;
+  state.historyBookmarkId = restored.historyBookmarkId;
+  return restored;
+}
+
+function persistRouteSnapshot(route) {
+  persistUiSessionFromActiveView({ route: route || "#/" });
+}
+
 function updateInstallVisibility(viewId) {
   installButton.hidden = !installCanShow || viewId !== "homeView";
 }
@@ -134,6 +210,7 @@ function setView(viewId) {
   updateHeader(viewId);
   updateInstallVisibility(viewId);
   updateDevEasterEggVisibility();
+  persistUiSessionFromActiveView({ viewId });
 }
 
 function updateHeader(viewId) {
@@ -179,6 +256,7 @@ function routeFromState() {
 
 function pushRouteAndSave(route) {
   navigationService.push(route, { save: true });
+  persistRouteSnapshot(route);
 }
 
 function ensureReaderService() {
@@ -268,6 +346,7 @@ function renderBookmarkRibbons() {
 
 function renderHistoryView(bookmark) {
   state.historyBookmarkName = `History: ${bookmark.name}`;
+  state.historyBookmarkId = bookmark.id;
   setView("historyView");
   uiEmit.history({
     level: "info",
@@ -289,6 +368,16 @@ function renderHistoryView(bookmark) {
     refs: { bookmarkId: bookmark.id },
     metrics: { rows: entries.length },
   });
+  persistRouteSnapshot(`#/history/${bookmark.id}`);
+  persistUiSessionFromActiveView({ viewId: "historyView", historyBookmarkId: bookmark.id });
+}
+
+function restoreHistoryBookmarkById(bookmarkId) {
+  if (!bookmarkId) return false;
+  const bookmark = bookmarkService.getBookmarks().find((item) => item.id === bookmarkId);
+  if (!bookmark) return false;
+  renderHistoryView(bookmark);
+  return true;
 }
 
 function renderHomeView() {
@@ -577,6 +666,7 @@ const STORAGE_LABELS = {
   "scripture-pwa-dev-mode-v1": "Developer Mode",
   "scripture-pwa-logs-v1": "Legacy Logs",
   "scripture-pwa-visibility-v1": "Visibility Config",
+  "scripture-pwa-ui-session-v1": "UI Session",
 };
 
 function formatStorageValue(raw) {
@@ -607,7 +697,7 @@ function renderStoragePanel(container) {
 
 function matchesFilters(entry) {
   const { modules, levels, search } = state.activeLogFilters;
-  if (modules.size > 0 && !modules.has(entry.module || "domain.logging")) return false;
+  if (modules.size > 0 && !modules.has(entry.module || "backend.logging")) return false;
   if (levels.size > 0 && !levels.has(entry.level)) return false;
   if (search) {
     const haystack = JSON.stringify({
@@ -625,7 +715,7 @@ function matchesFilters(entry) {
 
 function renderLogFilterControls(filtersEl, entries) {
   if (!filtersEl) return;
-  const modules = [...new Set(entries.map((e) => e.module || "domain.logging"))].sort();
+  const modules = [...new Set(entries.map((e) => e.module || "backend.logging"))].sort();
   const levelOptions = ["debug", "info", "warn", "error"];
   const moduleChecks = modules
     .map(
@@ -809,6 +899,44 @@ function renderVisibilityPanel(container) {
   });
 }
 
+function setActiveDebugTab(tabName) {
+  const safeTab = sanitizeDebugDrawerTab(tabName);
+  state.devDrawerTab = safeTab;
+  document.querySelectorAll(".dev-tab[data-tab]").forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.tab === safeTab);
+  });
+}
+
+function applyDebugDrawerState({
+  drawer,
+  showStorage,
+  showLogs,
+  showObjects,
+  showVisibility,
+  persist = true,
+  overrideOpen,
+} = {}) {
+  if (!drawer) return;
+  const targetOpen = typeof overrideOpen === "boolean" ? overrideOpen : state.devDrawerOpen;
+  drawer.hidden = !targetOpen;
+  state.devDrawerOpen = targetOpen;
+  const tab = sanitizeDebugDrawerTab(state.devDrawerTab);
+  state.devDrawerTab = tab;
+  setActiveDebugTab(tab);
+  if (targetOpen) {
+    if (tab === "storage") showStorage();
+    else if (tab === "logs") void showLogs();
+    else if (tab === "objects") showObjects();
+    else showVisibility();
+  }
+  if (persist) {
+    persistUiSessionFromActiveView({
+      devDrawerOpen: state.devDrawerOpen,
+      devDrawerTab: state.devDrawerTab,
+    });
+  }
+}
+
 function wireDevEasterEgg() {
   const egg = document.getElementById("devEasterEgg");
   if (!egg) return;
@@ -900,32 +1028,39 @@ function wireDeveloperMode() {
   }
 
   bugIcon?.addEventListener("click", () => {
-    if (drawer.hidden) {
-      drawer.hidden = false;
+    const opening = drawer.hidden;
+    if (opening) {
       visibilityEmit({
         level: "info",
         event: "debug_drawer_open",
         summary: "Debug drawer opened",
       });
-      const tab = document.querySelector(".dev-tab.active")?.dataset.tab || "storage";
-      if (tab === "storage") showStorage();
-      else if (tab === "logs") void showLogs();
-      else if (tab === "objects") showObjects();
-      else showVisibility();
-    } else {
-      drawer.hidden = true;
     }
+    applyDebugDrawerState({
+      drawer,
+      showStorage,
+      showLogs,
+      showObjects,
+      showVisibility,
+      overrideOpen: opening,
+    });
   });
 
   document.getElementById("devDrawerClose")?.addEventListener("click", () => {
-    drawer.hidden = true;
+    applyDebugDrawerState({
+      drawer,
+      showStorage,
+      showLogs,
+      showObjects,
+      showVisibility,
+      overrideOpen: false,
+    });
   });
 
   document.querySelectorAll(".dev-tab[data-tab]").forEach((tab) => {
     tab.addEventListener("click", () => {
-      document.querySelectorAll(".dev-tab[data-tab]").forEach((t) => t.classList.remove("active"));
-      tab.classList.add("active");
-      const tabName = tab.dataset.tab;
+      const tabName = sanitizeDebugDrawerTab(tab.dataset.tab);
+      setActiveDebugTab(tabName);
       visibilityEmit({
         level: "info",
         event: "debug_tab_change",
@@ -936,6 +1071,10 @@ function wireDeveloperMode() {
       else if (tabName === "logs") void showLogs();
       else if (tabName === "objects") showObjects();
       else showVisibility();
+      persistUiSessionFromActiveView({
+        devDrawerOpen: !drawer.hidden,
+        devDrawerTab: tabName,
+      });
     });
   });
 
@@ -1104,6 +1243,15 @@ function wireDeveloperMode() {
     });
   }
 
+  applyDebugDrawerState({
+    drawer,
+    showStorage,
+    showLogs,
+    showObjects,
+    showVisibility,
+    persist: false,
+  });
+
   setOnLogCallback(appendLogEntryLive);
 }
 
@@ -1253,6 +1401,12 @@ async function restoreFromRoute(route) {
       return;
     }
   }
+  if (parsed.view === "history") {
+    const targetBookmarkId = parsed.bookmarkId || state.historyBookmarkId;
+    if (restoreHistoryBookmarkById(targetBookmarkId)) {
+      return;
+    }
+  }
   renderHomeView();
 }
 
@@ -1277,13 +1431,23 @@ async function init() {
   wireDeveloperMode();
   wireInstallFlow();
 
-  const hash = window.location.hash || navigationService.loadFallbackRoute();
-  if (hash && hash !== "#/") {
-    await restoreFromRoute(hash);
+  const restoredUiSession = restoreUiSessionState();
+  const initialRoute =
+    window.location.hash ||
+    restoredUiSession?.route ||
+    navigationService.loadFallbackRoute() ||
+    "#/";
+  if (initialRoute && initialRoute !== "#/") {
+    await restoreFromRoute(initialRoute);
   } else {
-    renderHomeView();
+    if (restoredUiSession?.viewId === "historyView" && restoreHistoryBookmarkById(restoredUiSession.historyBookmarkId)) {
+      // History view restored from persisted UI session state.
+    } else {
+      renderHomeView();
+    }
   }
   navigationService.push(routeFromState());
+  persistUiSessionFromActiveView();
 
   window.addEventListener("hashchange", () => {
     const h = window.location.hash;

@@ -3,7 +3,7 @@ import { createTelemetryEmitter } from "../telemetry.js";
 import { createRuntimeMetrics } from "../runtimeMetrics.js";
 
 export function createReaderService({ scroller, content, getWorkMeta, bookCache, onAnchorChange }) {
-  const emit = createTelemetryEmitter("domain.readerEngine");
+  const emit = createTelemetryEmitter("ui.readerEngine");
   const metrics = createRuntimeMetrics();
   let reader = null;
 

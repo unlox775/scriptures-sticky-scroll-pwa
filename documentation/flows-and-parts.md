@@ -139,6 +139,8 @@ This split prevents accidental architecture blur where UI layout mechanics leak 
 
 ### 2.2 Back-end modules (non-environmental)
 
+**Telemetry naming contract:** Runtime instrumentation for these modules uses explicit `backend.*` IDs, and UI instrumentation uses explicit `ui.*` IDs. Legacy `domain.*` aliases were removed from active runtime emitters and are only retained in visibility-config migration mapping for old localStorage payloads.
+
 #### A) Navigation and Route State Module
 - **Files:** `src/stateRouting.js` + route orchestration in `src/main.js`
 - **Domain role:** Converts UI state to stable route, restores UI state from route, and persists fallback route state.
@@ -147,6 +149,7 @@ This split prevents accidental architecture blur where UI layout mechanics leak 
   - `parseRoute(hash)` -> parsed route descriptor
   - `pushRoute(route)` -> writes hash via history
   - `saveRouteToStorage(route)` / `loadRouteFromStorage()` -> fallback state
+- **Route restore coverage:** Supports `home`, `books`, `chapters`, `reader`, and `history` (`#/history/:bookmarkId`) to preserve deep-link/refresh continuity for the bookmark-history screen.
 - **Primary model objects:** Route descriptor (`view`, `workId`, `bookId`, `chapter`, `verse`), UI navigation state.
 
 #### B) Scripture Data Access + Book Cache Module
