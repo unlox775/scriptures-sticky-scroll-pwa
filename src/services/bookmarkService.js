@@ -10,6 +10,23 @@ export function createBookmarkService(bookmarkStore) {
     getBookmarkToFollow(location) {
       return bookmarkStore.getBookmarkToFollow(location);
     },
+    emitAutoFollowUpdateContext(location, source) {
+      const sourceEvent = source === "auto-scroll" || source === "scroll" ? "bookmark_auto_follow_update" : "bookmark_move";
+      emit({
+        level: sourceEvent === "bookmark_move" ? "info" : "debug",
+        event: sourceEvent,
+        summary: sourceEvent === "bookmark_move" ? "Moved bookmark" : "Auto-follow updated bookmark",
+        refs: {
+          source,
+          workId: location?.workId,
+          bookId: location?.bookId,
+          chapter: location?.chapter,
+          verse: location?.verse,
+        },
+        details: { reference: location?.reference },
+        minVerbosity: sourceEvent === "bookmark_move" ? "minimal" : "standard",
+      });
+    },
     getHistoryOnePerDay(bookmark) {
       return bookmarkStore.getHistoryOnePerDay(bookmark);
     },
@@ -27,10 +44,11 @@ export function createBookmarkService(bookmarkStore) {
     updateBookmarkLocation(bookmarkId, location, source = "manual") {
       const bookmark = bookmarkStore.updateBookmarkLocation(bookmarkId, location, source);
       if (bookmark) {
+        const isAutoFollow = source === "auto-scroll" || source === "scroll";
         emit({
           level: source === "manual" ? "info" : "debug",
-          event: source === "manual" ? "bookmark_move" : "bookmark_auto_follow_update",
-          summary: source === "manual" ? "Moved bookmark" : "Auto-follow updated bookmark",
+          event: isAutoFollow ? "bookmark_auto_follow_update" : "bookmark_move",
+          summary: isAutoFollow ? "Auto-follow updated bookmark" : "Moved bookmark",
           refs: {
             bookmarkId: bookmark.id,
             source,

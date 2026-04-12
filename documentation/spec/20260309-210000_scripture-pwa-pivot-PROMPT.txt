@@ -36,3 +36,9 @@ I don’t know what happened on    I think I am OK with you looking at the chang
 <user_query>
 All right. Well, I've been spending some time with another agent putting together a the AI Modulization Standard. Specifically, the piece I want to focus on debug is the UI Reader Engine. The AI Modularization Standard is defining things in an idyllic way that it should be done. And it may not have anything to do with what the current code implemented on this is. It may be broken out into different modules, the modules might be different names. I need you to compute the full list of to-dos to try and get the code to line up with the documentation for the AI Modulization Standard. I need you to then go through and complete. everything on that to-do list unless there's anything you get stuck on. Get it all completed. And then one other feature I want you to add to the user interface. I want you to have it remember statefully the last screen that it was at. and even remember whether or not the debugging drawer was open and what panel the debugging drawer was on. That way I can just hit refresh on the page. Whenever you make a code change and I could be right where I left off right ready to debug where I was Get all that completed and let me know where to get Thank you.
 </user_query>
+
+=== Prompt 13 (event parity challenge) ===
+
+<user_query>
+really saying that all of the events for all of the modules are in place and functioning as documented in there? I highly doubt that. It is as if I spent a week with the architect  a whole bunch of new plans and then I went to the builder to go build it, and the builder tells me yes that is already what we built. There’s nothing in the architect plan that has not already been built today.
+</user_query>

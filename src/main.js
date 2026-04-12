@@ -246,6 +246,63 @@ function stopAutoScrollAndUpdateUI() {
   autoScrollStart.textContent = "Auto-scroll";
 }
 
+function emitBookmarkFollowSkipped(anchor, meta, reason) {
+  dataEmit({
+    level: "debug",
+    event: "bookmark_follow_skipped",
+    summary: "Auto-follow update skipped",
+    refs: {
+      reason,
+      reference: anchor?.reference,
+      workId: anchor?.workId,
+      bookId: anchor?.bookId,
+      chapter: anchor?.chapter,
+      verse: anchor?.verse,
+    },
+    metrics: {
+      velocity: Number((meta?.velocity ?? 0).toFixed(1)),
+      averageVelocity: Number(getAverageVelocityOverWindow().toFixed(1)),
+      autoScrolling: Boolean(meta?.autoScrolling),
+    },
+    minVerbosity: "standard",
+  });
+}
+
+function emitInstallPromptChoice(choiceResult) {
+  const outcome = choiceResult?.outcome || "unknown";
+  dataEmit({
+    level: "info",
+    event: "install_prompt_accepted",
+    summary: "Install prompt completed",
+    details: { outcome },
+    minVerbosity: "minimal",
+  });
+}
+
+function emitInstallPromptAvailable() {
+  dataEmit({
+    level: "info",
+    event: "install_prompt_available",
+    summary: "Install prompt became available",
+    minVerbosity: "minimal",
+  });
+}
+
+const emitBookmarkTelemetry = createTelemetryEmitter("backend.bookmarks");
+
+function emitInstallIosInstructionsShown() {
+  dataEmit({
+    level: "info",
+    event: "install_ios_instructions_shown",
+    summary: "Displayed iOS install instructions",
+    minVerbosity: "minimal",
+  });
+}
+
+function isCurrentView(viewId) {
+  return !document.getElementById(viewId).hidden;
+}
+
 function routeFromState() {
   return navigationService.routeFromState({
     currentLocation: state.currentLocation,
@@ -359,7 +416,21 @@ function renderHistoryView(bookmark) {
     container: historyView,
     bookmark,
     entries,
-    onBack: () => renderHomeView(),
+    onBack: () => {
+      uiEmit.history({
+        level: "info",
+        event: "history_back_click",
+        summary: "Back clicked from history panel",
+        refs: { bookmarkId: bookmark.id },
+      });
+      uiEmit.history({
+        level: "info",
+        event: "history_back_to_home",
+        summary: "Navigated from history view back to home",
+        refs: { bookmarkId: bookmark.id },
+      });
+      renderHomeView();
+    },
   });
   uiEmit.history({
     level: "info",
@@ -378,6 +449,87 @@ function restoreHistoryBookmarkById(bookmarkId) {
   if (!bookmark) return false;
   renderHistoryView(bookmark);
   return true;
+}
+
+async function restoreFromRoute(route) {
+  navigationService.emitRestoreStart(route);
+  const parsed = navigationService.parse(route);
+  if (parsed.view === "reader" && parsed.workId && parsed.bookId) {
+    const work = state.index.works.find((w) => w.id === parsed.workId);
+    const book = work?.books.find((b) => b.id === parsed.bookId);
+    if (work && book) {
+      state.currentWork = work;
+      state.currentBook = book;
+      await openReader({
+        workId: work.id,
+        workTitle: work.title,
+        bookId: book.id,
+        bookTitle: book.title,
+        chapter: parsed.chapter || 1,
+        verse: parsed.verse || 1,
+        reference: `${book.title} ${parsed.chapter || 1}:${parsed.verse || 1}`,
+      });
+      navigationService.emitRestoreResolved("reader", {
+        workId: work.id,
+        bookId: book.id,
+        chapter: parsed.chapter || 1,
+        verse: parsed.verse || 1,
+      });
+      return;
+    }
+    navigationService.emitRestoreFail(route, "reader-target-missing", {
+      parsed,
+    });
+  }
+  if (parsed.view === "chapters" && parsed.workId && parsed.bookId) {
+    const work = state.index.works.find((w) => w.id === parsed.workId);
+    const book = work?.books.find((b) => b.id === parsed.bookId);
+    if (work && book) {
+      state.currentWork = work;
+      state.currentBook = book;
+      renderChaptersView();
+      navigationService.emitRestoreResolved("chapters", {
+        workId: work.id,
+        bookId: book.id,
+      });
+      return;
+    }
+    navigationService.emitRestoreFail(route, "chapters-target-missing", {
+      parsed,
+    });
+  }
+  if (parsed.view === "books" && parsed.workId) {
+    const work = state.index.works.find((w) => w.id === parsed.workId);
+    if (work) {
+      state.currentWork = work;
+      state.currentBook = null;
+      renderBooksView();
+      navigationService.emitRestoreResolved("books", {
+        workId: work.id,
+      });
+      return;
+    }
+    navigationService.emitRestoreFail(route, "books-target-missing", {
+      parsed,
+    });
+  }
+  if (parsed.view === "history") {
+    const targetBookmarkId = parsed.bookmarkId || state.historyBookmarkId;
+    if (restoreHistoryBookmarkById(targetBookmarkId)) {
+      navigationService.emitRestoreResolved("history", {
+        bookmarkId: targetBookmarkId,
+      });
+      return;
+    }
+    navigationService.emitRestoreFail(route, "history-bookmark-missing", {
+      parsed,
+      bookmarkId: targetBookmarkId,
+    });
+  }
+  navigationService.emitRestoreResolved("home", {
+    reason: "fallback-home",
+  });
+  renderHomeView();
 }
 
 function renderHomeView() {
@@ -565,17 +717,41 @@ function handleAnchorChange(anchor, meta) {
 
   const toFollow = bookmarkService.getBookmarkToFollow(anchor);
   if (!toFollow) {
+    emitBookmarkTelemetry({
+      level: "debug",
+      event: "bookmark_follow_skipped",
+      summary: "No bookmark candidate available to follow",
+      refs: { reason: "no-bookmark-candidate", reference: anchor?.reference },
+      minVerbosity: "standard",
+    });
     bookmarkStatusEl.textContent = "";
     readerStatusEl.hidden = true;
     return;
   }
-  if (shouldAutoFollow(anchor, meta)) {
+  const shouldFollow = shouldAutoFollow(anchor, meta);
+  if (shouldFollow) {
     bookmarkService.updateBookmarkLocation(toFollow.id, anchor, meta.autoScrolling ? "auto-scroll" : "scroll");
     state.lastAutoBookmarkAt = meta.timestamp;
     state.lastAutoReference = anchor.reference;
     bookmarkStatusEl.textContent = `${toFollow.name} updated`;
     readerStatusEl.hidden = false;
   } else {
+    let reason = "rate-limited";
+    const avg = getAverageVelocityOverWindow();
+    if (avg > SLOW_READING_THRESHOLD) reason = "velocity-too-high";
+    else if (anchor.reference === state.lastAutoReference && meta.timestamp - state.lastAutoBookmarkAt < 2200) reason = "same-reference-cooldown";
+    emitBookmarkTelemetry({
+      level: "debug",
+      event: "bookmark_follow_skipped",
+      summary: "Auto-follow update skipped by heuristics",
+      refs: { reason, reference: anchor?.reference },
+      metrics: {
+        velocity: Number((meta?.velocity ?? 0).toFixed(1)),
+        averageVelocity: Number(avg.toFixed(1)),
+        autoScrolling: Boolean(meta?.autoScrolling),
+      },
+      minVerbosity: "standard",
+    });
     bookmarkStatusEl.textContent = "";
     readerStatusEl.hidden = true;
   }
@@ -598,6 +774,7 @@ function wireInstallFlow() {
     e.preventDefault();
     state.deferredPrompt = e;
     installButton.textContent = "Install";
+    emitInstallPromptAvailable();
     if (!isStandaloneOrDesktopInstall()) {
       installCanShow = true;
       const viewId = viewIds.find((id) => !document.getElementById(id).hidden) || "homeView";
@@ -608,6 +785,7 @@ function wireInstallFlow() {
   if (isIOS() && !isStandaloneOrDesktopInstall()) {
     installButton.textContent = "Add to Home Screen";
     installCanShow = true;
+    emitInstallPromptAvailable();
     const viewId = viewIds.find((id) => !document.getElementById(id).hidden) || "homeView";
     updateInstallVisibility(viewId);
   }
@@ -615,7 +793,8 @@ function wireInstallFlow() {
   installButton.addEventListener("click", async () => {
     if (state.deferredPrompt) {
       state.deferredPrompt.prompt();
-      await state.deferredPrompt.userChoice;
+      const choiceResult = await state.deferredPrompt.userChoice;
+      emitInstallPromptChoice(choiceResult);
       state.deferredPrompt = null;
       installButton.hidden = true;
       return;
@@ -624,6 +803,7 @@ function wireInstallFlow() {
       const msg =
         "To add this app to your home screen:\n\n1. Tap the Share button (square with arrow) at the bottom of the screen\n2. Scroll and tap \"Add to Home Screen\"\n3. Tap Add";
       alert(msg);
+      emitInstallIosInstructionsShown();
     }
   });
 }
@@ -633,6 +813,13 @@ async function registerServiceWorker() {
   const base = import.meta.env.BASE_URL;
   const swUrl = base.endsWith("/") ? `${base}sw.js` : `${base}/sw.js`;
   await navigator.serviceWorker.register(swUrl, { scope: base });
+  dataEmit({
+    level: "info",
+    event: "service_worker_registered",
+    summary: "Service worker registered",
+    refs: { scope: base },
+    minVerbosity: "minimal",
+  });
 }
 
 function wireScrollerRibbonUpdates() {
@@ -917,6 +1104,7 @@ function applyDebugDrawerState({
   overrideOpen,
 } = {}) {
   if (!drawer) return;
+  const previouslyOpen = !drawer.hidden;
   const targetOpen = typeof overrideOpen === "boolean" ? overrideOpen : state.devDrawerOpen;
   drawer.hidden = !targetOpen;
   state.devDrawerOpen = targetOpen;
@@ -928,6 +1116,13 @@ function applyDebugDrawerState({
     else if (tab === "logs") void showLogs();
     else if (tab === "objects") showObjects();
     else showVisibility();
+  }
+  if (previouslyOpen && !targetOpen) {
+    visibilityEmit({
+      level: "info",
+      event: "debug_drawer_close",
+      summary: "Debug drawer closed",
+    });
   }
   if (persist) {
     persistUiSessionFromActiveView({
@@ -953,6 +1148,11 @@ function wireDevEasterEgg() {
       const bug = document.getElementById("devBugIcon");
       if (bug) bug.hidden = false;
       egg.hidden = true;
+      visibilityEmit({
+        level: "info",
+        event: "dev_mode_enabled",
+        summary: "Developer mode enabled",
+      });
       visibilityEmit({
         level: "info",
         event: "debug_easter_egg_enabled",
@@ -1168,6 +1368,12 @@ function wireDeveloperMode() {
         refs: { sessionId: sid },
       });
     } catch {
+      visibilityEmit({
+        level: "warn",
+        event: "debug_copy_logs_failed",
+        summary: "Failed to copy full session logs",
+        refs: { sessionId: sid },
+      });
       copyFullBtn.textContent = "Copy failed";
       setTimeout(() => {
         copyFullBtn.textContent = "Copy full";
@@ -1257,6 +1463,28 @@ function wireDeveloperMode() {
 
 function wireGlobalEvents() {
   homeButton.addEventListener("click", () => {
+    if (isCurrentView("readerView")) {
+      uiEmit.reader({
+        level: "info",
+        event: "reader_home_click",
+        summary: "Navigated from reader to home",
+      });
+    }
+    if (isCurrentView("booksView")) {
+      uiEmit.books({
+        level: "info",
+        event: "books_back_to_home",
+        summary: "Navigated from books view to home",
+      });
+    }
+    if (isCurrentView("historyView")) {
+      uiEmit.history({
+        level: "info",
+        event: "history_back_to_home",
+        summary: "Navigated from history view to home",
+        refs: { bookmarkId: state.historyBookmarkId },
+      });
+    }
     stopAutoScrollAndUpdateUI();
     pushRouteAndSave("#/");
     renderHomeView();
@@ -1329,12 +1557,39 @@ function wireGlobalEvents() {
   backButton.addEventListener("click", () => {
     stopAutoScrollAndUpdateUI();
     if (!readerView.hidden) {
+      uiEmit.reader({
+        level: "info",
+        event: "reader_back_to_chapters",
+        summary: "Navigated from reader to chapters",
+        refs: { workId: state.currentWork?.id, bookId: state.currentBook?.id },
+      });
       pushRouteAndSave(`#/b/${state.currentWork?.id || ""}/${state.currentBook?.id || ""}`);
       renderChaptersView();
     } else if (!chaptersView.hidden) {
+      uiEmit.chapters({
+        level: "info",
+        event: "chapters_back_to_books",
+        summary: "Navigated from chapters view to books",
+        refs: { workId: state.currentWork?.id, bookId: state.currentBook?.id },
+      });
       pushRouteAndSave(`#/w/${state.currentWork?.id || ""}`);
       renderBooksView();
     } else if (!booksView.hidden || !historyView.hidden) {
+      if (!booksView.hidden) {
+        uiEmit.books({
+          level: "info",
+          event: "books_back_to_home",
+          summary: "Navigated from books view to home",
+          refs: { workId: state.currentWork?.id },
+        });
+      } else {
+        uiEmit.history({
+          level: "info",
+          event: "history_back_to_home",
+          summary: "Navigated from history view to home",
+          refs: { bookmarkId: state.historyBookmarkId },
+        });
+      }
       pushRouteAndSave("#/");
       renderHomeView();
     }
@@ -1362,102 +1617,76 @@ function wireGlobalEvents() {
   });
 }
 
-async function restoreFromRoute(route) {
-  const parsed = navigationService.parse(route);
-  if (parsed.view === "reader" && parsed.workId && parsed.bookId) {
-    const work = state.index.works.find((w) => w.id === parsed.workId);
-    const book = work?.books.find((b) => b.id === parsed.bookId);
-    if (work && book) {
-      state.currentWork = work;
-      state.currentBook = book;
-      await openReader({
-        workId: work.id,
-        workTitle: work.title,
-        bookId: book.id,
-        bookTitle: book.title,
-        chapter: parsed.chapter || 1,
-        verse: parsed.verse || 1,
-        reference: `${book.title} ${parsed.chapter || 1}:${parsed.verse || 1}`,
-      });
-      return;
-    }
-  }
-  if (parsed.view === "chapters" && parsed.workId && parsed.bookId) {
-    const work = state.index.works.find((w) => w.id === parsed.workId);
-    const book = work?.books.find((b) => b.id === parsed.bookId);
-    if (work && book) {
-      state.currentWork = work;
-      state.currentBook = book;
-      renderChaptersView();
-      return;
-    }
-  }
-  if (parsed.view === "books" && parsed.workId) {
-    const work = state.index.works.find((w) => w.id === parsed.workId);
-    if (work) {
-      state.currentWork = work;
-      state.currentBook = null;
-      renderBooksView();
-      return;
-    }
-  }
-  if (parsed.view === "history") {
-    const targetBookmarkId = parsed.bookmarkId || state.historyBookmarkId;
-    if (restoreHistoryBookmarkById(targetBookmarkId)) {
-      return;
-    }
-  }
-  renderHomeView();
-}
-
 async function init() {
+  dataEmit({
+    level: "info",
+    event: "app_init_start",
+    summary: "Application initialization started",
+    minVerbosity: "minimal",
+  });
   logInfo("init start");
-  dataEmit({
-    level: "info",
-    event: "index_load_start",
-    summary: "Loading scripture index",
-  });
-  state.index = await loadIndex();
-  dataEmit({
-    level: "info",
-    event: "index_load_done",
-    summary: "Loaded scripture index",
-    metrics: { works: state.index.works.length },
-  });
 
-  wireGlobalEvents();
-  wireScrollerRibbonUpdates();
-  wireDevEasterEgg();
-  wireDeveloperMode();
-  wireInstallFlow();
+  try {
+    dataEmit({
+      level: "info",
+      event: "index_load_start",
+      summary: "Loading scripture index",
+    });
+    state.index = await loadIndex();
+    dataEmit({
+      level: "info",
+      event: "index_load_done",
+      summary: "Loaded scripture index",
+      metrics: { works: state.index.works.length },
+    });
 
-  const restoredUiSession = restoreUiSessionState();
-  const initialRoute =
-    window.location.hash ||
-    restoredUiSession?.route ||
-    navigationService.loadFallbackRoute() ||
-    "#/";
-  if (initialRoute && initialRoute !== "#/") {
-    await restoreFromRoute(initialRoute);
-  } else {
-    if (restoredUiSession?.viewId === "historyView" && restoreHistoryBookmarkById(restoredUiSession.historyBookmarkId)) {
+    wireGlobalEvents();
+    wireScrollerRibbonUpdates();
+    wireDevEasterEgg();
+    wireDeveloperMode();
+    wireInstallFlow();
+
+    const restoredUiSession = restoreUiSessionState();
+    const initialRoute =
+      window.location.hash ||
+      restoredUiSession?.route ||
+      navigationService.loadFallbackRoute() ||
+      "#/";
+    if (initialRoute && initialRoute !== "#/") {
+      await restoreFromRoute(initialRoute);
+    } else if (restoredUiSession?.viewId === "historyView" && restoreHistoryBookmarkById(restoredUiSession.historyBookmarkId)) {
       // History view restored from persisted UI session state.
     } else {
       renderHomeView();
     }
+    navigationService.push(routeFromState());
+    persistUiSessionFromActiveView();
+
+    window.addEventListener("hashchange", () => {
+      const h = window.location.hash;
+      if (h && !document.getElementById("homeView").hidden) {
+        void restoreFromRoute(h);
+      }
+    });
+
+    await registerServiceWorker();
+    dataEmit({
+      level: "info",
+      event: "app_init_complete",
+      summary: "Application initialization completed",
+      minVerbosity: "minimal",
+    });
+    logInfo("init complete");
+  } catch (err) {
+    dataEmit({
+      level: "error",
+      event: "app_init_fail",
+      summary: "Application initialization failed",
+      details: { errorMessage: err?.message || String(err) },
+      minVerbosity: "minimal",
+    });
+    throw err;
   }
-  navigationService.push(routeFromState());
-  persistUiSessionFromActiveView();
-
-  window.addEventListener("hashchange", () => {
-    const h = window.location.hash;
-    if (h && !document.getElementById("homeView").hidden) {
-      restoreFromRoute(h);
-    }
-  });
-
-  await registerServiceWorker();
-  logInfo("init complete");
 }
 
 init().catch((err) => {

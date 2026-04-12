@@ -73,3 +73,17 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 1. Optional: replace the node-level critical-path integration test with browser-driven Playwright coverage if full UI e2e is required.
 2. Optional: configure a secure remote retrieval endpoint/workflow to move `getLogsForAiShare` from manual-copy contract to direct fetch.
 3. Continue iterating from this pivot; append new prompts to the pivot PROMPT log.
+
+### Prompt 13: Event parity challenge and remediation
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Audit claim: verify whether documented module events are truly implemented | Done | Ran direct doc-vs-code event audit against `documentation/ai-human-visibility/*.md` and `src/**/*.js`; identified concrete gaps before remediation |
+| Implement missing routing restore telemetry events | Done | Added `route_restore_start`, `route_restore_resolved`, `route_restore_fail` emitters in `src/services/navigationService.js`; integrated into restore flow in `src/main.js` |
+| Implement missing app-shell lifecycle + install/service-worker telemetry events | Done | Added `app_init_start`, `app_init_complete`, `app_init_fail`, `install_prompt_available`, `install_prompt_accepted`, `install_ios_instructions_shown`, `service_worker_registered` instrumentation in `src/main.js` |
+| Implement missing reader-engine control-loop telemetry taxonomy | Done | Reader engine now emits documented granular events (`reader_chapter_load_attempt/success/failure/skip`, threshold/boundary/blocked signals, jump attempt/done/fail, trim events) in `src/readerEngine.js` |
+| Implement missing debug drawer close/failure and dev-mode activation events | Done | Added `debug_drawer_close`, `debug_copy_logs_failed`, and `dev_mode_enabled` in `src/main.js` |
+| Implement missing back-navigation and history interaction events | Done | Added `reader_back_to_chapters`, `reader_home_click`, `chapters_back_to_books`, `books_back_to_home`, `history_back_click`, `history_back_to_home` via `src/main.js` + `src/views/historyView.js` callback wiring |
+| Implement missing bookmark follow-skip telemetry | Done | Added explicit `bookmark_follow_skipped` emission path in `handleAnchorChange` (`src/main.js`) |
+| Preserve existing stateful refresh/debug-drawer behavior while adding telemetry | Done | Session restore behavior retained; telemetry augmentation added without removing resume UX |
+| Re-verify build/test after remediation | Done | `npm test` and `npm run build` both pass after event parity updates |
