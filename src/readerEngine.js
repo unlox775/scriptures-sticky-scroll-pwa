@@ -31,6 +31,10 @@ export class ReaderEngine {
     this.autoScroll = { active: false, speed: 90, frameId: null, lastTs: 0, accumulatedPx: 0 };
     this.isBuffering = false;
     this.destroyed = false;
+    this.lastManualScrollAt = 0;
+    this.lastResizeAt = 0;
+    this.lastReanchorAt = 0;
+    this.pendingResizeTimer = null;
 
     this.boundOnScroll = this.onScroll.bind(this);
     this.boundOnResize = this.onResize.bind(this);
@@ -43,6 +47,10 @@ export class ReaderEngine {
     this.stopAutoScroll();
     this.scroller.removeEventListener("scroll", this.boundOnScroll);
     window.removeEventListener("resize", this.boundOnResize);
+    if (this.pendingResizeTimer) {
+      window.clearTimeout(this.pendingResizeTimer);
+      this.pendingResizeTimer = null;
+    }
     if (this.frameId) {
       cancelAnimationFrame(this.frameId);
     }
@@ -166,15 +174,69 @@ export class ReaderEngine {
   }
 
   async onResize() {
-    const anchor = this.captureAnchor();
-    if (!anchor) {
+    if (this.destroyed) return;
+    if (this.autoScroll.active) {
+      emitReader({
+        level: "debug",
+        event: "reader_resize_reanchor_skipped",
+        summary: "Skipped resize re-anchor while auto-scroll active",
+        details: { reason: "auto-scroll-active" },
+        throttleMs: 1200,
+        minVerbosity: "deep",
+      });
       return;
     }
-    // Keep the currently-read text locked at 25% viewport after reflow.
-    await this.jumpToLocation(anchor, 0.25);
+    const now = performance.now();
+    this.lastResizeAt = now;
+    if (now - this.lastManualScrollAt < 600) {
+      emitReader({
+        level: "debug",
+        event: "reader_resize_reanchor_skipped",
+        summary: "Skipped resize re-anchor during active manual scroll momentum",
+        details: {
+          reason: "recent-manual-scroll",
+          msSinceManualScroll: Math.round(now - this.lastManualScrollAt),
+        },
+        throttleMs: 1200,
+        minVerbosity: "deep",
+      });
+      return;
+    }
+    if (this.pendingResizeTimer) {
+      clearTimeout(this.pendingResizeTimer);
+      this.pendingResizeTimer = null;
+    }
+    this.pendingResizeTimer = setTimeout(async () => {
+      this.pendingResizeTimer = null;
+      if (this.destroyed || this.autoScroll.active) return;
+      const elapsed = performance.now() - this.lastResizeAt;
+      if (elapsed < 140) return;
+      if (performance.now() - this.lastReanchorAt < 900) return;
+      const anchor = this.captureAnchor();
+      if (!anchor) {
+        return;
+      }
+      this.lastReanchorAt = performance.now();
+      // Keep currently-read text at 25% after true layout reflow, not momentum scroll.
+      await this.jumpToLocation(anchor, 0.25);
+      emitReader({
+        level: "debug",
+        event: "reader_resize_reanchor_applied",
+        summary: "Applied resize re-anchor after layout settle",
+        refs: {
+          workId: anchor.workId,
+          bookId: anchor.bookId,
+          chapter: anchor.chapter,
+          verse: anchor.verse,
+        },
+        minVerbosity: "deep",
+      });
+    }, 180);
+    return;
   }
 
   onScroll() {
+    this.lastManualScrollAt = performance.now();
     if (this.frameId) {
       return;
     }
@@ -194,6 +256,16 @@ export class ReaderEngine {
     const anchor = this.captureAnchor();
     if (!anchor || !this.onAnchorChange) {
       return;
+    }
+    if (this.autoScroll.active && Math.abs(velocity) > this.autoScroll.speed * 2.5) {
+      // Manual gesture likely occurred while auto-scroll was active; immediately cede control.
+      this.stopAutoScroll();
+      emitReader({
+        level: "info",
+        event: "reader_autoscroll_stop",
+        summary: "Auto-scroll stopped due to manual scroll override",
+        refs: { reason: "manual-scroll-override" },
+      });
     }
     this.onAnchorChange(anchor, {
       velocity,

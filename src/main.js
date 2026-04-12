@@ -1,7 +1,15 @@
 import "./styles.css";
 import { loadIndex, BookCache } from "./data.js";
 import { BookmarkStore } from "./bookmarks.js";
-import { getLogsForCopy, getLogsForAiShare, getAllSessions, getEntriesForSession, setOnLogCallback, logInfo } from "./logger.js";
+import {
+  getLogsForCopy,
+  getLogsForAiShare,
+  getAllSessions,
+  getEntriesForSession,
+  setOnLogCallback,
+  logInfo,
+  ensureLogSession,
+} from "./logger.js";
 import { createNavigationService } from "./services/navigationService.js";
 import { createBookmarkService } from "./services/bookmarkService.js";
 import { createReaderService } from "./services/readerService.js";
@@ -36,6 +44,7 @@ const state = {
   },
   lastRenderedLogEntries: [],
   lastRenderedSessionId: null,
+  liveLogSessionStartedAt: null,
   devDrawerOpen: false,
   devDrawerTab: "storage",
   historyBookmarkId: null,
@@ -680,6 +689,7 @@ function shouldAutoFollow(anchor, meta) {
 }
 
 function handleAnchorChange(anchor, meta) {
+  const source = meta?.autoScrolling ? "auto-scroll" : "scroll";
   state.currentLocation = anchor;
   const chapterRef = anchor ? `${anchor.bookTitle ?? ""} ${anchor.chapter ?? 1}` : "";
   if (chapterRef && chapterRef !== state.lastChapterRef) {
@@ -710,6 +720,7 @@ function handleAnchorChange(anchor, meta) {
       velocity: Number((meta?.velocity ?? 0).toFixed(1)),
       averageVelocity: Number(getAverageVelocityOverWindow().toFixed(1)),
       autoScrolling: Boolean(meta?.autoScrolling),
+      source,
     },
     throttleMs: 650,
     minVerbosity: "standard",
@@ -730,7 +741,7 @@ function handleAnchorChange(anchor, meta) {
   }
   const shouldFollow = shouldAutoFollow(anchor, meta);
   if (shouldFollow) {
-    bookmarkService.updateBookmarkLocation(toFollow.id, anchor, meta.autoScrolling ? "auto-scroll" : "scroll");
+    bookmarkService.updateBookmarkLocation(toFollow.id, anchor, source);
     state.lastAutoBookmarkAt = meta.timestamp;
     state.lastAutoReference = anchor.reference;
     bookmarkStatusEl.textContent = `${toFollow.name} updated`;
@@ -966,12 +977,19 @@ function renderLogEntries(entries, container, countEl) {
 }
 
 async function loadLogSessionsAndRender(selectEl, entriesEl, filtersEl, countEl) {
-  const sessions = await getAllSessions();
+  let sessions = await getAllSessions();
+  if (sessions.length === 0) {
+    await ensureLogSession();
+    sessions = await getAllSessions();
+  }
   selectEl.innerHTML =
     sessions.length === 0
       ? '<option value="">No sessions</option>'
       : sessions.map((s) => `<option value="${escapeHtml(s.id)}">${new Date(s.startedAt).toLocaleString()}</option>`).join("");
-  const first = sessions[0] ?? null;
+  const preferredSession = state.lastRenderedSessionId
+    ? sessions.find((s) => s.id === state.lastRenderedSessionId) || null
+    : null;
+  const first = preferredSession ?? sessions[0] ?? null;
   selectEl.value = first?.id ?? "";
   selectEl.dataset.sessions = JSON.stringify(sessions);
   state.lastRenderedSessionId = first?.id ?? null;
@@ -1044,6 +1062,19 @@ function renderVisibilityPanel(container) {
   container.innerHTML = `
     <section class="dev-object-section">
       <h4>Visibility Controls</h4>
+      <p class="dev-visibility-help">
+        <strong>Quick start:</strong> check the modules you want (for example <code>ui.readerView</code> and
+        <code>ui.readerEngine</code>). Turning on any module auto-enables global visibility.
+      </p>
+      <ol class="dev-visibility-steps">
+        <li>Choose modules here.</li>
+        <li>Set verbosity (<code>minimal</code>, <code>standard</code>, or <code>deep</code>).</li>
+        <li>Open the <strong>Logs</strong> tab and scroll/use the app.</li>
+      </ol>
+      <p class="dev-visibility-help">
+        Verbosity guide: <code>minimal</code> = lifecycle milestones, <code>standard</code> = normal debug flow,
+        <code>deep</code> = high-detail loop diagnostics.
+      </p>
       <label class="dev-filter-chip"><input type="checkbox" id="devVisibilityEnabled" ${config.enabled ? "checked" : ""} /><span>Global visibility enabled</span></label>
       <label class="dev-inline-label">Verbosity:
         <select id="devVisibilityVerbosity">
@@ -1196,6 +1227,7 @@ function wireDeveloperMode() {
   }
 
   async function showLogs() {
+    await ensureLogSession();
     storagePanel.hidden = true;
     logsPanel.hidden = false;
     if (objectsPanel) objectsPanel.hidden = true;
@@ -1433,7 +1465,12 @@ function wireDeveloperMode() {
 
   function appendLogEntryLive(entry) {
     if (!logsPanel || logsPanel.hidden || !logEntries) return;
+    if (!logSelect || !logFilters || !logCount) return;
     const sid = logSelect?.value || "";
+    if (!sid) {
+      void loadLogSessionsAndRender(logSelect, logEntries, logFilters, logCount).then(updatePrevNextButtons);
+      return;
+    }
     if (entry.sessionId !== sid) return;
     const synthetic = { ...entry, timestamp: Date.now() };
     if (!matchesFilters(synthetic)) return;

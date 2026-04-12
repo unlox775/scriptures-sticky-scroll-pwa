@@ -175,6 +175,14 @@ At true start/end limits, module emits:
 - `reader_jump_attempt` / `reader_jump_done` / `reader_jump_fail`
 - `reader_capture_anchor_miss`
 - `reader_autoscroll_tick` (dev-sampled)
+- `reader_resize_reanchor_applied`
+- `reader_resize_reanchor_skipped`
+
+### Verbosity mapping
+
+- **Minimal** (default signal): `reader_open_start`, `reader_open_ready`
+- **Standard** (day-to-day debugging): `reader_chapter_load_attempt`, `reader_chapter_load_success`, `reader_chapter_load_skip`, `reader_jump_attempt`, `reader_jump_done`, `reader_jump_fail`, `reader_autoscroll_tick`
+- **Deep** (control-loop internals): `reader_buffer_state`, `reader_buffer_threshold_crossed`, `reader_buffer_boundary`, `reader_buffer_blocked`, `reader_buffer_trim_skipped`, `reader_chunk_trimmed`, `reader_capture_anchor_miss`, `reader_resize_reanchor_applied`, `reader_resize_reanchor_skipped`
 
 ---
 

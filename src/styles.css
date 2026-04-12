@@ -630,6 +630,19 @@ body {
   background: #1e293b;
 }
 
+.dev-visibility-help {
+  margin: 0.35rem 0;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.dev-visibility-steps {
+  margin: 0.35rem 0 0.5rem 1rem;
+  padding: 0;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
 .dev-panel {
   flex: 1;
   min-height: 0;

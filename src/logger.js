@@ -39,6 +39,10 @@ export function getSessionIdOrCreate() {
   return sessionId;
 }
 
+export async function ensureLogSession() {
+  return getSessionIdAsync();
+}
+
 let onLogCallback = null;
 
 export function setOnLogCallback(cb) {

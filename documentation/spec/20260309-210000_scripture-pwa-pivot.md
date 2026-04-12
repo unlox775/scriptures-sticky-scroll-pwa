@@ -94,3 +94,15 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 |------|--------|---------------|
 | Ensure debug drawer open/closed state restores on refresh | Done | Moved `restoreUiSessionState()` to run before `wireDeveloperMode()` in `src/main.js`, so initial drawer render consumes restored state |
 | Ensure active debug drawer tab restores on refresh | Done | Same sequencing fix ensures `applyDebugDrawerState(...persist:false)` applies restored `state.devDrawerTab` during startup wire-up |
+
+### Prompt 15: Logging enable UX + unexpected scrolling follow-up
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Make logging activation intuitive from Visibility tab | Done | `src/services/visibilityService.js` now auto-enables global visibility when any module is enabled; visibility toggle telemetry includes `globalEnabled` state |
+| Ensure Logs tab can immediately show active session events | Done | `src/logger.js` adds `ensureLogSession`; `src/main.js` ensures a session exists before rendering Logs and reloads sessions when live entries arrive with no selected session |
+| Add in-app guidance for visibility/verbosity controls | Done | `src/main.js` visibility panel now includes quick-start instructions and verbosity guidance; styled in `src/styles.css` |
+| Prevent resize-induced re-jumps from feeling like forced auto-scroll | Done | `src/readerEngine.js` debounces/guards resize re-anchors, skips during active/manual momentum, and emits `reader_resize_reanchor_skipped/applied` deep diagnostics |
+| Stop auto-scroll when manual swipe overrides it | Done | `src/readerEngine.js` detects high-velocity manual override while auto-scroll is active and emits `reader_autoscroll_stop` with reason |
+| Prevent auto-follow bookmark writes while auto-scroll is running | Done | `src/main.js` `handleAnchorChange` now short-circuits bookmark auto-follow during active auto-scroll and emits explicit `bookmark_follow_skipped` reason |
+| Document minimal/standard/deep behavior where users look for it | Done | Updated `documentation/ai-human-visibility/ui-dev-drawer.md` and `documentation/ai-human-visibility/ui-reader-engine.md` with verbosity guidance and deep-event examples |
