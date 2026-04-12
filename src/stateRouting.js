@@ -1,3 +1,5 @@
+import { isDevMode, logEvent } from "./logger.js";
+
 const ROUTE_KEY = "scripture-pwa-route-v1";
 
 export function stateToRoute(state) {
@@ -20,34 +22,56 @@ export function stateToRoute(state) {
 export function parseRoute(hash) {
   const h = (hash || window.location.hash || "#/").replace(/^#/, "") || "/";
   const parts = h.split("/").filter(Boolean);
+  let parsed;
   if (parts[0] === "r" && parts.length >= 5) {
-    return {
+    parsed = {
       view: "reader",
       workId: parts[1],
       bookId: parts[2],
       chapter: parseInt(parts[3], 10) || 1,
       verse: parseInt(parts[4], 10) || 1,
     };
-  }
-  if (parts[0] === "b" && parts.length >= 3) {
-    return {
+  } else if (parts[0] === "b" && parts.length >= 3) {
+    parsed = {
       view: "chapters",
       workId: parts[1],
       bookId: parts[2],
     };
-  }
-  if (parts[0] === "w" && parts.length >= 2) {
-    return {
+  } else if (parts[0] === "w" && parts.length >= 2) {
+    parsed = {
       view: "books",
       workId: parts[1],
     };
+  } else {
+    parsed = { view: "home" };
   }
-  return { view: "home" };
+  if (isDevMode()) {
+    logEvent({
+      level: "debug",
+      module: "backend.routing",
+      event: "route_parse",
+      summary: "Parsed route string",
+      refs: {
+        hash: h,
+      },
+      details: parsed,
+    });
+  }
+  return parsed;
 }
 
 export function pushRoute(route) {
   const h = route.startsWith("#") ? route : `#${route}`;
   if (window.location.hash !== h) {
+    if (isDevMode()) {
+      logEvent({
+        level: "debug",
+        module: "backend.routing",
+        event: "route_push",
+        summary: "Updating browser hash route",
+        refs: { route: h },
+      });
+    }
     window.history.replaceState(null, "", h);
   }
 }
@@ -55,12 +79,31 @@ export function pushRoute(route) {
 export function saveRouteToStorage(route) {
   try {
     localStorage.setItem(ROUTE_KEY, route);
+    if (isDevMode()) {
+      logEvent({
+        level: "debug",
+        module: "backend.routing",
+        event: "route_persist",
+        summary: "Saved route fallback in local storage",
+        refs: { storageKey: ROUTE_KEY, route },
+      });
+    }
   } catch {}
 }
 
 export function loadRouteFromStorage() {
   try {
-    return localStorage.getItem(ROUTE_KEY) || "#/";
+    const route = localStorage.getItem(ROUTE_KEY) || "#/";
+    if (isDevMode()) {
+      logEvent({
+        level: "debug",
+        module: "backend.routing",
+        event: "route_fallback_loaded",
+        summary: "Loaded route fallback from local storage",
+        refs: { storageKey: ROUTE_KEY, route },
+      });
+    }
+    return route;
   } catch {
     return "#/";
   }

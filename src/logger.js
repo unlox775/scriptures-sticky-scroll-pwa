@@ -94,6 +94,36 @@ export function logError(msg, details) {
   log("error", msg, details);
 }
 
+function maybeField(value) {
+  return value == null ? undefined : value;
+}
+
+/**
+ * Emit a structured, module-oriented event envelope that stays readable for
+ * humans while remaining machine-filterable for tooling and AI debugging.
+ */
+export function logEvent({
+  level = "debug",
+  module,
+  event,
+  summary,
+  refs,
+  metrics,
+  details,
+} = {}) {
+  const safeSummary = summary || event || "event";
+  const envelope = {
+    module: maybeField(module),
+    event: maybeField(event),
+    summary: maybeField(summary),
+    refs: maybeField(refs),
+    metrics: maybeField(metrics),
+    details: maybeField(details),
+  };
+  const compact = Object.fromEntries(Object.entries(envelope).filter(([, v]) => v !== undefined));
+  log(level, safeSummary, compact);
+}
+
 export async function getLogsForCopy(sessionIdOverride = null) {
   const sid = sessionIdOverride ?? (await getSessionIdAsync());
   const sessions = await loggerDB.listLogSessions();

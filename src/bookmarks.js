@@ -1,3 +1,5 @@
+import { isDevMode, logEvent } from "./logger.js";
+
 const BOOKMARKS_KEY = "scripture-pwa-bookmarks-v1";
 
 function isoDateOnly(timestamp) {
@@ -46,6 +48,20 @@ export class BookmarkStore {
   constructor() {
     this.state = sanitizeState(this.loadRaw());
     this.save();
+    if (isDevMode()) {
+      logEvent({
+        level: "debug",
+        module: "backend.bookmarks",
+        event: "bookmark_store_init",
+        summary: "Bookmark store initialized",
+        metrics: {
+          bookmarks: this.state.bookmarks.length,
+        },
+        refs: {
+          activeBookmarkId: this.state.activeBookmarkId,
+        },
+      });
+    }
   }
 
   loadRaw() {
@@ -74,6 +90,15 @@ export class BookmarkStore {
     }
     this.state.activeBookmarkId = bookmarkId;
     this.save();
+    if (isDevMode()) {
+      logEvent({
+        level: "debug",
+        module: "backend.bookmarks",
+        event: "bookmark_active_set",
+        summary: "Changed active bookmark",
+        refs: { bookmarkId },
+      });
+    }
   }
 
   createBookmark(name = "Bookmark") {
@@ -86,6 +111,15 @@ export class BookmarkStore {
     };
     this.state.bookmarks.push(bookmark);
     this.save();
+    logEvent({
+      level: "info",
+      module: "backend.bookmarks",
+      event: "bookmark_create",
+      summary: "Created new bookmark",
+      refs: { bookmarkId: bookmark.id },
+      details: { name: bookmark.name },
+      metrics: { totalBookmarks: this.state.bookmarks.length },
+    });
     return bookmark;
   }
 
@@ -121,6 +155,22 @@ export class BookmarkStore {
         }
       }
     }
+    if (isDevMode()) {
+      logEvent({
+        level: "debug",
+        module: "backend.bookmarks",
+        event: "bookmark_follow_candidate",
+        summary: best ? "Selected bookmark to auto-follow" : "No bookmark eligible for auto-follow",
+        refs: {
+          currentRef: currentLocation.reference,
+          bookmarkId: best?.id,
+        },
+        details: {
+          bookmarkName: best?.name,
+          bookmarkRef: best?.location?.reference,
+        },
+      });
+    }
     return best;
   }
 
@@ -145,6 +195,30 @@ export class BookmarkStore {
       bookmark.history.push(historyItem);
     }
     this.save();
+    logEvent({
+      level: source === "manual" ? "info" : "debug",
+      module: "backend.bookmarks",
+      event: "bookmark_location_updated",
+      summary: "Updated bookmark location",
+      refs: {
+        bookmarkId,
+        source,
+      },
+      details: {
+        reference: location.reference,
+        day,
+      },
+    });
+    if (isDevMode()) {
+      logEvent({
+        level: "debug",
+        module: "backend.bookmarks",
+        event: "bookmark_history_snapshot",
+        summary: "Recorded one-per-day bookmark history snapshot",
+        refs: { bookmarkId, day },
+        metrics: { historyCount: bookmark.history.length },
+      });
+    }
     return bookmark;
   }
 
