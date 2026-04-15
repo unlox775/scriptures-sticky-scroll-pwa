@@ -273,6 +273,27 @@ function emitBookmarkFollowSkipped(anchor, meta, reason) {
       averageVelocity: Number(getAverageVelocityOverWindow().toFixed(1)),
       autoScrolling: Boolean(meta?.autoScrolling),
     },
+    throttleMs: 2000,
+    sampleEvery: 2,
+    minVerbosity: "standard",
+  });
+}
+
+function emitBookmarkFollowCandidate(anchor, candidate) {
+  emitBookmarkTelemetry({
+    level: "debug",
+    event: "bookmark_follow_candidate",
+    summary: candidate ? "Selected bookmark to auto-follow" : "No bookmark eligible for auto-follow",
+    refs: {
+      currentRef: anchor?.reference,
+      bookmarkId: candidate?.id,
+    },
+    details: {
+      bookmarkName: candidate?.name,
+      bookmarkRef: candidate?.location?.reference,
+    },
+    throttleMs: 2000,
+    sampleEvery: 2,
     minVerbosity: "standard",
   });
 }
@@ -722,19 +743,15 @@ function handleAnchorChange(anchor, meta) {
       autoScrolling: Boolean(meta?.autoScrolling),
       source,
     },
-    throttleMs: 650,
+    throttleMs: 2000,
+    sampleEvery: 2,
     minVerbosity: "standard",
   });
 
   const toFollow = bookmarkService.getBookmarkToFollow(anchor);
+  emitBookmarkFollowCandidate(anchor, toFollow);
   if (!toFollow) {
-    emitBookmarkTelemetry({
-      level: "debug",
-      event: "bookmark_follow_skipped",
-      summary: "No bookmark candidate available to follow",
-      refs: { reason: "no-bookmark-candidate", reference: anchor?.reference },
-      minVerbosity: "standard",
-    });
+    emitBookmarkFollowSkipped(anchor, meta, "no-bookmark-candidate");
     bookmarkStatusEl.textContent = "";
     readerStatusEl.hidden = true;
     return;
@@ -761,6 +778,8 @@ function handleAnchorChange(anchor, meta) {
         averageVelocity: Number(avg.toFixed(1)),
         autoScrolling: Boolean(meta?.autoScrolling),
       },
+      throttleMs: 2000,
+      sampleEvery: 2,
       minVerbosity: "standard",
     });
     bookmarkStatusEl.textContent = "";

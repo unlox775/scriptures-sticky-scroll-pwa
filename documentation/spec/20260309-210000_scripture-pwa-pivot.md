@@ -106,3 +106,12 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Stop auto-scroll when manual swipe overrides it | Done | `src/readerEngine.js` detects high-velocity manual override while auto-scroll is active and emits `reader_autoscroll_stop` with reason |
 | Prevent auto-follow bookmark writes while auto-scroll is running | Done | `src/main.js` `handleAnchorChange` now short-circuits bookmark auto-follow during active auto-scroll and emits explicit `bookmark_follow_skipped` reason |
 | Document minimal/standard/deep behavior where users look for it | Done | Updated `documentation/ai-human-visibility/ui-dev-drawer.md` and `documentation/ai-human-visibility/ui-reader-engine.md` with verbosity guidance and deep-event examples |
+
+### Prompt 16: Telemetry firehose reduction + debounce
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Reduce high-frequency reader telemetry to practical debug cadence | Done | Added stricter `throttleMs` + `sampleEvery` controls across deep reader-engine loop events in `src/readerEngine.js` (`reader_buffer_state`, threshold/boundary/blocked, trim, chapter-load-skip) |
+| Debounce/noise-control bookmark follow diagnostics | Done | Removed per-anchor candidate emission from `src/bookmarks.js`; consolidated candidate + skipped diagnostics in `src/main.js` with shared throttled emit helpers |
+| Lower standard-level anchor chatter while preserving trend visibility | Done | Increased `reader_anchor_change` telemetry gate to slower cadence in `src/main.js` (`throttleMs` + sampling) |
+| Document expected event frequency caps in “factory tour” docs | Done | Updated `documentation/ai-human-visibility/ui-reader-engine.md` and `documentation/ai-human-visibility/backend-bookmarks.md` with practical expected-frequency and interpretation guidance |

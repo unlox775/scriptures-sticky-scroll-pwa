@@ -229,6 +229,7 @@ export class ReaderEngine {
           chapter: anchor.chapter,
           verse: anchor.verse,
         },
+        throttleMs: 1500,
         minVerbosity: "deep",
       });
     }, 180);
@@ -390,7 +391,8 @@ export class ReaderEngine {
           firstOffset: first?.offsetTop,
           lastEnd: last ? last.offsetTop + last.offsetHeight : null,
         },
-        throttleMs: 900,
+        throttleMs: 2000,
+        sampleEvery: 2,
         minVerbosity: "deep",
       });
 
@@ -404,6 +406,8 @@ export class ReaderEngine {
             activeBuffer: topBuffer,
             threshold: minBuffer,
           },
+          throttleMs: 1500,
+          sampleEvery: 2,
           minVerbosity: "deep",
         });
         await this.ensureLoaded(this.minLoadedSeq() - 1, "prepend");
@@ -421,6 +425,7 @@ export class ReaderEngine {
             activeBuffer: topBuffer,
             threshold: minBuffer,
           },
+          throttleMs: 5000,
           minVerbosity: "deep",
         });
         emitReader({
@@ -433,6 +438,7 @@ export class ReaderEngine {
             activeBuffer: topBuffer,
             threshold: minBuffer,
           },
+          throttleMs: 5000,
           minVerbosity: "deep",
         });
       }
@@ -447,6 +453,8 @@ export class ReaderEngine {
             activeBuffer: bottomBuffer,
             threshold: minBuffer,
           },
+          throttleMs: 1500,
+          sampleEvery: 2,
           minVerbosity: "deep",
         });
         await this.ensureLoaded(this.maxLoadedSeq() + 1, "append");
@@ -464,6 +472,7 @@ export class ReaderEngine {
             activeBuffer: bottomBuffer,
             threshold: minBuffer,
           },
+          throttleMs: 5000,
           minVerbosity: "deep",
         });
         emitReader({
@@ -476,6 +485,7 @@ export class ReaderEngine {
             activeBuffer: bottomBuffer,
             threshold: minBuffer,
           },
+          throttleMs: 5000,
           minVerbosity: "deep",
         });
       }
@@ -493,6 +503,8 @@ export class ReaderEngine {
               activeBuffer: topBuffer,
               threshold: maxBuffer,
             },
+            throttleMs: 2500,
+            sampleEvery: 3,
             minVerbosity: "deep",
           });
           break;
@@ -510,6 +522,7 @@ export class ReaderEngine {
           refs: { seq },
           metrics: { removedHeight },
           details: { direction: "top" },
+          throttleMs: 1200,
           minVerbosity: "deep",
         });
       }
@@ -527,6 +540,8 @@ export class ReaderEngine {
               activeBuffer: bottomBuffer,
               threshold: maxBuffer,
             },
+            throttleMs: 2500,
+            sampleEvery: 3,
             minVerbosity: "deep",
           });
           break;
@@ -541,6 +556,7 @@ export class ReaderEngine {
           summary: "Trimmed chapter chunk from bottom buffer",
           refs: { seq },
           details: { direction: "bottom" },
+          throttleMs: 1200,
           minVerbosity: "deep",
         });
       }
@@ -556,6 +572,7 @@ export class ReaderEngine {
         event: "reader_chapter_load_skip",
         summary: "Skipped chapter load out of sequence bounds",
         details: { seq, mode, reason: "out-of-range" },
+        throttleMs: 5000,
         minVerbosity: "deep",
       });
       return;
@@ -567,6 +584,8 @@ export class ReaderEngine {
         summary: "Skipped chapter load already present in buffer",
         refs: { seq },
         details: { mode, reason: "already-loaded" },
+        throttleMs: 3000,
+        sampleEvery: 3,
         minVerbosity: "deep",
       });
       return;
