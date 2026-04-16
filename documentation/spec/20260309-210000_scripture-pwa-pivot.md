@@ -124,6 +124,15 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Update build tooling for React | Done | Added `react`, `react-dom`, `@vitejs/plugin-react`; updated `vite.config.js` and `index.html` for JSX entry |
 | Allow broad behavior reset (no preservation constraints) | Done | Rebuilt navigation/reader shell as a simplified React flow (Home → Books → Chapters → Reader) around `loadIndex` + `BookCache` |
 
+### Prompt 20/21: Continue infinite scroll across all books in a work
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Continue reader infinite scroll across book boundaries in the selected work | Done | Added cross-book chapter sequence helper `src/readerSequence.js`; reader append flow in `src/App.jsx` now advances chapter-by-chapter across all books in the active work |
+| Stop infinite scrolling only at end-of-work boundary | Done | `getNextChapterPointer(...)` returns `null` only for final chapter of the final book in work; `hasNext` is derived from that pointer in `src/App.jsx` |
+| Add explicit unit coverage for work-wide sequence behavior | Done | Added `tests/unit/readerSequence.test.mjs` covering in-book advance, cross-book advance (Mosiah → Alma), and end-of-work stop |
+| Track deferred React follow-up features without implementing them yet | Done | Added `documentation/todo-react-rebuild-followups.md` with scoped TODO list for deferred features (anchor updates, richer debug drawer/log visibility, history/bookmarks, route/session restore, auto-scroll controls) |
+
 ### Prompt 16: Telemetry firehose reduction + debounce
 
 | Item | Status | Where / Notes |

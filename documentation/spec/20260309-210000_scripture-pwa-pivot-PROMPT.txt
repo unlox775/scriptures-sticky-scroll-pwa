@@ -80,3 +80,19 @@ Force a react rewrite first. My gosh don’t do vanilla JS!!
 <user_query>
 No, the current reader behavior is 100% broken change as much as you want to do abroad rearranged without worrying about preserving anything
 </user_query>
+
+=== Prompt 20 (cross-book infinite scroll + feature TODO list) ===
+
+<user_query>
+OK, that is awesome. You have remade the app and I can scroll all the way through one book. Now continue I should be able to continue onto the next book that is I should be able to go from Mosiah to Alma, etc..
+
+Also make sure you have a to-do list to eventually re-add other features like the  scrolling  updating the  the current   at, but don’t implement any of those features yet just get the infinite scroller working
+</user_query>
+
+=== Prompt 21 (explicit whole-work scroll boundary clarification) ===
+
+<user_query>
+no, through All the books of the whole work, dummy!
+
+Stop scrolling at the end of the work
+</user_query>

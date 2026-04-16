@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { loadIndex, BookCache } from "./data.js";
 import { createTelemetryEmitter } from "./telemetry.js";
+import { getNextChapterPointer } from "./readerSequence.js";
 
 const VIEWS = {
   HOME: "home",
@@ -17,18 +18,28 @@ function referenceFor(bookTitle, chapter, verse = 1) {
   return `${bookTitle} ${chapter}:${verse}`;
 }
 
-function buildInitialReaderState(bookMeta, chapterData) {
+function buildInitialReaderState(workMeta, chapterData) {
+  const nextPointer = getNextChapterPointer(workMeta, {
+    bookId: chapterData.bookId,
+    chapter: chapterData.chapter,
+  });
   return {
     chapters: [chapterData],
-    minChapter: chapterData.chapter,
-    maxChapter: chapterData.chapter,
-    hasPrev: chapterData.chapter > 1,
-    hasNext: chapterData.chapter < bookMeta.chapterCount,
+    nextPointer,
+    hasNext: Boolean(nextPointer),
   };
 }
 
 function normalizeVerseText(verse) {
   return `${verse.verse}. ${verse.text}`;
+}
+
+function normalizePointer(pointer) {
+  if (!pointer?.bookId || !pointer?.chapter) return null;
+  return {
+    bookId: pointer.bookId,
+    chapter: pointer.chapter,
+  };
 }
 
 function Header({ view, title, onBackHome, onBack }) {
@@ -118,7 +129,7 @@ function ReaderView({
           loader={<p className="chapter-hint">Loading more chapters…</p>}
           scrollableTarget="readerScroller"
           style={{ overflow: "visible" }}
-          endMessage={<p className="chapter-hint">Reached the end of this book.</p>}
+          endMessage={<p className="chapter-hint">Reached the end of this work.</p>}
         >
           <div id="readerContent" className="reader-content">
             {chapterBlocks.map((chapter) => (
@@ -259,7 +270,7 @@ export default function App() {
       setIsLoadingMore(true);
       try {
         const chapterBlock = await loadChapter(selectedWork, selectedBook, chapter);
-        setReaderState(buildInitialReaderState(selectedBook, chapterBlock));
+        setReaderState(buildInitialReaderState(selectedWork, chapterBlock));
         setView(VIEWS.READER);
         uiReaderEmit({
           level: "info",
@@ -282,31 +293,40 @@ export default function App() {
   );
 
   const loadMoreReader = useCallback(async () => {
-    if (!readerState || !selectedWork || !selectedBook || isLoadingMore || !readerState.hasNext) return;
-    const nextChapter = readerState.maxChapter + 1;
-    if (nextChapter > selectedBook.chapterCount) {
-      setReaderState((current) => (current ? { ...current, hasNext: false } : current));
+    if (!readerState || !selectedWork || isLoadingMore || !readerState.nextPointer) return;
+    const nextPointer = normalizePointer(readerState.nextPointer);
+    const targetBook = selectedWork.books.find((book) => book.id === nextPointer.bookId);
+    if (!targetBook) {
+      setReaderState((current) => (current ? { ...current, nextPointer: null, hasNext: false } : current));
       return;
     }
     setIsLoadingMore(true);
     try {
-      const chapterBlock = await loadChapter(selectedWork, selectedBook, nextChapter);
+      const chapterBlock = await loadChapter(selectedWork, targetBook, nextPointer.chapter);
       setReaderState((current) => {
         if (!current) return current;
+        const upcomingPointer = getNextChapterPointer(selectedWork, {
+          bookId: chapterBlock.bookId,
+          chapter: chapterBlock.chapter,
+        });
+        const normalizedUpcoming = normalizePointer(upcomingPointer);
         const nextBlocks = [...current.chapters, chapterBlock];
         return {
           chapters: nextBlocks,
-          minChapter: current.minChapter,
-          maxChapter: nextChapter,
-          hasPrev: current.minChapter > 1,
-          hasNext: nextChapter < selectedBook.chapterCount,
+          nextPointer: normalizedUpcoming,
+          hasNext: Boolean(normalizedUpcoming),
         };
       });
       uiReaderEmit({
         level: "debug",
         event: "reader_chapter_append",
         summary: "Appended next chapter via infinite scroll",
-        refs: { workId: selectedWork.id, bookId: selectedBook.id, chapter: nextChapter },
+        refs: {
+          workId: selectedWork.id,
+          bookId: chapterBlock.bookId,
+          chapter: chapterBlock.chapter,
+          reference: referenceFor(chapterBlock.bookTitle, chapterBlock.chapter, 1),
+        },
         minVerbosity: "standard",
       });
     } catch (err) {
@@ -314,7 +334,7 @@ export default function App() {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [readerState, selectedWork, selectedBook, loadChapter, isLoadingMore]);
+  }, [readerState, selectedWork, loadChapter, isLoadingMore]);
 
   const handleBackHome = useCallback(() => {
     setView(VIEWS.HOME);
