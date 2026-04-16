@@ -107,6 +107,23 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Prevent auto-follow bookmark writes while auto-scroll is running | Done | `src/main.js` `handleAnchorChange` now short-circuits bookmark auto-follow during active auto-scroll and emits explicit `bookmark_follow_skipped` reason |
 | Document minimal/standard/deep behavior where users look for it | Done | Updated `documentation/ai-human-visibility/ui-dev-drawer.md` and `documentation/ai-human-visibility/ui-reader-engine.md` with verbosity guidance and deep-event examples |
 
+### Prompt 16: Reduce telemetry firehose cadence
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Reduce scroll-time reader telemetry volume | Done | Added stricter throttling/sampling for high-frequency `ui.readerEngine` deep diagnostics in `src/readerEngine.js` |
+| Reduce bookmark follow diagnostics spam | Done | Moved `bookmark_follow_candidate` emission out of `src/bookmarks.js` store hot-path into UI orchestration in `src/main.js` with cadence gating |
+| Align docs with anti-firehose expectations | Done | Updated `documentation/ai-human-visibility/ui-reader-engine.md` + `documentation/ai-human-visibility/backend-bookmarks.md` with expected event frequency guidance |
+
+### Prompt 18/19: Force React rewrite and allow broad reset
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Migrate app runtime from vanilla DOM entry to React | Done | Replaced `src/main.js` with React entry `src/main.jsx` + root app `src/App.jsx`; removed legacy runtime entry |
+| Integrate off-the-shelf infinite scroll library in reader | Done | Added `react-infinite-scroll-component` and wired reader chapter append flow through it in `src/App.jsx` |
+| Update build tooling for React | Done | Added `react`, `react-dom`, `@vitejs/plugin-react`; updated `vite.config.js` and `index.html` for JSX entry |
+| Allow broad behavior reset (no preservation constraints) | Done | Rebuilt navigation/reader shell as a simplified React flow (Home → Books → Chapters → Reader) around `loadIndex` + `BookCache` |
+
 ### Prompt 16: Telemetry firehose reduction + debounce
 
 | Item | Status | Where / Notes |

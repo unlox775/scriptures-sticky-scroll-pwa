@@ -733,3 +733,219 @@ body {
   word-break: break-all;
 }
 
+@media (max-width: 780px) {
+  .reader-toolbar {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .reader-toolbar .secondary-btn,
+  .reader-toolbar .primary-btn {
+    flex: 1;
+  }
+
+  .reader-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .reader-controls .auto-scroll-slider-wrap {
+    max-width: none;
+    flex: 1;
+  }
+
+  .segmented-control {
+    flex-wrap: wrap;
+  }
+}
+
+.header-subtitle {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #cbd5e1;
+}
+
+.loading-panel,
+.error-panel,
+.empty-state {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin: 1rem;
+}
+
+.error-panel pre {
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.reader-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+
+.reader-title {
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.reader-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.reader-scroller {
+  overflow: auto;
+}
+
+.reader-chapter-list {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.reader-chapter-item {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: #fff;
+  padding: 0.85rem;
+}
+
+.reader-chapter-item h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.reader-chapter-item p {
+  margin: 0.35rem 0;
+  line-height: 1.6;
+}
+
+.segmented-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.segmented-control button {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.segmented-control button.active {
+  background: #0f172a;
+  color: #fff;
+  border-color: #0f172a;
+}
+
+.floating-debug {
+  position: fixed;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 40;
+}
+
+.floating-debug button {
+  background: #111827;
+  color: #fff;
+  border: 1px solid #111827;
+  border-radius: 999px;
+  width: 2.5rem;
+  height: 2.5rem;
+  cursor: pointer;
+}
+
+.header-subtitle {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.loading-panel,
+.error-panel,
+.empty-state {
+  margin: 1rem;
+}
+
+.error-panel pre {
+  white-space: pre-wrap;
+}
+
+.reader-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+}
+
+.reader-title {
+  font-weight: 600;
+}
+
+.reader-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.segmented-control {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.segmented-control button {
+  border: 0;
+  padding: 0.35rem 0.75rem;
+  background: #fff;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.segmented-control button.active {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.reader-chapter-list {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.reader-chapter-item {
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: #fff;
+  padding: 0.85rem;
+}
+
+.reader-chapter-item h3 {
+  margin: 0 0 0.35rem;
+}
+
+.reader-chapter-item p {
+  margin: 0.2rem 0;
+  line-height: 1.6;
+}
+
+.reader-chapter-item .chapter-link {
+  margin-top: 0.35rem;
+  display: inline-block;
+}
+

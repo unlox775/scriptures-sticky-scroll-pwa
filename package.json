@@ -15,9 +15,13 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@bencrowder/scriptures-json": "^1.0.1"
+    "@bencrowder/scriptures-json": "^1.0.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-infinite-scroll-component": "^7.1.0"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^5.2.0",
     "vite": "^7.3.1"
   }
 }
