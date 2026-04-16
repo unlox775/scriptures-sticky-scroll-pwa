@@ -5,15 +5,29 @@ const MAX_ENTRIES_PER_SESSION = 500;
 
 let sessionId = null;
 let sessionPromise = null;
+let persistenceAvailable = true;
+
+function createEphemeralSessionId() {
+  return `session-ephemeral-${Date.now()}`;
+}
 
 async function getSessionIdAsync() {
   if (sessionId) return sessionId;
   if (sessionPromise) return sessionPromise;
-  sessionPromise = loggerDB.createLogSession().then((s) => {
-    sessionId = s.id;
-    loggerDB.purgeOldSessions().catch(() => {});
-    return sessionId;
-  });
+  sessionPromise = loggerDB
+    .createLogSession()
+    .then((s) => {
+      sessionId = s.id;
+      persistenceAvailable = true;
+      loggerDB.purgeOldSessions().catch(() => {});
+      return sessionId;
+    })
+    .catch(() => {
+      // Non-browser runtimes (tests/SSR) may not expose IndexedDB.
+      persistenceAvailable = false;
+      sessionId = createEphemeralSessionId();
+      return sessionId;
+    });
   return sessionPromise;
 }
 
@@ -25,6 +39,10 @@ export function getSessionIdOrCreate() {
   return sessionId;
 }
 
+export async function ensureLogSession() {
+  return getSessionIdAsync();
+}
+
 let onLogCallback = null;
 
 export function setOnLogCallback(cb) {
@@ -34,9 +52,11 @@ export function setOnLogCallback(cb) {
 export function log(level, message, details = {}) {
   const structuredPayload = normalizeToStructuredPayload(level, message, details);
   getSessionIdAsync().then((sid) => {
-    loggerDB.appendLogEntry(sid, structuredPayload).catch((e) => {
-      console.warn("[Logger] Failed to persist:", e);
-    });
+    if (persistenceAvailable) {
+      loggerDB.appendLogEntry(sid, structuredPayload).catch((e) => {
+        console.warn("[Logger] Failed to persist:", e);
+      });
+    }
     if (onLogCallback) {
       onLogCallback({
         sessionId: sid,
@@ -71,7 +91,7 @@ function normalizeToStructuredPayload(level, message, details) {
   return {
     level,
     message,
-    module: "domain.logging",
+    module: "backend.logging",
     event: "legacy_log",
     summary: message,
     details: Object.keys(candidate).length ? candidate : undefined,
@@ -125,6 +145,13 @@ export function logEvent({
 }
 
 export async function getLogsForCopy(sessionIdOverride = null) {
+  if (!persistenceAvailable) {
+    return {
+      sessionId: sessionIdOverride ?? sessionId ?? createEphemeralSessionId(),
+      startedAt: Date.now(),
+      entries: [],
+    };
+  }
   const sid = sessionIdOverride ?? (await getSessionIdAsync());
   const sessions = await loggerDB.listLogSessions();
   const session = sessions.find((s) => s.id === sid);
@@ -159,10 +186,16 @@ export async function getLogsForAiShare(sessionIdOverride = null) {
 }
 
 export async function getAllSessions() {
+  if (!persistenceAvailable) {
+    return [];
+  }
   return loggerDB.listLogSessions();
 }
 
 export async function getEntriesForSession(sid) {
+  if (!persistenceAvailable) {
+    return [];
+  }
   return loggerDB.getLogEntries(sid, MAX_ENTRIES_PER_SESSION);
 }
 

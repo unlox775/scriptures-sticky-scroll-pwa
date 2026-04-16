@@ -175,6 +175,27 @@ At true start/end limits, module emits:
 - `reader_jump_attempt` / `reader_jump_done` / `reader_jump_fail`
 - `reader_capture_anchor_miss`
 - `reader_autoscroll_tick` (dev-sampled)
+- `reader_resize_reanchor_applied`
+- `reader_resize_reanchor_skipped`
+
+### Verbosity mapping
+
+- **Minimal** (default signal): `reader_open_start`, `reader_open_ready`
+- **Standard** (day-to-day debugging): `reader_chapter_load_attempt`, `reader_chapter_load_success`, `reader_chapter_load_skip`, `reader_jump_attempt`, `reader_jump_done`, `reader_jump_fail`, `reader_autoscroll_tick`
+- **Deep** (control-loop internals): `reader_buffer_state`, `reader_buffer_threshold_crossed`, `reader_buffer_boundary`, `reader_buffer_blocked`, `reader_buffer_trim_skipped`, `reader_chunk_trimmed`, `reader_capture_anchor_miss`, `reader_resize_reanchor_applied`, `reader_resize_reanchor_skipped`
+
+### Frequency policy (anti-firehose)
+
+Deep diagnostics are intentionally rate-limited so a manual scroll does not flood logs:
+
+- `reader_buffer_state`: throttled to ~1 event per 2s and sampled
+- `reader_buffer_threshold_crossed`: throttled/sampled
+- `reader_buffer_trim_skipped`: heavily throttled/sampled
+- `reader_buffer_boundary`, `reader_buffer_blocked`: throttled to boundary-level cadence
+- `reader_chunk_trimmed`: throttled
+- `reader_chapter_load_skip`: throttled/sampled
+
+If you need more detail for a short repro window, increase verbosity to deep and reproduce briefly; for longer sessions, stay in standard to keep logs actionable.
 
 ---
 

@@ -155,22 +155,6 @@ export class BookmarkStore {
         }
       }
     }
-    if (isDevMode()) {
-      logEvent({
-        level: "debug",
-        module: "backend.bookmarks",
-        event: "bookmark_follow_candidate",
-        summary: best ? "Selected bookmark to auto-follow" : "No bookmark eligible for auto-follow",
-        refs: {
-          currentRef: currentLocation.reference,
-          bookmarkId: best?.id,
-        },
-        details: {
-          bookmarkName: best?.name,
-          bookmarkRef: best?.location?.reference,
-        },
-      });
-    }
     return best;
   }
 

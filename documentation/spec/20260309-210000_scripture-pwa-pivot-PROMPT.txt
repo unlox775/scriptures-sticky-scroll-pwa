@@ -30,3 +30,69 @@ There are merge conflicts with the `main` branch. Review them and classify wheth
 <user_query>
 I don’t know what happened on    I think I am OK with you looking at the changes and just picking whatever you want on the actual code change the main thing I want to get committed are the documentation files themselves so I would say save the merge conflict  in a directory that we commit for later  if we want to, but I just want you to get it ready to commit so that I can merge our documentation  in and then I will begin a complete pass on a full rewrite of all of the code
 </user_query>
+
+=== Prompt 12 (AI Modulization Standard alignment + reader persistence) ===
+
+<user_query>
+All right. Well, I've been spending some time with another agent putting together a the AI Modulization Standard. Specifically, the piece I want to focus on debug is the UI Reader Engine. The AI Modularization Standard is defining things in an idyllic way that it should be done. And it may not have anything to do with what the current code implemented on this is. It may be broken out into different modules, the modules might be different names. I need you to compute the full list of to-dos to try and get the code to line up with the documentation for the AI Modulization Standard. I need you to then go through and complete. everything on that to-do list unless there's anything you get stuck on. Get it all completed. And then one other feature I want you to add to the user interface. I want you to have it remember statefully the last screen that it was at. and even remember whether or not the debugging drawer was open and what panel the debugging drawer was on. That way I can just hit refresh on the page. Whenever you make a code change and I could be right where I left off right ready to debug where I was Get all that completed and let me know where to get Thank you.
+</user_query>
+
+=== Prompt 13 (event parity challenge) ===
+
+<user_query>
+really saying that all of the events for all of the modules are in place and functioning as documented in there? I highly doubt that. It is as if I spent a week with the architect  a whole bunch of new plans and then I went to the builder to go build it, and the builder tells me yes that is already what we built. There’s nothing in the architect plan that has not already been built today.
+</user_query>
+
+=== Prompt 14 (debug panel state persistence follow-up) ===
+
+<user_query>
+Also, it was supposed to remember whether I had the debugger panel open across refresh, including which section I was on in the  panel
+</user_query>
+
+=== Prompt 15 (logging enable UX + unexpected scrolling behavior) ===
+
+<user_query>
+Alright, this is what I'm seeing. I've given you two screenshots. I don't think I am turning on the logging, like UI Reader Engine. I'm obviously on that page. I'm trying to scroll. The weird thing that's going on too, I don't know, the only, it seems like you're trying to actually adjust the scrolling of the page. Like I've had it where I just load the page somehow. So first off, I need to fix the log. I don't actually know how to turn it on. It should be as simple as me. Go into the visibility thing, checking the box. Switch to the logs. So I'll just enable logging for UI ReaderView, ReaderEngine. And then go to the other page, to the logs page. I should start seeing whenever events start firing, they should start building up there. That should be as simple as it is. That logging depth minimal versus deep. I guess that's fine. I changed it to deep just to understand what the heck's going on. Your tours don't mention anything about what events are going deep. The AI, human visibility, don't see anything about minimal versus deep. Theoretically, I would at least need to give some pointers as to which things are in here showing as deep or not. I don't know. I don't even know what they're supposed to be. So I need pointers on that, how to actually turn on logging. Secondly, just behaviors or weird things that I'm seeing. When I load, just refresh the page or whatever, it's remembering where I am. It, uh, when I scroll down, though, I can tell when it's normal iPhone scrolling. I'm wondering if you're, like, if you wrote code to, like, override the regular scrolling logic of the page. Maybe that's necessary. I don't know. But I don't really want to mess with the default scrolling of the device. Because iPhones scroll different than Androids. I'm just hoping that when you're scrolling, it actually is doing the normal scrolling stuff. I scroll fast, faster, faster, faster. The iPhone does amplified scrolling, you know. As far as I know, other than the auto scroll mechanism, nothing should be messing with the scrolling. All your infinite scrollers should be written in a way that is just letting it... that it's letting it just scroll, watching the locations and then on times when it needs to mess with what's being scrolled, then it does a quick adjust if it's appending stuff to the top or bottom. I don't know. I'm not quite 100% sure what, how you solve it. But it just shouldn't be messing with the scroll. It just started auto-moving me. I scrolled a little bit, then I kept scrolling at a certain fixed volume, almost like it was stuck in auto-scroll. Anyway, I don't really know what's going on. I haven't yet been able to see any logs yet, but that's my visible feedback so far.
+</user_query>
+
+=== Prompt 16 (reduce telemetry firehose and debounce high-frequency events) ===
+
+<user_query>
+Well turning on logging worked, and MAN are you fire-hosing!!!!!  Like 100+ events per second when I scroll around. Maybe evaluate what the planned events are on the factory tour, so there is not any with crazy high frequency. Also maybe debounce?
+</user_query>
+
+=== Prompt 17 (request off-the-shelf infinite scroll library) ===
+
+<user_query>
+Wow you suck. Try using an off the shelf library like: 
+
+https://www.npmjs.com/package/react-infinite-scroll-component
+</user_query>
+
+=== Prompt 18 (force React rewrite first) ===
+
+<user_query>
+Force a react rewrite first. My gosh don’t do vanilla JS!!
+</user_query>
+
+=== Prompt 19 (allow broad rewrite, no behavior preservation) ===
+
+<user_query>
+No, the current reader behavior is 100% broken change as much as you want to do abroad rearranged without worrying about preserving anything
+</user_query>
+
+=== Prompt 20 (cross-book infinite scroll + feature TODO list) ===
+
+<user_query>
+OK, that is awesome. You have remade the app and I can scroll all the way through one book. Now continue I should be able to continue onto the next book that is I should be able to go from Mosiah to Alma, etc..
+
+Also make sure you have a to-do list to eventually re-add other features like the  scrolling  updating the  the current   at, but don’t implement any of those features yet just get the infinite scroller working
+</user_query>
+
+=== Prompt 21 (explicit whole-work scroll boundary clarification) ===
+
+<user_query>
+no, through All the books of the whole work, dummy!
+
+Stop scrolling at the end of the work
+</user_query>

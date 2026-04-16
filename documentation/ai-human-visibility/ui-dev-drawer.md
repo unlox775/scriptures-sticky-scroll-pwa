@@ -64,3 +64,14 @@ Expected events:
 2. Switch tabs twice; confirm `debug_tab_change` per switch.
 3. Select a non-latest session; confirm `debug_session_select`.
 4. Copy logs and confirm either `debug_copy_logs` or `debug_copy_logs_failed`.
+
+## Operator quick-start (how to turn logging on)
+1. Open **Visibility** tab in the debug drawer.
+2. Check the module(s) you want (`ui.readerView`, `ui.readerEngine`, etc.).  
+   - Any checked module auto-enables global visibility.
+3. Pick verbosity:
+   - `minimal`: milestones and high-level lifecycle events
+   - `standard`: normal debugging flow (default for most investigations)
+   - `deep`: high-detail loop diagnostics (buffer/anchor/control-loop detail)
+4. Switch to **Logs** tab and interact with the app (scroll/open/close/navigate).
+5. Confirm the selected log session is the latest one (top of session selector).

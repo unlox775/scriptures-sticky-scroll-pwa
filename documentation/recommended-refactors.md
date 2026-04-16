@@ -13,10 +13,10 @@ into concrete refactors for this repository. It is intentionally implementation-
 | Structured module/event envelope exists in runtime logs | Yes | `logEvent()` in `src/logger.js`; module/event badges in debug log rendering in `src/main.js` | Maintain contract consistency for new events |
 | Visibility docs include mechanism story + tricky dynamics + healthy/failure cues for major modules | Yes | `documentation/ai-human-visibility/` module docs | Keep sections updated as module behavior evolves |
 | Reader infinite scroller is documented as control-loop mechanism (not just event list) | Yes | `documentation/ai-human-visibility/ui-reader-engine.md` | Add screenshots/examples in future if needed |
-| Major UI and backend modules emit story-aligned instrumentation | Partial | `main.js`, `readerEngine.js`, `data.js`, `bookmarks.js`, `stateRouting.js` now emit structured events | Add in-view filters and per-module runtime toggles |
-| Per-module instrumentation toggles in UI | No | Global dev mode only | Implement visibility config + module toggle UI |
-| Object browser for key persisted/runtime objects | No | Storage + logs present; objects tab absent | Add Objects tab and summary/raw views |
-| Flow verification protocol (automated/manual) explicitly tied to event chains | Partial | Checklists in `documentation/ai-human-visibility/README.md` | Add automated e2e assertions and a manual runbook |
+| Major UI and backend modules emit story-aligned instrumentation | Yes | `main.js`, `readerEngine.js`, `data.js`, `bookmarks.js`, `stateRouting.js` emit structured events via `ui.*` / `backend.*` module IDs | Keep module IDs aligned with architecture docs as new telemetry is added |
+| Per-module instrumentation toggles in UI | Yes | `src/visibilityConfig.js` + `src/services/visibilityService.js` + debug Visibility tab in `src/main.js` | Maintain backward-compatible migrations when module IDs evolve |
+| Object browser for key persisted/runtime objects | Yes | Debug drawer **Objects** tab in `index.html` + `src/main.js` renders bookmarks/history, route state, reader snapshot, cache snapshot | Extend object cards if new persisted models are introduced |
+| Flow verification protocol (automated/manual) explicitly tied to event chains | Yes | Automated critical-path + contract tests (`tests/e2e`, `tests/unit`) and module-level walkthrough checklists in `documentation/ai-human-visibility/` | Add browser-native e2e coverage if stronger UI execution guarantees are needed |
 
 ## 1) High-value structural refactors
 

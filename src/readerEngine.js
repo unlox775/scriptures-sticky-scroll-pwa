@@ -1,6 +1,6 @@
 import { createTelemetryEmitter } from "./telemetry.js";
 
-const emitReader = createTelemetryEmitter("domain.readerEngine");
+const emitReader = createTelemetryEmitter("ui.readerEngine");
 
 function escapeHtml(value) {
   return value
@@ -31,6 +31,10 @@ export class ReaderEngine {
     this.autoScroll = { active: false, speed: 90, frameId: null, lastTs: 0, accumulatedPx: 0 };
     this.isBuffering = false;
     this.destroyed = false;
+    this.lastManualScrollAt = 0;
+    this.lastResizeAt = 0;
+    this.lastReanchorAt = 0;
+    this.pendingResizeTimer = null;
 
     this.boundOnScroll = this.onScroll.bind(this);
     this.boundOnResize = this.onResize.bind(this);
@@ -43,26 +47,72 @@ export class ReaderEngine {
     this.stopAutoScroll();
     this.scroller.removeEventListener("scroll", this.boundOnScroll);
     window.removeEventListener("resize", this.boundOnResize);
+    if (this.pendingResizeTimer) {
+      window.clearTimeout(this.pendingResizeTimer);
+      this.pendingResizeTimer = null;
+    }
     if (this.frameId) {
       cancelAnimationFrame(this.frameId);
     }
   }
 
   async open(location) {
+    emitReader({
+      level: "info",
+      event: "reader_open_start",
+      summary: "Reader engine open started",
+      refs: {
+        workId: location?.workId,
+        bookId: location?.bookId,
+        chapter: location?.chapter,
+        verse: location?.verse,
+      },
+      minVerbosity: "minimal",
+    });
     this.content.innerHTML = "";
     this.loaded.clear();
 
-    const seq = this.locationToSeq(location);
-    await this.ensureLoaded(seq, "append");
-    if (seq > 0) {
-      await this.ensureLoaded(seq - 1, "prepend");
+    try {
+      const seq = this.locationToSeq(location);
+      await this.ensureLoaded(seq, "append");
+      if (seq > 0) {
+        await this.ensureLoaded(seq - 1, "prepend");
+      }
+      if (seq < this.sequence.length - 1) {
+        await this.ensureLoaded(seq + 1, "append");
+      }
+      await this.jumpToLocation(location, 0.25);
+      await this.ensureBuffer();
+      this.publishAnchor(0);
+      emitReader({
+        level: "info",
+        event: "reader_open_ready",
+        summary: "Reader engine open complete",
+        refs: {
+          workId: location?.workId,
+          bookId: location?.bookId,
+          chapter: location?.chapter,
+          verse: location?.verse,
+        },
+        minVerbosity: "minimal",
+      });
+    } catch (error) {
+      emitReader({
+        level: "error",
+        event: "reader_open_fail",
+        summary: "Reader engine open failed",
+        refs: {
+          workId: location?.workId,
+          bookId: location?.bookId,
+          chapter: location?.chapter,
+          verse: location?.verse,
+        },
+        details: {
+          message: error instanceof Error ? error.message : String(error),
+        },
+      });
+      throw error;
     }
-    if (seq < this.sequence.length - 1) {
-      await this.ensureLoaded(seq + 1, "append");
-    }
-    await this.jumpToLocation(location, 0.25);
-    await this.ensureBuffer();
-    this.publishAnchor(0);
   }
 
   setAutoScrollSpeed(speed) {
@@ -124,15 +174,70 @@ export class ReaderEngine {
   }
 
   async onResize() {
-    const anchor = this.captureAnchor();
-    if (!anchor) {
+    if (this.destroyed) return;
+    if (this.autoScroll.active) {
+      emitReader({
+        level: "debug",
+        event: "reader_resize_reanchor_skipped",
+        summary: "Skipped resize re-anchor while auto-scroll active",
+        details: { reason: "auto-scroll-active" },
+        throttleMs: 1200,
+        minVerbosity: "deep",
+      });
       return;
     }
-    // Keep the currently-read text locked at 25% viewport after reflow.
-    await this.jumpToLocation(anchor, 0.25);
+    const now = performance.now();
+    this.lastResizeAt = now;
+    if (now - this.lastManualScrollAt < 600) {
+      emitReader({
+        level: "debug",
+        event: "reader_resize_reanchor_skipped",
+        summary: "Skipped resize re-anchor during active manual scroll momentum",
+        details: {
+          reason: "recent-manual-scroll",
+          msSinceManualScroll: Math.round(now - this.lastManualScrollAt),
+        },
+        throttleMs: 1200,
+        minVerbosity: "deep",
+      });
+      return;
+    }
+    if (this.pendingResizeTimer) {
+      clearTimeout(this.pendingResizeTimer);
+      this.pendingResizeTimer = null;
+    }
+    this.pendingResizeTimer = setTimeout(async () => {
+      this.pendingResizeTimer = null;
+      if (this.destroyed || this.autoScroll.active) return;
+      const elapsed = performance.now() - this.lastResizeAt;
+      if (elapsed < 140) return;
+      if (performance.now() - this.lastReanchorAt < 900) return;
+      const anchor = this.captureAnchor();
+      if (!anchor) {
+        return;
+      }
+      this.lastReanchorAt = performance.now();
+      // Keep currently-read text at 25% after true layout reflow, not momentum scroll.
+      await this.jumpToLocation(anchor, 0.25);
+      emitReader({
+        level: "debug",
+        event: "reader_resize_reanchor_applied",
+        summary: "Applied resize re-anchor after layout settle",
+        refs: {
+          workId: anchor.workId,
+          bookId: anchor.bookId,
+          chapter: anchor.chapter,
+          verse: anchor.verse,
+        },
+        throttleMs: 1500,
+        minVerbosity: "deep",
+      });
+    }, 180);
+    return;
   }
 
   onScroll() {
+    this.lastManualScrollAt = performance.now();
     if (this.frameId) {
       return;
     }
@@ -152,6 +257,16 @@ export class ReaderEngine {
     const anchor = this.captureAnchor();
     if (!anchor || !this.onAnchorChange) {
       return;
+    }
+    if (this.autoScroll.active && Math.abs(velocity) > this.autoScroll.speed * 2.5) {
+      // Manual gesture likely occurred while auto-scroll was active; immediately cede control.
+      this.stopAutoScroll();
+      emitReader({
+        level: "info",
+        event: "reader_autoscroll_stop",
+        summary: "Auto-scroll stopped due to manual scroll override",
+        refs: { reason: "manual-scroll-override" },
+      });
     }
     this.onAnchorChange(anchor, {
       velocity,
@@ -276,26 +391,122 @@ export class ReaderEngine {
           firstOffset: first?.offsetTop,
           lastEnd: last ? last.offsetTop + last.offsetHeight : null,
         },
-        throttleMs: 900,
+        throttleMs: 2000,
+        sampleEvery: 2,
         minVerbosity: "deep",
       });
 
       while (topBuffer < minBuffer && this.minLoadedSeq() > 0) {
+        emitReader({
+          level: "debug",
+          event: "reader_buffer_threshold_crossed",
+          summary: "Top buffer below minimum threshold",
+          details: {
+            direction: "prepend",
+            activeBuffer: topBuffer,
+            threshold: minBuffer,
+          },
+          throttleMs: 1500,
+          sampleEvery: 2,
+          minVerbosity: "deep",
+        });
         await this.ensureLoaded(this.minLoadedSeq() - 1, "prepend");
         first = this.firstEl();
         topBuffer = this.scroller.scrollTop - first.offsetTop;
       }
+      if (topBuffer < minBuffer && this.minLoadedSeq() === 0) {
+        emitReader({
+          level: "debug",
+          event: "reader_buffer_boundary",
+          summary: "Reached start-of-work boundary during prepend",
+          details: {
+            direction: "prepend",
+            boundary: "start-of-work",
+            activeBuffer: topBuffer,
+            threshold: minBuffer,
+          },
+          throttleMs: 5000,
+          minVerbosity: "deep",
+        });
+        emitReader({
+          level: "debug",
+          event: "reader_buffer_blocked",
+          summary: "Top buffer could not be expanded at boundary",
+          details: {
+            direction: "prepend",
+            reason: "start-of-work",
+            activeBuffer: topBuffer,
+            threshold: minBuffer,
+          },
+          throttleMs: 5000,
+          minVerbosity: "deep",
+        });
+      }
 
       while (bottomBuffer < minBuffer && this.maxLoadedSeq() < this.sequence.length - 1) {
+        emitReader({
+          level: "debug",
+          event: "reader_buffer_threshold_crossed",
+          summary: "Bottom buffer below minimum threshold",
+          details: {
+            direction: "append",
+            activeBuffer: bottomBuffer,
+            threshold: minBuffer,
+          },
+          throttleMs: 1500,
+          sampleEvery: 2,
+          minVerbosity: "deep",
+        });
         await this.ensureLoaded(this.maxLoadedSeq() + 1, "append");
         last = this.lastEl();
         bottomBuffer = last.offsetTop + last.offsetHeight - (this.scroller.scrollTop + vh);
+      }
+      if (bottomBuffer < minBuffer && this.maxLoadedSeq() === this.sequence.length - 1) {
+        emitReader({
+          level: "debug",
+          event: "reader_buffer_boundary",
+          summary: "Reached end-of-work boundary during append",
+          details: {
+            direction: "append",
+            boundary: "end-of-work",
+            activeBuffer: bottomBuffer,
+            threshold: minBuffer,
+          },
+          throttleMs: 5000,
+          minVerbosity: "deep",
+        });
+        emitReader({
+          level: "debug",
+          event: "reader_buffer_blocked",
+          summary: "Bottom buffer could not be expanded at boundary",
+          details: {
+            direction: "append",
+            reason: "end-of-work",
+            activeBuffer: bottomBuffer,
+            threshold: minBuffer,
+          },
+          throttleMs: 5000,
+          minVerbosity: "deep",
+        });
       }
 
       while (this.loaded.size > 1) {
         first = this.firstEl();
         topBuffer = this.scroller.scrollTop - first.offsetTop;
         if (topBuffer <= maxBuffer) {
+          emitReader({
+            level: "debug",
+            event: "reader_buffer_trim_skipped",
+            summary: "Top trim skipped; buffer within threshold",
+            details: {
+              direction: "top",
+              activeBuffer: topBuffer,
+              threshold: maxBuffer,
+            },
+            throttleMs: 2500,
+            sampleEvery: 3,
+            minVerbosity: "deep",
+          });
           break;
         }
         const seq = this.minLoadedSeq();
@@ -304,18 +515,50 @@ export class ReaderEngine {
         removeEl.remove();
         this.loaded.delete(seq);
         this.scroller.scrollTop -= removedHeight;
+        emitReader({
+          level: "debug",
+          event: "reader_chunk_trimmed",
+          summary: "Trimmed chapter chunk from top buffer",
+          refs: { seq },
+          metrics: { removedHeight },
+          details: { direction: "top" },
+          throttleMs: 1200,
+          minVerbosity: "deep",
+        });
       }
 
       while (this.loaded.size > 1) {
         last = this.lastEl();
         bottomBuffer = last.offsetTop + last.offsetHeight - (this.scroller.scrollTop + vh);
         if (bottomBuffer <= maxBuffer) {
+          emitReader({
+            level: "debug",
+            event: "reader_buffer_trim_skipped",
+            summary: "Bottom trim skipped; buffer within threshold",
+            details: {
+              direction: "bottom",
+              activeBuffer: bottomBuffer,
+              threshold: maxBuffer,
+            },
+            throttleMs: 2500,
+            sampleEvery: 3,
+            minVerbosity: "deep",
+          });
           break;
         }
         const seq = this.maxLoadedSeq();
         const removeEl = this.loaded.get(seq);
         removeEl.remove();
         this.loaded.delete(seq);
+        emitReader({
+          level: "debug",
+          event: "reader_chunk_trimmed",
+          summary: "Trimmed chapter chunk from bottom buffer",
+          refs: { seq },
+          details: { direction: "bottom" },
+          throttleMs: 1200,
+          minVerbosity: "deep",
+        });
       }
     } finally {
       this.isBuffering = false;
@@ -323,37 +566,92 @@ export class ReaderEngine {
   }
 
   async ensureLoaded(seq, mode) {
-    if (seq < 0 || seq >= this.sequence.length || this.loaded.has(seq)) {
+    if (seq < 0 || seq >= this.sequence.length) {
+      emitReader({
+        level: "debug",
+        event: "reader_chapter_load_skip",
+        summary: "Skipped chapter load out of sequence bounds",
+        details: { seq, mode, reason: "out-of-range" },
+        throttleMs: 5000,
+        minVerbosity: "deep",
+      });
+      return;
+    }
+    if (this.loaded.has(seq)) {
+      emitReader({
+        level: "debug",
+        event: "reader_chapter_load_skip",
+        summary: "Skipped chapter load already present in buffer",
+        refs: { seq },
+        details: { mode, reason: "already-loaded" },
+        throttleMs: 3000,
+        sampleEvery: 3,
+        minVerbosity: "deep",
+      });
       return;
     }
     const pointer = this.sequence[seq];
     emitReader({
       level: "debug",
-      event: "reader_chapter_load",
+      event: "reader_chapter_load_attempt",
       summary: "Loading chapter into reader buffer",
       refs: {
+        seq,
         bookId: pointer?.bookMeta?.id,
         chapter: pointer?.chapter,
       },
       details: {
-        seq,
         mode,
         loadedCount: this.loaded.size,
       },
       minVerbosity: "standard",
     });
-    const chapterData = await this.loadChapter(seq);
-    const chapterNode = this.renderChapter(chapterData, seq);
+    try {
+      const chapterData = await this.loadChapter(seq);
+      const chapterNode = this.renderChapter(chapterData, seq);
 
-    if (mode === "prepend" && this.content.firstChild) {
-      const before = this.content.scrollHeight;
-      this.content.insertBefore(chapterNode, this.content.firstChild);
-      const after = this.content.scrollHeight;
-      this.scroller.scrollTop += after - before;
-    } else {
-      this.content.appendChild(chapterNode);
+      if (mode === "prepend" && this.content.firstChild) {
+        const before = this.content.scrollHeight;
+        this.content.insertBefore(chapterNode, this.content.firstChild);
+        const after = this.content.scrollHeight;
+        this.scroller.scrollTop += after - before;
+      } else {
+        this.content.appendChild(chapterNode);
+      }
+      this.loaded.set(seq, chapterNode);
+      emitReader({
+        level: "debug",
+        event: "reader_chapter_load_success",
+        summary: "Loaded chapter into reader buffer",
+        refs: {
+          seq,
+          bookId: pointer?.bookMeta?.id,
+          chapter: pointer?.chapter,
+        },
+        metrics: {
+          verseCount: chapterData?.chapter?.verses?.length ?? 0,
+          chapterPixelHeight: chapterNode.offsetHeight,
+        },
+        details: { mode, loadedCount: this.loaded.size },
+        minVerbosity: "standard",
+      });
+    } catch (error) {
+      emitReader({
+        level: "warn",
+        event: "reader_chapter_load_failure",
+        summary: "Failed to load chapter into reader buffer",
+        refs: {
+          seq,
+          bookId: pointer?.bookMeta?.id,
+          chapter: pointer?.chapter,
+        },
+        details: {
+          mode,
+          message: error instanceof Error ? error.message : String(error),
+        },
+      });
+      throw error;
     }
-    this.loaded.set(seq, chapterNode);
   }
 
   async loadChapter(seq) {
@@ -402,67 +700,96 @@ export class ReaderEngine {
   }
 
   async jumpToLocation(location, align = 0.25) {
+    emitReader({
+      level: "debug",
+      event: "reader_jump_attempt",
+      summary: "Attempting reader jump to location",
+      refs: {
+        workId: location?.workId,
+        bookId: location?.bookId,
+        chapter: location?.chapter,
+        verse: location?.verse,
+      },
+      details: { align },
+      minVerbosity: "standard",
+    });
     const seq = this.locationToSeq(location);
-    if (!this.loaded.has(seq)) {
-      this.content.innerHTML = "";
-      this.loaded.clear();
-      await this.ensureLoaded(seq, "append");
-      if (seq > 0) {
-        await this.ensureLoaded(seq - 1, "prepend");
+    try {
+      if (!this.loaded.has(seq)) {
+        this.content.innerHTML = "";
+        this.loaded.clear();
+        await this.ensureLoaded(seq, "append");
+        if (seq > 0) {
+          await this.ensureLoaded(seq - 1, "prepend");
+        }
+        if (seq < this.sequence.length - 1) {
+          await this.ensureLoaded(seq + 1, "append");
+        }
       }
-      if (seq < this.sequence.length - 1) {
-        await this.ensureLoaded(seq + 1, "append");
+
+      const scrollToTarget = () => {
+        const verseSelector = `.verse[data-seq="${seq}"][data-verse="${location.verse || 1}"]`;
+        const verseEl = this.content.querySelector(verseSelector);
+        const target = verseEl || this.content.querySelector(`.chapter-block[data-seq="${seq}"]`);
+        const scrollBefore = this.scroller.scrollTop;
+        const vh = this.scroller.clientHeight;
+        const sh = this.scroller.scrollHeight;
+
+        if (!target) return false;
+        const scrollerRect = this.scroller.getBoundingClientRect();
+        const targetRect = target.getBoundingClientRect();
+        const desiredTop = vh * align;
+        const delta = targetRect.top - scrollerRect.top - desiredTop;
+        const newTop = Math.max(0, scrollBefore + delta);
+        this.scroller.scrollTop = newTop;
+
+        emitReader({
+          level: "debug",
+          event: "reader_jump_done",
+          summary: "Reader jump applied",
+          refs: { seq, chapter: location?.chapter, verse: location?.verse },
+          metrics: {
+            scrollBefore,
+            scrollAfter: this.scroller.scrollTop,
+            delta,
+            vh,
+            sh,
+          },
+          minVerbosity: "standard",
+        });
+        return true;
+      };
+
+      await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => requestAnimationFrame(r));
+      const success = scrollToTarget();
+      if (!success) {
+        emitReader({
+          level: "warn",
+          event: "reader_jump_fail",
+          summary: "Reader jump target not found",
+          refs: { seq, chapter: location?.chapter, verse: location?.verse },
+          details: { align, reason: "target-not-found" },
+          minVerbosity: "standard",
+        });
       }
-    }
-
-    const scrollToTarget = () => {
-      const verseSelector = `.verse[data-seq="${seq}"][data-verse="${location.verse || 1}"]`;
-      const verseEl = this.content.querySelector(verseSelector);
-      const target = verseEl || this.content.querySelector(`.chapter-block[data-seq="${seq}"]`);
-      const scrollBefore = this.scroller.scrollTop;
-      const vh = this.scroller.clientHeight;
-      const sh = this.scroller.scrollHeight;
-
-      const noOverflow = sh <= vh;
+    } catch (error) {
       emitReader({
-        level: "debug",
-        event: "reader_jump_to_location",
-        summary: "Jumping reader to requested location",
+        level: "error",
+        event: "reader_jump_fail",
+        summary: "Reader jump failed",
+        refs: {
+          workId: location?.workId,
+          bookId: location?.bookId,
+          chapter: location?.chapter,
+          verse: location?.verse,
+        },
         details: {
-          seq,
           align,
-          verseSelector,
-          target: target ? target.className : null,
-          dimensions: { vh, sh, scrollBefore },
-          noOverflow: noOverflow ? "scroller cannot scroll (fix layout)" : null,
+          message: error instanceof Error ? error.message : String(error),
         },
-        minVerbosity: "standard",
       });
-
-      if (!target) return;
-      const scrollerRect = this.scroller.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      const desiredTop = vh * align;
-      const delta = targetRect.top - scrollerRect.top - desiredTop;
-      const newTop = Math.max(0, scrollBefore + delta);
-      this.scroller.scrollTop = newTop;
-
-      emitReader({
-        level: "debug",
-        event: "reader_jump_to_location_after",
-        summary: "Reader jump applied",
-        metrics: {
-          scrollAfter: this.scroller.scrollTop,
-          delta,
-          targetRectTop: targetRect.top,
-          scrollerRectTop: scrollerRect.top,
-        },
-        minVerbosity: "deep",
-      });
-    };
-
-    await new Promise((r) => requestAnimationFrame(r));
-    await new Promise((r) => requestAnimationFrame(r));
-    scrollToTarget();
+      throw error;
+    }
   }
 }

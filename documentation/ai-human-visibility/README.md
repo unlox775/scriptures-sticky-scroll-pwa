@@ -71,4 +71,5 @@ If a file only lists event names without explaining behavior flow, it fails this
 - `backend-routing.md`
 - `backend-data-access.md`
 - `backend-bookmarks.md`
+- `backend-ui-session-state.md`
 

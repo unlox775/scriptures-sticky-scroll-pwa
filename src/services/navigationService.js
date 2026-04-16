@@ -2,7 +2,7 @@ import { parseRoute, pushRoute, saveRouteToStorage, loadRouteFromStorage, stateT
 import { createTelemetryEmitter } from "../telemetry.js";
 
 export function createNavigationService() {
-  const emit = createTelemetryEmitter("domain.routing");
+  const emit = createTelemetryEmitter("backend.routing");
 
   function push(route, options = {}) {
     const save = options.save === true;
@@ -54,6 +54,37 @@ export function createNavigationService() {
     return route;
   }
 
+  function emitRestoreStart(route) {
+    emit({
+      level: "info",
+      event: "route_restore_start",
+      summary: "Route restore started",
+      refs: { route },
+      minVerbosity: "minimal",
+    });
+  }
+
+  function emitRestoreResolved(target, refs = {}) {
+    emit({
+      level: "info",
+      event: "route_restore_resolved",
+      summary: "Route restore resolved",
+      refs: { target, ...refs },
+      minVerbosity: "minimal",
+    });
+  }
+
+  function emitRestoreFail(route, reason, details = {}) {
+    emit({
+      level: "warn",
+      event: "route_restore_fail",
+      summary: "Route restore failed",
+      refs: { route, reason },
+      details,
+      minVerbosity: "standard",
+    });
+  }
+
   return {
     push,
     pushAndSave(route) {
@@ -62,5 +93,8 @@ export function createNavigationService() {
     parse,
     routeFromState,
     loadFallbackRoute,
+    emitRestoreStart,
+    emitRestoreResolved,
+    emitRestoreFail,
   };
 }

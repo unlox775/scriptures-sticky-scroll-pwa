@@ -1,7 +1,7 @@
 # Scripture PWA Pivot — Iteration Log
 
 **Prompt slug:** `scripture-pwa-pivot`  
-**Last updated:** 2026-04-05
+**Last updated:** 2026-04-12
 
 **Context:** The interface-refinements work (Prompts 1–8 in `20260309-200000_scripture-pwa-interface-refinements-*`) was not making sufficient progress. This spec marks a fresh start from Prompt 9 of that series. Update this spec from here forward.
 
@@ -54,8 +54,90 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | R12 AI retrieval log channel prep | Done | `getLogsForAiShare()` in `src/logger.js` + "Copy AI-share" action in debug drawer |
 | Build/test verification | Done | `npm test` and `npm run build` passing |
 
+### Prompt 12: AI Modulization Standard alignment + stateful debug resume
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Compute full to-do list for standard/code alignment | Done | Added adherence-gap checklist + closure notes in `documentation/recommended-refactors.md` |
+| Enforce required module namespace taxonomy (`ui.*` / `backend.*`) | Done | Telemetry module IDs updated in `src/main.js`, `src/readerEngine.js`, `src/services/*`, `src/logger.js`, `src/visibilityConfig.js` |
+| Keep compatibility for older `domain.*` visibility config keys | Done | Legacy mapping in `src/visibilityConfig.js` migrates prior module toggles into the new IDs |
+| Align reader engine as explicit UI module in runtime instrumentation | Done | Reader emitters now use `ui.readerEngine`; visibility presets and toggles updated |
+| Add stateful “last screen” resume on refresh | Done | Added persisted UI session envelope in `src/main.js` (`scripture-pwa-ui-session-v1`) and restore logic in `init()` |
+| Add stateful debug drawer persistence (open/closed + active panel tab) | Done | Debug drawer state orchestration + persistence/restore in `src/main.js` (`applyDebugDrawerState`, `setActiveDebugTab`) |
+| Persist/restore history view specifically | Done | Added hash route form `#/history/:bookmarkId` in `src/stateRouting.js`, history restore branch in `src/main.js`, and unit coverage |
+| Update docs to reflect AI standard alignment and evidence | Done | Updated `documentation/flows-and-parts.md`, `documentation/ai-human-visibility/README.md`, added `documentation/ai-human-visibility/backend-logging.md`, updated `documentation/recommended-refactors.md` |
+| Add/extend tests for new state-routing behavior | Done | Added `parseRoute` history-route test in `tests/unit/stateRouting.test.mjs` |
+
 ## Next Actions
 
 1. Optional: replace the node-level critical-path integration test with browser-driven Playwright coverage if full UI e2e is required.
 2. Optional: configure a secure remote retrieval endpoint/workflow to move `getLogsForAiShare` from manual-copy contract to direct fetch.
 3. Continue iterating from this pivot; append new prompts to the pivot PROMPT log.
+
+### Prompt 13: Event parity challenge and remediation
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Audit claim: verify whether documented module events are truly implemented | Done | Ran direct doc-vs-code event audit against `documentation/ai-human-visibility/*.md` and `src/**/*.js`; identified concrete gaps before remediation |
+| Implement missing routing restore telemetry events | Done | Added `route_restore_start`, `route_restore_resolved`, `route_restore_fail` emitters in `src/services/navigationService.js`; integrated into restore flow in `src/main.js` |
+| Implement missing app-shell lifecycle + install/service-worker telemetry events | Done | Added `app_init_start`, `app_init_complete`, `app_init_fail`, `install_prompt_available`, `install_prompt_accepted`, `install_ios_instructions_shown`, `service_worker_registered` instrumentation in `src/main.js` |
+| Implement missing reader-engine control-loop telemetry taxonomy | Done | Reader engine now emits documented granular events (`reader_chapter_load_attempt/success/failure/skip`, threshold/boundary/blocked signals, jump attempt/done/fail, trim events) in `src/readerEngine.js` |
+| Implement missing debug drawer close/failure and dev-mode activation events | Done | Added `debug_drawer_close`, `debug_copy_logs_failed`, and `dev_mode_enabled` in `src/main.js` |
+| Implement missing back-navigation and history interaction events | Done | Added `reader_back_to_chapters`, `reader_home_click`, `chapters_back_to_books`, `books_back_to_home`, `history_back_click`, `history_back_to_home` via `src/main.js` + `src/views/historyView.js` callback wiring |
+| Implement missing bookmark follow-skip telemetry | Done | Added explicit `bookmark_follow_skipped` emission path in `handleAnchorChange` (`src/main.js`) |
+| Preserve existing stateful refresh/debug-drawer behavior while adding telemetry | Done | Session restore behavior retained; telemetry augmentation added without removing resume UX |
+| Re-verify build/test after remediation | Done | `npm test` and `npm run build` both pass after event parity updates |
+
+### Prompt 14: Debug drawer resume persistence follow-up
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Ensure debug drawer open/closed state restores on refresh | Done | Moved `restoreUiSessionState()` to run before `wireDeveloperMode()` in `src/main.js`, so initial drawer render consumes restored state |
+| Ensure active debug drawer tab restores on refresh | Done | Same sequencing fix ensures `applyDebugDrawerState(...persist:false)` applies restored `state.devDrawerTab` during startup wire-up |
+
+### Prompt 15: Logging enable UX + unexpected scrolling follow-up
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Make logging activation intuitive from Visibility tab | Done | `src/services/visibilityService.js` now auto-enables global visibility when any module is enabled; visibility toggle telemetry includes `globalEnabled` state |
+| Ensure Logs tab can immediately show active session events | Done | `src/logger.js` adds `ensureLogSession`; `src/main.js` ensures a session exists before rendering Logs and reloads sessions when live entries arrive with no selected session |
+| Add in-app guidance for visibility/verbosity controls | Done | `src/main.js` visibility panel now includes quick-start instructions and verbosity guidance; styled in `src/styles.css` |
+| Prevent resize-induced re-jumps from feeling like forced auto-scroll | Done | `src/readerEngine.js` debounces/guards resize re-anchors, skips during active/manual momentum, and emits `reader_resize_reanchor_skipped/applied` deep diagnostics |
+| Stop auto-scroll when manual swipe overrides it | Done | `src/readerEngine.js` detects high-velocity manual override while auto-scroll is active and emits `reader_autoscroll_stop` with reason |
+| Prevent auto-follow bookmark writes while auto-scroll is running | Done | `src/main.js` `handleAnchorChange` now short-circuits bookmark auto-follow during active auto-scroll and emits explicit `bookmark_follow_skipped` reason |
+| Document minimal/standard/deep behavior where users look for it | Done | Updated `documentation/ai-human-visibility/ui-dev-drawer.md` and `documentation/ai-human-visibility/ui-reader-engine.md` with verbosity guidance and deep-event examples |
+
+### Prompt 16: Reduce telemetry firehose cadence
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Reduce scroll-time reader telemetry volume | Done | Added stricter throttling/sampling for high-frequency `ui.readerEngine` deep diagnostics in `src/readerEngine.js` |
+| Reduce bookmark follow diagnostics spam | Done | Moved `bookmark_follow_candidate` emission out of `src/bookmarks.js` store hot-path into UI orchestration in `src/main.js` with cadence gating |
+| Align docs with anti-firehose expectations | Done | Updated `documentation/ai-human-visibility/ui-reader-engine.md` + `documentation/ai-human-visibility/backend-bookmarks.md` with expected event frequency guidance |
+
+### Prompt 18/19: Force React rewrite and allow broad reset
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Migrate app runtime from vanilla DOM entry to React | Done | Replaced `src/main.js` with React entry `src/main.jsx` + root app `src/App.jsx`; removed legacy runtime entry |
+| Integrate off-the-shelf infinite scroll library in reader | Done | Added `react-infinite-scroll-component` and wired reader chapter append flow through it in `src/App.jsx` |
+| Update build tooling for React | Done | Added `react`, `react-dom`, `@vitejs/plugin-react`; updated `vite.config.js` and `index.html` for JSX entry |
+| Allow broad behavior reset (no preservation constraints) | Done | Rebuilt navigation/reader shell as a simplified React flow (Home → Books → Chapters → Reader) around `loadIndex` + `BookCache` |
+
+### Prompt 20/21: Continue infinite scroll across all books in a work
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Continue reader infinite scroll across book boundaries in the selected work | Done | Added cross-book chapter sequence helper `src/readerSequence.js`; reader append flow in `src/App.jsx` now advances chapter-by-chapter across all books in the active work |
+| Stop infinite scrolling only at end-of-work boundary | Done | `getNextChapterPointer(...)` returns `null` only for final chapter of the final book in work; `hasNext` is derived from that pointer in `src/App.jsx` |
+| Add explicit unit coverage for work-wide sequence behavior | Done | Added `tests/unit/readerSequence.test.mjs` covering in-book advance, cross-book advance (Mosiah → Alma), and end-of-work stop |
+| Track deferred React follow-up features without implementing them yet | Done | Added `documentation/todo-react-rebuild-followups.md` with scoped TODO list for deferred features (anchor updates, richer debug drawer/log visibility, history/bookmarks, route/session restore, auto-scroll controls) |
+
+### Prompt 16: Telemetry firehose reduction + debounce
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Reduce high-frequency reader telemetry to practical debug cadence | Done | Added stricter `throttleMs` + `sampleEvery` controls across deep reader-engine loop events in `src/readerEngine.js` (`reader_buffer_state`, threshold/boundary/blocked, trim, chapter-load-skip) |
+| Debounce/noise-control bookmark follow diagnostics | Done | Removed per-anchor candidate emission from `src/bookmarks.js`; consolidated candidate + skipped diagnostics in `src/main.js` with shared throttled emit helpers |
+| Lower standard-level anchor chatter while preserving trend visibility | Done | Increased `reader_anchor_change` telemetry gate to slower cadence in `src/main.js` (`throttleMs` + sampling) |
+| Document expected event frequency caps in “factory tour” docs | Done | Updated `documentation/ai-human-visibility/ui-reader-engine.md` and `documentation/ai-human-visibility/backend-bookmarks.md` with practical expected-frequency and interpretation guidance |

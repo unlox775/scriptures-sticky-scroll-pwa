@@ -38,6 +38,10 @@ Expected event chain:
 Expected event chain:
 `bookmark_follow_candidate` -> `bookmark_auto_follow_update` -> `bookmark_location_updated` -> `bookmark_history_snapshot`
 
+Cadence guidance:
+- `bookmark_follow_candidate` and `bookmark_follow_skipped` are intentionally debounced/sampled in the UI orchestrator (standard ~2s throttle with sampling) so logs stay readable while continuously scrolling.
+- Treat these as periodic state hints, not frame-level traces.
+
 ## Signals to watch
 - `bookmark_store_init`
 - `bookmark_create`
@@ -51,6 +55,7 @@ Expected event chain:
 ## Healthy sequence examples
 - Create flow: `bookmark_create` then first `bookmark_location_updated`.
 - Follow flow: candidate appears repeatedly while scrolling; updates only when UI thresholds allow.
+- In healthy deep runs, follow candidate/skip telemetry should remain low-frequency (single-digit events per 10 seconds), not a frame-by-frame stream.
 
 ## Failure cues and interpretation
 - repeated candidates but never updates during slow reading => likely UI heuristic too strict

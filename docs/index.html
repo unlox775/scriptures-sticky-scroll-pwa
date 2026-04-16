@@ -6,87 +6,10 @@
     <meta name="theme-color" content="#0f172a" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>Scripture Reader PWA</title>
-    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/index-CJnGpTBa.js"></script>
-    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/index-BVej5KF_.css">
+    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/index-8hTR8_wM.js"></script>
+    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/index-DqoCJEoi.css">
   </head>
   <body>
-    <div id="app">
-      <header class="app-header">
-        <div id="devEasterEgg" class="dev-easter-egg" aria-hidden="true"></div>
-        <button id="homeButton" class="header-btn" hidden>Home</button>
-        <button id="backButton" class="header-btn header-back-btn" hidden aria-label="Back"><span aria-hidden="true" class="back-icon">‹</span></button>
-        <div id="headerTitle" class="header-title">Standard Works Reader</div>
-        <button id="addBookmarkButton" class="header-btn ribbon-plus-btn" title="Add Bookmark" hidden>
-          <span class="ribbon-plus-icon" aria-hidden="true">+</span>
-        </button>
-        <button id="moveBookmarkButton" class="header-btn" title="Move bookmark to current location" hidden aria-label="Move bookmark to current location">↻</button>
-        <button id="autoScrollStart" class="header-btn" hidden>Auto-scroll</button>
-        <button id="installButton" class="header-btn" hidden>Install</button>
-      </header>
-
-      <main class="app-main">
-        <section id="homeView" class="view"></section>
-        <section id="booksView" class="view" hidden></section>
-        <section id="chaptersView" class="view" hidden></section>
-        <section id="historyView" class="view" hidden></section>
-
-        <section id="readerView" class="view reader-view" hidden>
-          <div id="autoScrollPanel" class="auto-scroll-panel" hidden>
-            <button id="autoScrollStop" class="stop-btn" aria-label="Stop auto-scroll">×</button>
-            <label for="autoScrollSpeed">Speed</label>
-            <div class="auto-scroll-slider-wrap">
-              <input id="autoScrollSpeed" type="range" min="8" max="100" step="5" value="90" />
-            </div>
-            <span id="autoScrollSpeedLabel">90 px/s</span>
-          </div>
-          <div id="bookmarkRibbons" class="bookmark-ribbons" aria-hidden="true"></div>
-          <div id="readerStatus" class="reader-status" hidden>
-            <span id="bookmarkStatus"></span>
-          </div>
-          <div id="readerScroller" class="reader-scroller">
-            <div id="readerRibbonsOverlay" class="reader-ribbons-overlay" aria-hidden="true"></div>
-            <div id="readerContent" class="reader-content"></div>
-          </div>
-        </section>
-      </main>
-    </div>
-
-    <div id="devBugIcon" class="dev-bug-icon" hidden title="Debug">🐛</div>
-    <div id="devDrawer" class="dev-drawer" hidden>
-      <div class="dev-drawer-header">
-        <span>Debug</span>
-        <button id="devDrawerClose" class="header-btn">Close</button>
-      </div>
-      <div class="dev-drawer-tabs">
-        <button class="dev-tab active" data-tab="storage">Storage</button>
-        <button class="dev-tab" data-tab="logs">Logs</button>
-        <button class="dev-tab" data-tab="objects">Objects</button>
-        <button class="dev-tab" data-tab="visibility">Visibility</button>
-        <button id="devCopyVisibleLogs" class="dev-tab-action secondary-btn" type="button">Copy visible</button>
-        <button id="devCopyLogs" class="dev-tab-action secondary-btn" type="button">Copy full</button>
-        <button id="devCopyAiShare" class="dev-tab-action secondary-btn" type="button">Copy AI-share</button>
-        <div class="dev-log-session-controls" id="devLogSessionControls" hidden>
-          <button id="devLogPrev" type="button" title="Previous session">←</button>
-          <select id="devLogSessionSelect">
-            <option value="">No sessions</option>
-          </select>
-          <button id="devLogNext" type="button" title="Next session">→</button>
-        </div>
-      </div>
-      <div id="devStoragePanel" class="dev-panel">
-        <div id="devStorageContent"></div>
-      </div>
-      <div id="devLogsPanel" class="dev-panel" hidden>
-        <div class="dev-log-toolbar">
-          <input id="devLogSearch" type="search" placeholder="Search logs..." />
-          <span id="devLogVisibleCount" class="dev-log-visible-count">0/0 visible</span>
-        </div>
-        <div id="devLogFilters" class="dev-log-filters"></div>
-        <div id="devLogEntries" class="dev-log-entries"></div>
-      </div>
-      <div id="devObjectsPanel" class="dev-panel" hidden></div>
-      <div id="devVisibilityPanel" class="dev-panel" hidden></div>
-    </div>
-
+    <div id="root"></div>
   </body>
 </html>

@@ -48,13 +48,16 @@ export function createVisibilityService() {
   }
 
   function setModule(moduleId, enabled) {
-    const result = setModuleVisibility(moduleId, enabled);
+    let result = setModuleVisibility(moduleId, enabled);
+    if (enabled && !result.enabled) {
+      result = setVisibilityEnabled(true);
+    }
     emit({
       level: "debug",
       event: "visibility_module_toggle",
       summary: "Toggled module visibility",
       refs: { moduleId },
-      details: { enabled: Boolean(enabled) },
+      details: { enabled: Boolean(enabled), globalEnabled: result.enabled },
       minVerbosity: "standard",
     });
     return result;
