@@ -266,6 +266,16 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Prevent stale reader route after leaving reader | Done | `src/main.js`; Home/Back destroy the active reader and hidden-reader anchor events are ignored before route updates |
 | Build verification | Done | `npm run build` passing |
 
+### Prompt 34: iPhone slow auto-scroll, jitter, bookmark history
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Fix low-speed auto-scroll on iPhone | Done | `src/autoScrollController.js`; auto-scroll now accumulates fractional scroll position and writes rounded integer pixels |
+| Reduce occasional reader jiggle | Done | `src/views/readerView.js`, `src/scriptureScroller.js`; bookmark ribbons update existing DOM nodes and unload triggers get a small epsilon near thresholds |
+| Preserve one bookmark history row per local day | Done | `src/bookmarks.js`; history uses local dates, backfills older location-only bookmarks, and updates the current day row |
+| Add bookmark history coverage | Done | `tests/unit/bookmarks.test.mjs`; focused assertions pass before the existing async IndexedDB harness failure |
+| Build verification | Done | `npm run build` passing |
+
 ## Next Actions
 
 1. Exercise the integrated reader on iPhone Safari and tune preload/unload distances for touch momentum scrolling.

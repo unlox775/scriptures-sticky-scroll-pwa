@@ -83,3 +83,17 @@ test("BookmarkStore.getBookmarkToFollow returns null when all ahead", () => {
   const follow = store.getBookmarkToFollow(target);
   assert.equal(follow, null);
 });
+
+test("BookmarkStore history keeps one mutable entry per local day", () => {
+  setupLocalStorage();
+  setupCrypto();
+  const store = new BookmarkStore();
+  const bookmark = store.getBookmarks()[0];
+
+  store.updateBookmarkLocation(bookmark.id, loc("1-ne", 2, 1), "scroll");
+  store.updateBookmarkLocation(bookmark.id, loc("1-ne", 2, 5), "scroll");
+
+  const entries = store.getHistoryOnePerDay(bookmark);
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].reference, "1-ne 2:5");
+});

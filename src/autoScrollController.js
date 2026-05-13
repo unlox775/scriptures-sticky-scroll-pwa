@@ -11,6 +11,7 @@ export class AutoScrollController {
     this.onStateChange = onStateChange;
     this.raf = 0;
     this.lastTs = 0;
+    this.floatScrollTop = 0;
     this.touchStartY = null;
 
     this.open = this.open.bind(this);
@@ -45,6 +46,7 @@ export class AutoScrollController {
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = 0;
     this.lastTs = 0;
+    this.floatScrollTop = 0;
     this.touchStartY = null;
     if (this.button) this.button.textContent = "Auto scroll";
     document.querySelectorAll(".auto-scroll-panel").forEach((node) => node.remove());
@@ -76,6 +78,7 @@ export class AutoScrollController {
 
     this.panelHost?.insertAdjacentElement("afterend", panel);
     if (this.button) this.button.textContent = "Auto scrolling";
+    this.floatScrollTop = this.scroller.scrollTop;
     this.onStateChange?.(true);
     this.raf = requestAnimationFrame(this.step);
   }
@@ -85,7 +88,11 @@ export class AutoScrollController {
     const elapsedSeconds = Math.min((ts - this.lastTs) / 1000, 0.1);
     this.lastTs = ts;
     this.onAutoScroll?.();
-    this.scroller.scrollTop += this.speed * elapsedSeconds;
+    this.floatScrollTop += this.speed * elapsedSeconds;
+    const nextScrollTop = Math.round(this.floatScrollTop);
+    if (nextScrollTop !== Math.round(this.scroller.scrollTop)) {
+      this.scroller.scrollTop = nextScrollTop;
+    }
 
     const atBottom = this.scroller.scrollTop + this.scroller.clientHeight >= this.content.scrollHeight - 1;
     if (atBottom) {

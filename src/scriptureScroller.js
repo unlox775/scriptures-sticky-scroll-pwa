@@ -47,6 +47,8 @@ function compareSeq(a, b) {
   return Number(a) - Number(b);
 }
 
+const UNLOAD_EPSILON_PX = 4;
+
 export class ScriptureScroller {
   constructor(options) {
     this.scroller = options.scroller;
@@ -388,8 +390,8 @@ export class ScriptureScroller {
     const unloadBelowAt = top - unloadDistancePx;
     const crossedAbove = direction === "down" && previousScrollTop <= unloadAboveAt && viewportTop > unloadAboveAt;
     const crossedBelow = direction === "up" && previousViewportBottom >= unloadBelowAt && viewportBottom < unloadBelowAt;
-    const pastAbove = direction === "down" && viewportTop > unloadAboveAt;
-    const pastBelow = direction === "up" && viewportBottom < unloadBelowAt;
+    const pastAbove = direction === "down" && viewportTop > unloadAboveAt + UNLOAD_EPSILON_PX;
+    const pastBelow = direction === "up" && viewportBottom < unloadBelowAt - UNLOAD_EPSILON_PX;
     const shouldUnloadAbove = pastAbove;
     const shouldUnloadBelow = pastBelow;
 

@@ -3,7 +3,11 @@ import { isDevMode, logEvent } from "./logger.js";
 const BOOKMARKS_KEY = "scripture-pwa-bookmarks-v1";
 
 function isoDateOnly(timestamp) {
-  return new Date(timestamp).toISOString().slice(0, 10);
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 const DEFAULT_1NE_1_1 = {
@@ -34,13 +38,26 @@ function sanitizeState(raw) {
   const active = raw.bookmarks.find((b) => b.id === raw.activeBookmarkId) || raw.bookmarks[0];
   return {
     activeBookmarkId: active.id,
-    bookmarks: raw.bookmarks.map((bookmark) => ({
-      id: bookmark.id || crypto.randomUUID(),
-      name: bookmark.name || "Bookmark",
-      location: bookmark.location || null,
-      updatedAt: bookmark.updatedAt || null,
-      history: Array.isArray(bookmark.history) ? bookmark.history : [],
-    })),
+    bookmarks: raw.bookmarks.map((bookmark) => {
+      const updatedAt = bookmark.updatedAt || null;
+      const history = Array.isArray(bookmark.history) ? bookmark.history : [];
+      if (bookmark.location && updatedAt && history.length === 0) {
+        history.push({
+          day: isoDateOnly(updatedAt),
+          timestamp: updatedAt,
+          reference: bookmark.location.reference,
+          location: bookmark.location,
+          source: "restored",
+        });
+      }
+      return {
+        id: bookmark.id || crypto.randomUUID(),
+        name: bookmark.name || "Bookmark",
+        location: bookmark.location || null,
+        updatedAt,
+        history,
+      };
+    }),
   };
 }
 
@@ -190,7 +207,14 @@ export class BookmarkStore {
     bookmark.updatedAt = historyItem.timestamp;
     const existingIndex = bookmark.history.findIndex((item) => item.day === day);
     if (existingIndex >= 0) {
-      bookmark.history[existingIndex] = historyItem;
+      const existing = bookmark.history[existingIndex];
+      if (existing.reference === historyItem.reference) {
+        existing.timestamp = historyItem.timestamp;
+        existing.location = historyItem.location;
+        existing.source = historyItem.source;
+      } else {
+        bookmark.history[existingIndex] = historyItem;
+      }
     } else {
       bookmark.history.push(historyItem);
     }
