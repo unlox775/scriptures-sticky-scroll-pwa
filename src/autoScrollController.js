@@ -17,7 +17,7 @@ function saveSpeed(speed) {
 }
 
 export class AutoScrollController {
-  constructor({ scroller, content, button, panelHost, initialSpeed = 24, onAutoScroll = null, onStateChange = null }) {
+  constructor({ scroller, content, button, panelHost, initialSpeed = 20, onAutoScroll = null, onStateChange = null }) {
     this.scroller = scroller;
     this.content = content;
     this.button = button;

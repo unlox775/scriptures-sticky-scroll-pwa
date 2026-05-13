@@ -182,3 +182,13 @@ Second, I had some trouble when I scrolled ahead a ways, then came back into vie
 <user_query>
 Ok, go back for this whoel conversation, This all should have been a new documentation/spec-and-prompt set of files.  Look at git history fix that, use the prompts that got recorded, etc, make sure it is in a new set dated yesterday
 </user_query>
+
+=== Prompt 27 (loosen sticky-follow and lower default auto-scroll speed) ===
+
+<user_query>
+Set default scroll speed to 20px/sec
+
+Your stop-auto-scrollingif-too-far-behind is way too agressive, check this screenshot.  I am only that far ahead and it has stopped auto-scrolling,  Make 4-5x more flexible, letting even things being off screen a ways still allow sticky-following.
+
+Maybe allow for quicker readers, increase the ok-to-read-this-fast-and-still-sticky-follow speed a bit, maybe 25% faster
+</user_query>

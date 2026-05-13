@@ -261,6 +261,14 @@ See `20260512-224600_scripture-pwa-infinite-scroller-PROMPT.txt` for the full mi
 | Migrate recorded prompts | Done | Old pivot Prompts 12–37 were copied here as Prompts 1–26 |
 | Trim old pivot spec | Done | `20260309-210000_scripture-pwa-pivot-*` now points to this spec for the scroller rewrite |
 
+### Prompt 27: Loosen sticky-follow and lower default auto-scroll speed
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Lower default auto-scroll speed | Done | `src/autoScrollController.js`, `src/scriptureReaderMount.js`, `src/services/readerService.js`; default speed is now 20 px/sec when no saved user speed exists |
+| Make sticky-follow more forgiving | Done | `src/main.js`; resume and max-update verse windows are roughly 4.5x larger, allowing the active bookmark to keep following from farther off screen |
+| Allow faster sticky-follow reading | Done | `src/main.js`; slow-reading velocity gate is increased by about 25% |
+
 ## Next Actions
 
 1. Exercise the integrated reader on iPhone Safari and tune remaining touch momentum behavior.

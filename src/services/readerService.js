@@ -84,7 +84,7 @@ export function createReaderService({ index, scroller, content, getWorkMeta, boo
         bookCache,
         autoScrollButton,
         autoScrollPanelHost,
-        initialAutoScrollSpeed: 90,
+        initialAutoScrollSpeed: 20,
         onAutoScrollStateChange,
         onTelemetry: handleTelemetry,
       });

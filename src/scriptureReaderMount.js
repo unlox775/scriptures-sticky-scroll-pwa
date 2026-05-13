@@ -9,7 +9,7 @@ export function createScriptureReader({
   bookCache = null,
   autoScrollButton = null,
   autoScrollPanelHost = null,
-  initialAutoScrollSpeed = 24,
+  initialAutoScrollSpeed = 20,
   onAutoScrollStateChange = null,
   location = defaultLocation(),
   onTelemetry = null,
