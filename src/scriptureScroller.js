@@ -332,6 +332,10 @@ export class ScriptureScroller {
     this.userScrollSinceJump = true;
   }
 
+  markIntentionalScroll() {
+    this.userScrollSinceJump = true;
+  }
+
   async evaluateWindow() {
     const snapshot = this.getSnapshot("scroll");
     const previousScrollTop = this.lastScrollTop;

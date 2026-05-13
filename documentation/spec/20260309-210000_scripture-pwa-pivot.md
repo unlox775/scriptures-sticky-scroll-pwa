@@ -224,8 +224,20 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Browser verification | Done | Cache-busted lab page starts/stops auto-scroll from the main header |
 | Build verification | Done | `npm run build` passing |
 
+### Prompt 30: Prepare scroller for production transplant
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Extract reusable reader styles | Done | `src/scriptureReader.css`; left-reader visuals now live outside the telemetry stylesheet |
+| Split auto-scroll controller | Done | `src/autoScrollController.js`; auto-scroll can be mounted with or without the lab telemetry UI |
+| Add reader mount adapter | Done | `src/scriptureReaderMount.js`; wraps `ScriptureScroller`, optional auto-scroll, `init`, `jumpTo`, `getSnapshot`, and `destroy` |
+| Add production reader entrypoint | Done | `src/scriptureReader.js`; old app can import the reader module without importing the lab harness |
+| Keep lab as telemetry harness | Done | `src/scrollerLab.js`; lab now imports the reusable reader entrypoint and owns only controls/telemetry rendering |
+| Build verification | Done | `npm run build` passing |
+
 ## Next Actions
 
-1. Exercise the scroller lab on iPhone Safari and tune preload/unload distances for touch momentum scrolling.
-2. Optional: add browser-driven checks for direct URL alignment and cross-book boundary scrolling.
-3. Continue iterating from this pivot; append new prompts to the pivot PROMPT log.
+1. Mount `createScriptureReader()` inside the traditional app reader pane and wire existing navigation state to `jumpTo()`.
+2. Exercise the scroller lab on iPhone Safari and tune preload/unload distances for touch momentum scrolling.
+3. Optional: add browser-driven checks for direct URL alignment and cross-book boundary scrolling.
+4. Continue iterating from this pivot; append new prompts to the pivot PROMPT log.

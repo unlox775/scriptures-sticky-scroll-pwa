@@ -1,6 +1,6 @@
 import "./scrollerLab.css";
 import { loadIndex } from "./data.js";
-import { ScriptureScroller, parseScrollerRoute } from "./scriptureScroller.js";
+import { createScriptureReader, parseScrollerRoute } from "./scriptureReader.js";
 
 const els = {
   labHeader: document.querySelector(".lab-header"),
@@ -33,11 +33,9 @@ const els = {
 };
 
 let scroller = null;
+let reader = null;
 let lastSnapshot = null;
 let preloadNoise = null;
-let autoScrollRaf = 0;
-let autoScrollLastTs = 0;
-let autoScrollSpeed = 24;
 
 function fmtPx(value) {
   return `${Math.round(value || 0).toLocaleString()} px`;
@@ -46,54 +44,6 @@ function fmtPx(value) {
 function setStatus(text, level = "info") {
   els.statusPill.textContent = text;
   els.statusPill.dataset.level = level;
-}
-
-function stopAutoScroll() {
-  if (autoScrollRaf) cancelAnimationFrame(autoScrollRaf);
-  autoScrollRaf = 0;
-  autoScrollLastTs = 0;
-  document.body.classList.remove("auto-scroll-active");
-  if (els.autoScrollToggle) els.autoScrollToggle.textContent = "Auto scroll";
-  document.querySelectorAll(".auto-scroll-panel").forEach((node) => node.remove());
-}
-
-function autoScrollStep(ts) {
-  if (!autoScrollLastTs) autoScrollLastTs = ts;
-  const elapsedSeconds = Math.min((ts - autoScrollLastTs) / 1000, 0.1);
-  autoScrollLastTs = ts;
-  els.scroller.scrollTop += autoScrollSpeed * elapsedSeconds;
-  const atBottom = els.scroller.scrollTop + els.scroller.clientHeight >= els.content.scrollHeight - 1;
-  if (atBottom) {
-    stopAutoScroll();
-    return;
-  }
-  autoScrollRaf = requestAnimationFrame(autoScrollStep);
-}
-
-function startAutoScroll(panel, input) {
-  autoScrollSpeed = Number(input.value) || autoScrollSpeed;
-  els.autoScrollToggle.textContent = "Auto scrolling";
-  document.body.classList.add("auto-scroll-active");
-  if (!autoScrollRaf) autoScrollRaf = requestAnimationFrame(autoScrollStep);
-}
-
-function createAutoScrollPanel() {
-  stopAutoScroll();
-  const panel = document.createElement("div");
-  panel.className = "auto-scroll-panel";
-  panel.innerHTML = `
-    <label>px/sec <input type="range" min="8" max="160" step="4" value="${autoScrollSpeed}" /></label>
-    <span data-auto-speed>${autoScrollSpeed} px/s</span>
-    <button type="button" data-auto-stop>Stop</button>
-  `;
-  const input = panel.querySelector("input");
-  input.addEventListener("input", () => {
-    autoScrollSpeed = Number(input.value) || autoScrollSpeed;
-    panel.querySelector("[data-auto-speed]").textContent = `${autoScrollSpeed} px/s`;
-  });
-  panel.querySelector("[data-auto-stop]").addEventListener("click", stopAutoScroll);
-  els.labHeader.insertAdjacentElement("afterend", panel);
-  startAutoScroll(panel, input);
 }
 
 function addEvent(entry) {
@@ -319,12 +269,16 @@ async function boot() {
     setStatus("loading", "info");
     const index = await loadIndex();
     const location = parseScrollerRoute(window.location.hash);
-    scroller = new ScriptureScroller({
+    reader = createScriptureReader({
       index,
       scroller: els.scroller,
       content: els.content,
+      autoScrollButton: els.autoScrollToggle,
+      autoScrollPanelHost: els.labHeader,
+      location,
       onTelemetry,
     });
+    scroller = reader.scroller;
     const work = index.works.find((item) => item.id === "book-of-mormon") || index.works[0];
     populateBooks(work.books);
     syncControls(location);
@@ -345,11 +299,9 @@ async function boot() {
       els.eventTicker.innerHTML = "";
       preloadNoise = null;
     });
-    els.autoScrollToggle.addEventListener("click", createAutoScrollPanel);
     window.addEventListener("resize", () => renderSnapshot(lastSnapshot));
 
-    await scroller.init(location);
-    const initialSnapshot = scroller.getSnapshot("boot");
+    const initialSnapshot = await reader.init(location);
     const anchor = initialSnapshot.anchor || location;
     syncControls(anchor);
     updateHash(anchor);

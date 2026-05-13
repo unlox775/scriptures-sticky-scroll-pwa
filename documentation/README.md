@@ -9,7 +9,8 @@ This directory contains technical documentation for the Scripture Reader PWA. St
 | Installable PWA shell | 🟩 Ready | Scaffolding, manifest, service worker; GitHub Pages deployment with base path. |
 | Drill-down navigation | 🟩 Ready | Home → collection → book → chapter tiles → reader. |
 | Infinite chapter scrolling | 🟩 Ready | Cross-book chapter loading, 25% reading anchor, resize/orientation preservation. |
-| Infinite scroller lab | 🟩 Ready | Standalone `scroller-lab.html` debug playground with direct hash jumps, minimap, threshold meters, and event telemetry. |
+| Infinite scroller lab | 🟩 Ready | Standalone `scroller-lab.html` telemetry harness around the reusable reader module. |
+| Portable reader module | 🟩 Ready | `src/scriptureReader.js` exports the reusable scroller, mount adapter, styles, and optional auto-scroll controller for transplant into the traditional app. |
 | Sticky bookmarks | 🟩 Ready | Multiple bookmarks, active selection, auto-follow while scrolling. |
 | Daily bookmark history | 🟩 Ready | Per-bookmark chronology snapshots persisted locally. |
 | Auto-scroll controls | 🟩 Ready | Top-mounted start/stop and speed slider. |
@@ -23,7 +24,7 @@ This directory contains technical documentation for the Scripture Reader PWA. St
 
 ## Current Focus
 
-- Use the standalone scroller lab to tune the new infinite-reader module before integrating it into the final app UI.
+- Mount the reusable reader module in the traditional app UI, using the standalone scroller lab as the debug harness.
 - Continue polishing mobile UX and long-session performance.
 - Tune bookmark auto-follow heuristics for variable scroll speeds.
 - If a footnote-capable data source becomes available, wire footnote rendering.

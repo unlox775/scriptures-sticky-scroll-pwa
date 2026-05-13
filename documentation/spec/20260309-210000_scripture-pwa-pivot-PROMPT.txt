@@ -85,6 +85,20 @@ All right, let's try some stuff. yep it working it working great nice and solid 
 So close. You added the auto-scroll button into the chapter header. I only wanted that arrow pointing up and to the right. And I think I want that over to the right next to the chapter 5 thing. Maybe chapter 5 and on the right side of the chapter 5 have that arrow pointing up to the right. But the auto scroll button should actually be in the main header, the header where you have infinite, scroller, lab, book of Mormon, debug reader, auto scroll. Because it may actually exist on the outside of this component anyways, but the actual bar that it's adding of the pixels per second auto scroll when you hit auto scroll should immediately start scrolling and then there should be that stop button you can get rid of the start button because the stop button also hide that auto scroll and then stop closes the thing but But it's looking okay.
 </user_query>
 
+=== Prompt 30 (prepare scroller for production transplant) ===
+
+<user_query>
+Alright, do the work to make... Go ahead and actually make the changes to try to prepare for it being portable and jumping Jumping into the replacement of the other one. But leave it, make it the changes while still in this telemetry harness so that it is as clean separation as still possible while still making the telemetry harness still work as it is. Please see if you can get that to work before we jump on to the next. Thing was just merging it into the other stuff.  All the steps you recommended
+</user_query>
+
+=== Prompt 31 (auto-scroll unload and manual stop behavior) ===
+
+<user_query>
+another small glitch the autoscroll as it moves down doesn't end up firing the events or says whatever it is that causes the unload event to unload earlier chapters it doesn't happen when it's autoscrolling so the it keeps loading new chapters as they come along but it does not actually work to just keep letting it scroll forever. It just keeps loading more and more and more stuff into the page. Anyway, that also needs to be fixed.
+
+Also, when you are scrolling, I like that you change the name of the button to auto-scrolling. If they tap that same button again, I want it to be the same as if they'd hit stop. The other thing I want you to do is if there is more than a little bit of manual scrolling, either backscrolling or forward scrolling, more than just like an accidental tap, can you actually also treat that as a stop button too? so that it auto stops if you start scrolling around.
+</user_query>
+
 === Prompt 19 (directional unload and bottom-edge line) ===
 
 <user_query>
