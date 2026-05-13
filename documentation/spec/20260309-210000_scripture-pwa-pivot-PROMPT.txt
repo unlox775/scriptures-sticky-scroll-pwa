@@ -67,6 +67,12 @@ Can you figure out what happened here? I was just scrolling down and crossed the
 Alright, see if you can comprehend this. Don't fix anything unless you see something obvious, I guess. What exactly is happening in this? I've grabbed just two screenshots that happen right before and after each other. What I'm doing is I'm scrolling down until I cross the line, which should unload Jacob 2. As you can see, it rapidly unloads Jacob 2 and then reloads Jacob 2 immediately. Look at the event trail. What would have happened in there? How close the numbers are? Maybe we need to add a debug of like, as soon as jacob2 is done, we debug how many pixels are left before it needs to scroll back up to load jacob2. I mean, are we already within the line? To load jacob2 again? Again, theoretically that shouldn't happen because that line should be significantly above. I thought that what we did earlier would have fixed that. I do not know. Take a look.
 </user_query>
 
+=== Prompt 27 (implement unload catch-up) ===
+
+<user_query>
+Sounds good. Please go do that if you could. Thank you.
+</user_query>
+
 === Prompt 19 (directional unload and bottom-edge line) ===
 
 <user_query>

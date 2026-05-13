@@ -194,6 +194,16 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Add unload debug metrics | Done | `chapter_unloaded` telemetry now includes before/after scroll, removed layout space, and exact adjustment |
 | Build verification | Done | `npm run build` passing |
 
+### Prompt 27: Implement unload catch-up
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Allow overdue unload cleanup | Done | `src/scriptureScroller.js`; unload now fires if the viewport is already past the edge threshold, not only on the exact crossing frame |
+| Keep cleanup edge-only | Done | `src/scriptureScroller.js`; fast downward scroll cleans one top chapter per evaluation, fast upward scroll cleans one bottom chapter |
+| Clarify passed threshold state | Done | `src/scriptureScroller.js` and `src/scrollerLab.js`; counters now show `passed` instead of reporting no chapter when an unload threshold is behind the viewport |
+| Avoid misleading minimap lines | Done | `src/scrollerLab.js`; passed unload thresholds do not draw stale red lines |
+| Build verification | Done | `npm run build` passing |
+
 ## Next Actions
 
 1. Exercise the scroller lab on iPhone Safari and tune preload/unload distances for touch momentum scrolling.

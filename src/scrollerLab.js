@@ -112,6 +112,7 @@ function renderSnapshot(snapshot) {
 
 function counterLine(label, item, fallback = "none") {
   if (!item) return `<div><span>${label}</span><strong>${fallback}</strong></div>`;
+  if (item.passed) return `<div><span>${label}</span><strong>passed · ${item.label}</strong></div>`;
   return `<div><span>${label}</span><strong>${fmtPx(item.px)} · ${item.label}</strong></div>`;
 }
 
@@ -175,14 +176,14 @@ function renderMinimapLines(snapshot, scale) {
     ));
   }
 
-  if (t.unloadUp) {
+  if (t.unloadUp && !t.unloadUp.passed) {
     lines.push(makeLine(
       `unload below: ${t.unloadUp.label} in ${fmtPx(t.unloadUp.px)}`,
       t.unloadUp.targetScrollTop * scale,
       "line-unload",
     ));
   }
-  if (t.unloadDown) {
+  if (t.unloadDown && !t.unloadDown.passed) {
     lines.push(makeLine(
       `unload above: ${t.unloadDown.label} in ${fmtPx(t.unloadDown.px)}`,
       (t.unloadDown.triggerY ?? t.unloadDown.targetScrollTop + snapshot.viewportHeight) * scale,

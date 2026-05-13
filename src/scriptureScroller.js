@@ -376,35 +376,36 @@ export class ScriptureScroller {
     const unloadBelowAt = top - unloadDistancePx;
     const crossedAbove = direction === "down" && previousScrollTop <= unloadAboveAt && viewportTop > unloadAboveAt;
     const crossedBelow = direction === "up" && previousViewportBottom >= unloadBelowAt && viewportBottom < unloadBelowAt;
+    const pastAbove = direction === "down" && viewportTop > unloadAboveAt;
+    const pastBelow = direction === "up" && viewportBottom < unloadBelowAt;
+    const shouldUnloadAbove = pastAbove;
+    const shouldUnloadBelow = pastBelow;
 
-    if ((this.lastLoadDirection === "down" && crossedAbove) || (this.lastLoadDirection === "up" && crossedBelow)) {
-      this.lastLoadDirection = null;
-      return;
-    }
-    if (!crossedAbove && !crossedBelow) {
+    if (!shouldUnloadAbove && !shouldUnloadBelow) {
       this.lastLoadDirection = null;
       return;
     }
 
     const beforeScroll = this.scroller.scrollTop;
     const nextNode = node.nextElementSibling;
-    const removedSpace = crossedAbove && nextNode
+    const removedSpace = shouldUnloadAbove && nextNode
       ? nextNode.offsetTop - node.offsetTop
       : node.offsetHeight;
     node.remove();
     this.loaded.delete(seq);
-    if (crossedAbove) this.scroller.scrollTop = Math.max(0, beforeScroll - removedSpace);
+    if (shouldUnloadAbove) this.scroller.scrollTop = Math.max(0, beforeScroll - removedSpace);
     this.lastScrollTop = this.scroller.scrollTop;
     this.emit("chapter_unloaded", {
       level: "info",
       summary: `${this.pointerLabel(this.sequence[seq])} unloaded`,
-      refs: { seq, edge: crossedAbove ? "top" : "bottom" },
+      refs: { seq, edge: shouldUnloadAbove ? "top" : "bottom" },
       metrics: {
         retainedCount: this.loaded.size,
         beforeScroll: Math.round(beforeScroll),
         afterScroll: Math.round(this.scroller.scrollTop),
         removedSpace: Math.round(removedSpace),
-        scrollAdjustedBy: crossedAbove ? Math.round(this.scroller.scrollTop - beforeScroll) : 0,
+        mode: crossedAbove || crossedBelow ? "crossed" : "catch-up",
+        scrollAdjustedBy: shouldUnloadAbove ? Math.round(this.scroller.scrollTop - beforeScroll) : 0,
       },
     });
     this.lastLoadDirection = null;
@@ -486,25 +487,25 @@ export class ScriptureScroller {
     const unloadDown = canUnloadEdge && firstChapter
       ? (() => {
           const targetScrollTop = firstChapter.top + firstChapter.height + unloadDistancePx;
-          return targetScrollTop >= scrollTop
-            ? {
-                label: firstChapter.label,
-                targetScrollTop,
-                triggerY: targetScrollTop + viewportHeight,
-                px: targetScrollTop - scrollTop,
-              }
-            : null;
+          return {
+            label: firstChapter.label,
+            targetScrollTop,
+            triggerY: targetScrollTop + viewportHeight,
+            px: targetScrollTop - scrollTop,
+            passed: targetScrollTop < scrollTop,
+          };
         })()
       : null;
     const unloadUpTargetScrollTop = canUnloadEdge && lastChapter
       ? lastChapter.top - viewportHeight - unloadDistancePx
       : null;
-    const unloadUp = canUnloadEdge && lastChapter && unloadUpTargetScrollTop >= 0 && unloadUpTargetScrollTop <= scrollTop
+    const unloadUp = canUnloadEdge && lastChapter && unloadUpTargetScrollTop >= 0
       ? {
           label: lastChapter.label,
           triggerY: lastChapter.top - unloadDistancePx,
           targetScrollTop: unloadUpTargetScrollTop,
           px: scrollTop - unloadUpTargetScrollTop,
+          passed: unloadUpTargetScrollTop > scrollTop,
         }
       : null;
 
