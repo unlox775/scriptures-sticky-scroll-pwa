@@ -12,6 +12,7 @@ export const VISIBILITY_MODULES = [
   { id: "domain.routing", label: "Routing", group: "domain" },
   { id: "domain.dataAccess", label: "Data access", group: "domain" },
   { id: "domain.readerEngine", label: "Reader engine", group: "domain" },
+  { id: "domain.infiniteScroller", label: "Infinite scroller", group: "domain" },
   { id: "domain.bookmarks", label: "Bookmarks", group: "domain" },
   { id: "domain.logging", label: "Logging", group: "domain" },
 ];
@@ -32,6 +33,7 @@ export const VISIBILITY_PRESETS = {
     modules: {
       "ui.readerView": true,
       "domain.readerEngine": true,
+      "domain.infiniteScroller": true,
       "domain.dataAccess": true,
       "domain.routing": true,
     },
@@ -44,6 +46,7 @@ export const VISIBILITY_PRESETS = {
       "domain.bookmarks": true,
       "domain.routing": true,
       "domain.readerEngine": true,
+      "domain.infiniteScroller": true,
     },
   },
   "Navigation restore": {
@@ -55,6 +58,7 @@ export const VISIBILITY_PRESETS = {
       "ui.readerView": true,
       "domain.routing": true,
       "domain.readerEngine": true,
+      "domain.infiniteScroller": true,
     },
   },
 };

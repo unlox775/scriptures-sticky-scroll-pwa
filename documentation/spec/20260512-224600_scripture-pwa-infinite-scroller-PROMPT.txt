@@ -192,3 +192,13 @@ Your stop-auto-scrollingif-too-far-behind is way too agressive, check this scree
 
 Maybe allow for quicker readers, increase the ok-to-read-this-fast-and-still-sticky-follow speed a bit, maybe 25% faster
 </user_query>
+
+=== Prompt 28 (sticky-follow resume diagnostics and debug log UX) ===
+
+<user_query>
+Ok, so if I am sticky scrolling, then scroll way past, then come back to the scroll being on screen (see pic), it clearly should still be doing sticky-scroll, right?  From there if I scroll, even realllly slow, it isn't staying sticky.  various thiings can resume the stickyness, like updating the position manually, go back to home, then back in...
+
+But WHY is it stuck sometimes?  I want it to resume immediately once I am back in view, and then start scrolling at the regular reading-speed-slowness.  
+
+Also, maybe the debug for this could be in the logs, but I can't figure out if the debug/logging view works any more, whether this new infinite scroller is included, can you make it be included and tell me how to view events/logs?  Also I'd like you to make the logs view look/behave much more like our infinite-scroll telemetryone, with newest-at-top, most messages that we can, converted into a simple string, with dups showing as x1, x2, x18 etc Fix all that and I wil try again
+</user_query>

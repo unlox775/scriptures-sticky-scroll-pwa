@@ -4,6 +4,7 @@ import { createRuntimeMetrics } from "../runtimeMetrics.js";
 
 export function createReaderService({ index, scroller, content, getWorkMeta, bookCache, autoScrollButton, autoScrollPanelHost, onAnchorChange, onAutoScrollStateChange }) {
   const emit = createTelemetryEmitter("domain.readerEngine");
+  const scrollerEmit = createTelemetryEmitter("domain.infiniteScroller");
   const metrics = createRuntimeMetrics();
   let reader = null;
   let lastAnchor = null;
@@ -35,6 +36,26 @@ export function createReaderService({ index, scroller, content, getWorkMeta, boo
       lastAnchor = { reference: anchor.reference, scrollTop };
       lastAnchorAt = now;
       metrics.recordAnchor(Date.now());
+      scrollerEmit({
+        level: "debug",
+        event: entry.event,
+        summary: entry.event === "anchor_changed" ? `Anchor ${anchor.reference}` : `Metrics at ${anchor.reference}`,
+        refs: {
+          reference: anchor.reference,
+          workId: anchor.workId,
+          bookId: anchor.bookId,
+          chapter: anchor.chapter,
+          verse: anchor.verse,
+        },
+        metrics: {
+          scrollTop: Math.round(scrollTop),
+          velocity: Number(velocity.toFixed(1)),
+          autoScrolling: Boolean(reader?.autoScroll?.isActive),
+          loadedCount: snapshot?.loadedCount,
+        },
+        throttleMs: entry.event === "metrics_updated" ? 750 : 300,
+        minVerbosity: "standard",
+      });
       onAnchorChange(anchor, {
         velocity,
         autoScrolling: Boolean(reader?.autoScroll?.isActive),
@@ -48,6 +69,15 @@ export function createReaderService({ index, scroller, content, getWorkMeta, boo
     }
 
     emit({
+      level: entry.level || "debug",
+      event: entry.event,
+      summary: entry.summary,
+      refs: entry.refs,
+      metrics: entry.metrics,
+      details: entry.details,
+      minVerbosity: entry.event === "preload_not_needed" ? "deep" : "standard",
+    });
+    scrollerEmit({
       level: entry.level || "debug",
       event: entry.event,
       summary: entry.summary,

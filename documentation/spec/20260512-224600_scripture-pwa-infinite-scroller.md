@@ -269,6 +269,15 @@ See `20260512-224600_scripture-pwa-infinite-scroller-PROMPT.txt` for the full mi
 | Make sticky-follow more forgiving | Done | `src/main.js`; resume and max-update verse windows are roughly 4.5x larger, allowing the active bookmark to keep following from farther off screen |
 | Allow faster sticky-follow reading | Done | `src/main.js`; slow-reading velocity gate is increased by about 25% |
 
+### Prompt 28: Sticky-follow resume diagnostics and debug log UX
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Fix stuck sticky-follow resume | Done | `src/main.js`; when an active bookmark returns to update range, stale velocity samples are cleared so slow reading can immediately resume follow |
+| Add sticky-follow decision logs | Done | `src/main.js`; follow resume/update/skip/auto-disable decisions emit explicit reasons and threshold metrics |
+| Surface scroller telemetry in debug logs | Done | `src/services/readerService.js`, `src/visibilityConfig.js`; production infinite-scroller events have a dedicated `domain.infiniteScroller` visibility module |
+| Compact debug log view | Done | `src/main.js`, `src/styles.css`; logs render newest-first as compact strings and collapse repeated consecutive events with `xN` badges |
+
 ## Next Actions
 
 1. Exercise the integrated reader on iPhone Safari and tune remaining touch momentum behavior.

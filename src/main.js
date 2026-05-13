@@ -28,6 +28,7 @@ const state = {
   autoScrollActive: false,
   stickyFollowBookmarkId: null,
   stickyFollowOutOfRangeSince: null,
+  stickyFollowWasInUpdateRange: false,
   historyBookmarkName: "History",
   devTapCount: 0,
   devTapResetTimer: null,
@@ -203,8 +204,7 @@ function openWork(workId) {
   state.currentWork = state.index.works.find((work) => work.id === workId) || null;
   state.currentBook = null;
   state.currentLocation = null;
-  state.stickyFollowBookmarkId = null;
-  state.stickyFollowOutOfRangeSince = null;
+  clearStickyFollow();
   pushRouteAndSave(`#/w/${workId}`);
   renderBooksView();
 }
@@ -213,8 +213,7 @@ function openBook(bookId) {
   if (!state.currentWork) return;
   state.currentBook = state.currentWork.books.find((book) => book.id === bookId) || null;
   state.currentLocation = null;
-  state.stickyFollowBookmarkId = null;
-  state.stickyFollowOutOfRangeSince = null;
+  clearStickyFollow();
   pushRouteAndSave(`#/b/${state.currentWork.id}/${bookId}`);
   renderChaptersView();
   uiEmit.books({
@@ -275,11 +274,22 @@ function renderBookmarkRibbons() {
   });
 }
 
-function toggleStickyFollow(bookmarkId) {
-  state.stickyFollowBookmarkId = state.stickyFollowBookmarkId === bookmarkId ? null : bookmarkId;
+function resetStickyFollowTracking() {
   state.stickyFollowOutOfRangeSince = null;
+  state.stickyFollowWasInUpdateRange = false;
+  state.velocitySamples = [];
   state.lastAutoBookmarkAt = 0;
   state.lastAutoReference = "";
+}
+
+function clearStickyFollow() {
+  state.stickyFollowBookmarkId = null;
+  resetStickyFollowTracking();
+}
+
+function toggleStickyFollow(bookmarkId) {
+  state.stickyFollowBookmarkId = state.stickyFollowBookmarkId === bookmarkId ? null : bookmarkId;
+  resetStickyFollowTracking();
   readerStatusEl.hidden = true;
   bookmarkStatusEl.textContent = "";
   renderBookmarkRibbons();
@@ -314,8 +324,7 @@ function renderHomeView() {
   state.currentWork = null;
   state.currentBook = null;
   state.currentLocation = null;
-  state.stickyFollowBookmarkId = null;
-  state.stickyFollowOutOfRangeSince = null;
+  clearStickyFollow();
   setView("homeView");
   const bookmarks = bookmarkService.getBookmarks();
   uiEmit.home({
@@ -362,9 +371,7 @@ function renderHomeView() {
       if (!bookmark) return;
       const loc = bookmark.location || defaultLocationFromIndex();
       state.stickyFollowBookmarkId = bookmark.id;
-      state.stickyFollowOutOfRangeSince = null;
-      state.lastAutoBookmarkAt = 0;
-      state.lastAutoReference = "";
+      resetStickyFollowTracking();
       await openReader(loc);
     },
   });
@@ -418,8 +425,7 @@ function renderChaptersView() {
     container: chaptersView,
     book: state.currentBook,
     onOpenChapter: async (chapter) => {
-      state.stickyFollowBookmarkId = null;
-      state.stickyFollowOutOfRangeSince = null;
+      clearStickyFollow();
       uiEmit.chapters({
         level: "info",
         event: "chapters_open_chapter_click",
@@ -466,10 +472,12 @@ function shouldAutoFollow(anchor, meta) {
   const now = meta.timestamp;
   state.velocitySamples.push({ v: meta.velocity, ts: now });
   const avg = getAverageVelocityOverWindow();
-  if (avg > SLOW_READING_THRESHOLD) return false;
-  if (anchor.reference === state.lastAutoReference && now - state.lastAutoBookmarkAt < 900) return false;
-  if (now - state.lastAutoBookmarkAt < 350) return false;
-  return true;
+  if (avg > SLOW_READING_THRESHOLD) return { ok: false, reason: "average_velocity_too_high", averageVelocity: avg };
+  if (anchor.reference === state.lastAutoReference && now - state.lastAutoBookmarkAt < 900) {
+    return { ok: false, reason: "same_reference_throttled", averageVelocity: avg };
+  }
+  if (now - state.lastAutoBookmarkAt < 350) return { ok: false, reason: "update_throttled", averageVelocity: avg };
+  return { ok: true, reason: "ok", averageVelocity: avg };
 }
 
 function stickyFollowDelta(bookmark, anchor) {
@@ -548,28 +556,87 @@ function handleAnchorChange(anchor, meta) {
 
   if (!canResume) {
     state.stickyFollowOutOfRangeSince ??= now;
+    state.stickyFollowWasInUpdateRange = false;
+    const outOfRangeSince = state.stickyFollowOutOfRangeSince;
     if (now - state.stickyFollowOutOfRangeSince >= STICKY_FOLLOW_OUT_OF_RANGE_DISABLE_MS) {
-      state.stickyFollowBookmarkId = null;
-      state.stickyFollowOutOfRangeSince = null;
-      state.lastAutoBookmarkAt = 0;
-      state.lastAutoReference = "";
+      clearStickyFollow();
       renderBookmarkRibbons();
+      uiEmit.reader({
+        level: "info",
+        event: "sticky_follow_auto_disabled",
+        summary: "Sticky follow auto-disabled after staying out of range",
+        refs: { bookmarkId: toFollow.id, bookmarkName: toFollow.name, reference: anchor?.reference },
+      });
     }
+    uiEmit.reader({
+      level: "debug",
+      event: "sticky_follow_skipped",
+      summary: "Sticky follow waiting: anchor is out of resume range",
+      refs: { bookmarkId: toFollow.id, bookmarkName: toFollow.name, reference: anchor?.reference },
+      metrics: { delta, resumeGap: STICKY_FOLLOW_RESUME_VERSE_GAP, maxUpdateJump: STICKY_FOLLOW_MAX_UPDATE_VERSE_JUMP },
+      details: { outOfRangeSeconds: Number(((now - outOfRangeSince) / 1000).toFixed(1)) },
+      throttleMs: 1000,
+      minVerbosity: "standard",
+    });
     bookmarkStatusEl.textContent = "";
     readerStatusEl.hidden = true;
     return;
   }
 
   state.stickyFollowOutOfRangeSince = null;
-  if (canUpdate && shouldAutoFollow(anchor, meta)) {
+  if (canUpdate && !state.stickyFollowWasInUpdateRange) {
+    state.velocitySamples = [];
+    state.lastAutoBookmarkAt = 0;
+    state.lastAutoReference = "";
+    uiEmit.reader({
+      level: "info",
+      event: "sticky_follow_resumed",
+      summary: "Sticky follow resumed in update range",
+      refs: { bookmarkId: toFollow.id, bookmarkName: toFollow.name, reference: anchor?.reference },
+      metrics: { delta, maxUpdateJump: STICKY_FOLLOW_MAX_UPDATE_VERSE_JUMP },
+      minVerbosity: "standard",
+    });
+  }
+  state.stickyFollowWasInUpdateRange = canUpdate;
+  const followDecision = canUpdate
+    ? shouldAutoFollow(anchor, meta)
+    : { ok: false, reason: "near_but_update_jump_too_large", averageVelocity: getAverageVelocityOverWindow() };
+  if (canUpdate && followDecision.ok) {
     bookmarkService.updateBookmarkLocation(toFollow.id, anchor, meta.autoScrolling ? "auto-scroll" : "scroll");
     state.lastAutoBookmarkAt = meta.timestamp;
     state.lastAutoReference = anchor.reference;
     bookmarkStatusEl.textContent = "";
     readerStatusEl.hidden = true;
+    uiEmit.reader({
+      level: "debug",
+      event: "sticky_follow_updated",
+      summary: `Sticky follow updated ${toFollow.name} to ${anchor.reference}`,
+      refs: { bookmarkId: toFollow.id, bookmarkName: toFollow.name, reference: anchor.reference },
+      metrics: {
+        delta,
+        velocity: Number((meta?.velocity ?? 0).toFixed(1)),
+        averageVelocity: Number(followDecision.averageVelocity.toFixed(1)),
+      },
+      minVerbosity: "standard",
+    });
   } else {
     bookmarkStatusEl.textContent = "";
     readerStatusEl.hidden = true;
+    uiEmit.reader({
+      level: "debug",
+      event: "sticky_follow_skipped",
+      summary: `Sticky follow skipped: ${followDecision.reason}`,
+      refs: { bookmarkId: toFollow.id, bookmarkName: toFollow.name, reference: anchor?.reference },
+      metrics: {
+        delta,
+        resumeGap: STICKY_FOLLOW_RESUME_VERSE_GAP,
+        maxUpdateJump: STICKY_FOLLOW_MAX_UPDATE_VERSE_JUMP,
+        velocity: Number((meta?.velocity ?? 0).toFixed(1)),
+        averageVelocity: Number(followDecision.averageVelocity.toFixed(1)),
+      },
+      throttleMs: 650,
+      minVerbosity: "standard",
+    });
   }
   renderBookmarkRibbons();
 }
@@ -705,6 +772,61 @@ function matchesFilters(entry) {
   return true;
 }
 
+function entrySimpleString(entry) {
+  const parts = [
+    entry.summary || entry.message || entry.event || "Log event",
+    entry.refs?.reference,
+    entry.metrics?.delta != null ? `delta ${entry.metrics.delta}` : "",
+    entry.metrics?.averageVelocity != null ? `avg ${entry.metrics.averageVelocity}px/s` : "",
+    entry.metrics?.velocity != null ? `v ${entry.metrics.velocity}px/s` : "",
+    entry.metrics?.loadedCount != null ? `loaded ${entry.metrics.loadedCount}` : "",
+  ].filter(Boolean);
+  return parts.join(" | ");
+}
+
+function compactLogEntriesNewestFirst(entries) {
+  const ordered = entries.slice().sort((a, b) => b.timestamp - a.timestamp);
+  const compacted = [];
+  for (const entry of ordered) {
+    const key = JSON.stringify({
+      level: entry.level,
+      module: entry.module || "domain.logging",
+      event: entry.event || "legacy_log",
+      message: entrySimpleString(entry),
+    });
+    const previous = compacted[compacted.length - 1];
+    if (previous?._compactKey === key) {
+      previous._count += 1;
+      previous._oldestTimestamp = entry.timestamp;
+      continue;
+    }
+    compacted.push({
+      ...entry,
+      _compactKey: key,
+      _count: 1,
+      _oldestTimestamp: entry.timestamp,
+    });
+  }
+  return compacted;
+}
+
+function renderLogEntryHtml(entry) {
+  const level = entry.level || "debug";
+  const metaParts = [
+    `<span class="dev-log-level">${level.toUpperCase()}</span>`,
+    entry.module ? `<span>${escapeHtml(entry.module)}</span>` : "",
+    entry.event ? `<span>${escapeHtml(entry.event)}</span>` : "",
+    `<time>${new Date(entry.timestamp).toLocaleTimeString()}</time>`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const count = entry._count > 1 ? `<span class="dev-log-count">x${entry._count}</span>` : "";
+  const title = entry._count > 1
+    ? `Newest ${new Date(entry.timestamp).toLocaleString()} · oldest ${new Date(entry._oldestTimestamp).toLocaleString()}`
+    : new Date(entry.timestamp).toLocaleString();
+  return `<article class="dev-log-entry compact level-${level}" title="${escapeHtml(title)}"><header><span class="dev-log-message">${escapeHtml(entrySimpleString(entry))}</span>${count}<span class="dev-log-meta">${metaParts}</span></header></article>`;
+}
+
 function renderLogFilterControls(filtersEl, entries) {
   if (!filtersEl) return;
   const modules = [...new Set(entries.map((e) => e.module || "domain.logging"))].sort();
@@ -743,30 +865,17 @@ function renderLogFilterControls(filtersEl, entries) {
 function renderLogEntries(entries, container, countEl) {
   if (!container) return;
   const filtered = entries.filter(matchesFilters);
-  state.lastRenderedLogEntries = filtered;
+  const compacted = compactLogEntriesNewestFirst(filtered);
+  state.lastRenderedLogEntries = compacted;
   if (countEl) {
-    countEl.textContent = `${filtered.length}/${entries.length} visible`;
+    countEl.textContent = `${compacted.length}/${filtered.length}/${entries.length} rows/events/total`;
   }
   if (filtered.length === 0) {
     container.innerHTML = "<p>No entries match the current filters.</p>";
     return;
   }
-  container.innerHTML = filtered
-    .map((e) => {
-      const details = e.details
-        ? `<code class="dev-log-details">${escapeHtml(typeof e.details === "string" ? e.details : JSON.stringify(e.details, null, 2))}</code>`
-        : "";
-      const metaParts = [
-        `<span class="dev-log-level">${e.level.toUpperCase()}</span>`,
-        e.module ? `<span>${escapeHtml(e.module)}</span>` : "",
-        e.event ? `<span>${escapeHtml(e.event)}</span>` : "",
-      ]
-        .filter(Boolean)
-        .join(" · ");
-      const metrics = e.metrics ? `<code class="dev-log-details">${escapeHtml(JSON.stringify(e.metrics, null, 2))}</code>` : "";
-      const refs = e.refs ? `<code class="dev-log-details">${escapeHtml(JSON.stringify(e.refs, null, 2))}</code>` : "";
-      return `<article class="dev-log-entry level-${e.level}"><header><span class="dev-log-message">${escapeHtml(e.summary || e.message)}</span><span class="dev-log-meta">${metaParts} <time>${new Date(e.timestamp).toLocaleString()}</time></span></header>${metrics}${refs}${details}</article>`;
-    })
+  container.innerHTML = compacted
+    .map(renderLogEntryHtml)
     .join("");
 }
 
@@ -1123,10 +1232,11 @@ function wireDeveloperMode() {
       sessionId: state.lastRenderedSessionId,
       visibleEntries: state.lastRenderedLogEntries.map((e) => ({
         time: new Date(e.timestamp).toISOString(),
+        count: e._count,
         level: e.level,
         module: e.module,
         event: e.event,
-        summary: e.summary || e.message,
+        summary: entrySimpleString(e),
         metrics: e.metrics,
         refs: e.refs,
         details: e.details,
@@ -1174,16 +1284,10 @@ function wireDeveloperMode() {
     if (entry.sessionId !== sid) return;
     const synthetic = { ...entry, timestamp: Date.now() };
     if (!matchesFilters(synthetic)) return;
-    const details = entry.details
-      ? `<code class="dev-log-details">${escapeHtml(typeof entry.details === "string" ? entry.details : JSON.stringify(entry.details, null, 2))}</code>`
-      : "";
-    const refs = entry.refs ? `<code class="dev-log-details">${escapeHtml(JSON.stringify(entry.refs, null, 2))}</code>` : "";
-    const metrics = entry.metrics ? `<code class="dev-log-details">${escapeHtml(JSON.stringify(entry.metrics, null, 2))}</code>` : "";
-    const html = `<article class="dev-log-entry level-${entry.level}"><header><span class="dev-log-message">${escapeHtml(entry.summary || entry.message)}</span><span class="dev-log-meta"><span class="dev-log-level">${entry.level.toUpperCase()}</span> ${escapeHtml(entry.module || "")} ${escapeHtml(entry.event || "")} <time>${new Date().toLocaleString()}</time></span></header>${metrics}${refs}${details}</article>`;
-    logEntries.insertAdjacentHTML("beforeend", html);
-    requestAnimationFrame(() => {
-      logsPanel.scrollTop = logsPanel.scrollHeight;
-    });
+    const compacted = compactLogEntriesNewestFirst([synthetic, ...state.lastRenderedLogEntries.flatMap((e) => Array(e._count || 1).fill(e))]);
+    state.lastRenderedLogEntries = compacted;
+    if (logCount) logCount.textContent = `${compacted.length} live rows`;
+    logEntries.innerHTML = compacted.map(renderLogEntryHtml).join("");
   }
 
   setOnLogCallback(appendLogEntryLive);
@@ -1224,9 +1328,7 @@ function wireGlobalEvents() {
     if (list.length === 1) {
       bookmarkService.updateBookmarkLocation(list[0].id, state.currentLocation, "manual");
       state.stickyFollowBookmarkId = list[0].id;
-      state.stickyFollowOutOfRangeSince = null;
-      state.lastAutoBookmarkAt = 0;
-      state.lastAutoReference = "";
+      resetStickyFollowTracking();
       bookmarkStatusEl.textContent = `Moved ${list[0].name} to ${state.currentLocation.reference}`;
       readerStatusEl.hidden = false;
       renderBookmarkRibbons();
@@ -1244,9 +1346,7 @@ function wireGlobalEvents() {
       btn.addEventListener("click", () => {
         bookmarkService.updateBookmarkLocation(b.id, state.currentLocation, "manual");
         state.stickyFollowBookmarkId = b.id;
-        state.stickyFollowOutOfRangeSince = null;
-        state.lastAutoBookmarkAt = 0;
-        state.lastAutoReference = "";
+        resetStickyFollowTracking();
         bookmarkStatusEl.textContent = `Moved ${b.name} to ${state.currentLocation.reference}`;
         readerStatusEl.hidden = false;
         picker.remove();

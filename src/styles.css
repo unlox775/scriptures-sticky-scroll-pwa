@@ -625,8 +625,8 @@ body {
 }
 
 .dev-log-entry {
-  margin-bottom: 0.5rem;
-  padding: 0.5rem;
+  margin-bottom: 0.25rem;
+  padding: 0.35rem 0.45rem;
   background: #1e293b;
   border-radius: 0.35rem;
   border-left: 3px solid #64748b;
@@ -645,17 +645,37 @@ body {
   flex-wrap: wrap;
 }
 
+.dev-log-entry.compact header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+}
+
 .dev-log-message {
   font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dev-log-meta {
   font-size: 0.75rem;
   color: #94a3b8;
+  white-space: nowrap;
 }
 
 .dev-log-level {
   margin-right: 0.35rem;
+}
+
+.dev-log-count {
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  background: #334155;
+  color: #bfdbfe;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .dev-log-details {
