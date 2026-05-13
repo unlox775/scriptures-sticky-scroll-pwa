@@ -296,6 +296,14 @@ export class ScriptureScroller {
       <header class="chapter-heading">
         <span>${escapeHtml(pointer.bookMeta.title)}</span>
         <strong>Chapter ${chapter.chapter}</strong>
+        <a
+          class="chapter-external-link"
+          href="${escapeHtml(chapter.externalUrl || "#")}"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open ${escapeHtml(this.pointerLabel(pointer))} in Gospel Library"
+          title="Open in Gospel Library"
+        >↗</a>
       </header>
       ${chapter.verses
         .map(

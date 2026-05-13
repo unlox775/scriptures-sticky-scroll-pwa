@@ -204,6 +204,26 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Avoid misleading minimap lines | Done | `src/scrollerLab.js`; passed unload thresholds do not draw stale red lines |
 | Build verification | Done | `npm run build` passing |
 
+### Prompt 28: Chapter links and auto-scroll controls
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Add Gospel Library links | Done | `src/scriptureScroller.js`; each sticky chapter heading includes an external-link arrow using chapter `externalUrl` |
+| Add auto-scroll controls | Done | `src/scriptureScroller.js`, `src/scrollerLab.js`, `src/scrollerLab.css`; chapter headers expose an Auto scroll button that opens a speed slider, Start, and Stop bar |
+| Preserve scroller behavior | Done | Auto-scroll updates the existing scroll container with `requestAnimationFrame`, so normal load/unload telemetry still drives the window |
+| Browser verification | Done | Cache-busted lab page renders the header link/button; Auto scroll panel opens, starts, and stops |
+| Build verification | Done | `npm run build` passing |
+
+### Prompt 29: Move auto-scroll to lab header
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Move auto-scroll button | Done | `scroller-lab.html`, `src/scrollerLab.js`, `src/scrollerLab.css`; Auto scroll now lives in the main lab header |
+| Keep chapter header focused | Done | `src/scriptureScroller.js`; chapter headers now show book, chapter title, and Gospel Library arrow only |
+| Simplify auto-scroll panel | Done | `src/scrollerLab.js`; clicking Auto scroll starts immediately, shows speed slider and Stop only, and Stop closes the panel |
+| Browser verification | Done | Cache-busted lab page starts/stops auto-scroll from the main header |
+| Build verification | Done | `npm run build` passing |
+
 ## Next Actions
 
 1. Exercise the scroller lab on iPhone Safari and tune preload/unload distances for touch momentum scrolling.

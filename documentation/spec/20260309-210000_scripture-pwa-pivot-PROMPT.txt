@@ -73,6 +73,18 @@ Alright, see if you can comprehend this. Don't fix anything unless you see somet
 Sounds good. Please go do that if you could. Thank you.
 </user_query>
 
+=== Prompt 28 (chapter links and auto-scroll controls) ===
+
+<user_query>
+All right, let's try some stuff. yep it working it working great nice and solid um i want to make sure that not dependent upon simple stupid things. So, I want you to add something to each chapter heading. I think your setup right now is just fine. You have the sticky header, which sticks with it. I kind of love that. I think I just want you to add maybe in the center between Ether and chapter 9 or Jacob and chapter 2 Maybe just make chapter 9 a link And then when you tap on it, it opens in Gospel Library. Or maybe just like an arrow. something that when you click on it, you get the idea that it's going to take you out. You know, like the arrow pointing up and to the right or something like that. I don't know. Some icon. But you can look in the old app. There's an opening gospel library link that it should link to. I just want to see if you add that in there that you're not going to break everything. The other thing I want you to go ahead and see if you can add is the auto-scroller. The auto scroller has some controls on it. It you already got a sticky header that doesn move So you already have something maybe extend slightly. When you have the auto scroll button, you click on it. It adds a second little bar on the top for the speed controller. And it looks god awful. It looks terrible. But it has a scroll selector. You can choose how fast. it scrolls pixels per second it has a stop button hit auto scroll it starts and stop button auto scroll X that should be all you need to do theoretically if you add that auto scroll function on there and everything else still works I think we might be ready for primetime.
+</user_query>
+
+=== Prompt 29 (move auto-scroll to lab header) ===
+
+<user_query>
+So close. You added the auto-scroll button into the chapter header. I only wanted that arrow pointing up and to the right. And I think I want that over to the right next to the chapter 5 thing. Maybe chapter 5 and on the right side of the chapter 5 have that arrow pointing up to the right. But the auto scroll button should actually be in the main header, the header where you have infinite, scroller, lab, book of Mormon, debug reader, auto scroll. Because it may actually exist on the outside of this component anyways, but the actual bar that it's adding of the pixels per second auto scroll when you hit auto scroll should immediately start scrolling and then there should be that stop button you can get rid of the start button because the stop button also hide that auto scroll and then stop closes the thing but But it's looking okay.
+</user_query>
+
 === Prompt 19 (directional unload and bottom-edge line) ===
 
 <user_query>
