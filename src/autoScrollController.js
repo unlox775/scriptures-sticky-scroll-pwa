@@ -1,36 +1,60 @@
+const MANUAL_SCROLL_CANCEL_PX = 12;
+
 export class AutoScrollController {
-  constructor({ scroller, content, button, panelHost, initialSpeed = 24 }) {
+  constructor({ scroller, content, button, panelHost, initialSpeed = 24, onAutoScroll = null }) {
     this.scroller = scroller;
     this.content = content;
     this.button = button;
     this.panelHost = panelHost;
     this.speed = initialSpeed;
+    this.onAutoScroll = onAutoScroll;
     this.raf = 0;
     this.lastTs = 0;
+    this.touchStartY = null;
 
     this.open = this.open.bind(this);
     this.stop = this.stop.bind(this);
     this.step = this.step.bind(this);
+    this.handleTouchStart = this.handleTouchStart.bind(this);
+    this.handleManualScrollIntent = this.handleManualScrollIntent.bind(this);
   }
 
   connect() {
     this.button?.addEventListener("click", this.open);
+    this.scroller.addEventListener("wheel", this.handleManualScrollIntent, { passive: true });
+    this.scroller.addEventListener("touchstart", this.handleTouchStart, { passive: true });
+    this.scroller.addEventListener("touchmove", this.handleManualScrollIntent, { passive: true });
+    this.scroller.addEventListener("keydown", this.handleManualScrollIntent);
   }
 
   disconnect() {
     this.button?.removeEventListener("click", this.open);
+    this.scroller.removeEventListener("wheel", this.handleManualScrollIntent);
+    this.scroller.removeEventListener("touchstart", this.handleTouchStart);
+    this.scroller.removeEventListener("touchmove", this.handleManualScrollIntent);
+    this.scroller.removeEventListener("keydown", this.handleManualScrollIntent);
     this.stop();
+  }
+
+  get isActive() {
+    return Boolean(this.raf);
   }
 
   stop() {
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = 0;
     this.lastTs = 0;
+    this.touchStartY = null;
     if (this.button) this.button.textContent = "Auto scroll";
     document.querySelectorAll(".auto-scroll-panel").forEach((node) => node.remove());
   }
 
   open() {
+    if (this.isActive) {
+      this.stop();
+      return;
+    }
+
     this.stop();
     const panel = document.createElement("div");
     panel.className = "auto-scroll-panel";
@@ -57,6 +81,7 @@ export class AutoScrollController {
     if (!this.lastTs) this.lastTs = ts;
     const elapsedSeconds = Math.min((ts - this.lastTs) / 1000, 0.1);
     this.lastTs = ts;
+    this.onAutoScroll?.();
     this.scroller.scrollTop += this.speed * elapsedSeconds;
 
     const atBottom = this.scroller.scrollTop + this.scroller.clientHeight >= this.content.scrollHeight - 1;
@@ -66,5 +91,28 @@ export class AutoScrollController {
     }
 
     this.raf = requestAnimationFrame(this.step);
+  }
+
+  handleTouchStart(event) {
+    this.touchStartY = event.touches?.[0]?.clientY ?? null;
+  }
+
+  handleManualScrollIntent(event) {
+    if (!this.isActive) return;
+
+    const isMeaningfulWheel = event.type === "wheel" && Math.abs(event.deltaY || 0) >= MANUAL_SCROLL_CANCEL_PX;
+    const touchY = event.touches?.[0]?.clientY;
+    const isMeaningfulTouch =
+      event.type === "touchmove" &&
+      this.touchStartY !== null &&
+      Number.isFinite(touchY) &&
+      Math.abs(touchY - this.touchStartY) >= MANUAL_SCROLL_CANCEL_PX;
+    const isMeaningfulKey =
+      event.type === "keydown" &&
+      ["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " ", "Spacebar"].includes(event.key);
+
+    if (isMeaningfulWheel || isMeaningfulTouch || isMeaningfulKey) {
+      this.stop();
+    }
   }
 }

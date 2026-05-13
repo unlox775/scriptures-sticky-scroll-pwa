@@ -235,6 +235,15 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Keep lab as telemetry harness | Done | `src/scrollerLab.js`; lab now imports the reusable reader entrypoint and owns only controls/telemetry rendering |
 | Build verification | Done | `npm run build` passing |
 
+### Prompt 31: Auto-scroll unload and stop behavior
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Let auto-scroll trigger unload cleanup | Done | `src/scriptureReaderMount.js`, `src/scriptureScroller.js`; auto-scroll marks scrolling as intentional so edge unloads are no longer gated |
+| Toggle active auto-scroll from header button | Done | `src/autoScrollController.js`; clicking Auto scrolling now stops and closes the panel |
+| Stop auto-scroll on manual scroll intent | Done | `src/autoScrollController.js`; meaningful wheel, touch drag, or scroll-key input stops auto-scroll |
+| Build verification | Done | `npm run build` passing |
+
 ## Next Actions
 
 1. Mount `createScriptureReader()` inside the traditional app reader pane and wire existing navigation state to `jumpTo()`.

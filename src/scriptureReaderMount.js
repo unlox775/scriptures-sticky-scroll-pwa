@@ -24,6 +24,7 @@ export function createScriptureReader({
         content,
         button: autoScrollButton,
         panelHost: autoScrollPanelHost || autoScrollButton.parentElement,
+        onAutoScroll: () => scriptureScroller.markIntentionalScroll(),
       })
     : null;
 
