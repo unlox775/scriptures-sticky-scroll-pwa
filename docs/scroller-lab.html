@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scripture Infinite Scroller Lab</title>
+    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/scrollerLab-CSNUhWNj.js"></script>
+    <link rel="modulepreload" crossorigin href="/scriptures-sticky-scroll-pwa/assets/viewUtils-CPW0gbqq.js">
+    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/scrollerLab-ajac06Gv.css">
+  </head>
+  <body>
+    <div id="scrollerLab" class="scroller-lab-shell">
+      <section class="reader-pane" aria-label="Scripture scroller">
+        <header class="lab-header">
+          <p class="eyebrow">Infinite Scroller Lab</p>
+          <h1>Book of Mormon debug reader</h1>
+        </header>
+        <div class="align-guide" aria-hidden="true">
+          <span>25% target line</span>
+        </div>
+        <main id="scriptureScroller" class="scripture-scroller" tabindex="0">
+          <div id="scriptureContent" class="scripture-content"></div>
+        </main>
+      </section>
+
+      <aside class="telemetry-pane" aria-label="Scroller telemetry">
+        <section class="top-dashboard">
+          <div class="dashboard-controls">
+            <section class="control-card">
+              <div class="telemetry-title">
+                <div>
+                  <p class="eyebrow">Live Telemetry</p>
+                  <h2 id="currentReference">Loading...</h2>
+                </div>
+                <span id="statusPill" class="status-pill">boot</span>
+              </div>
+              <form id="jumpForm" class="jump-form">
+                <label>
+                  Book
+                  <select id="bookSelect"></select>
+                </label>
+                <label>
+                  Chapter
+                  <input id="chapterInput" type="number" min="1" value="2" inputmode="numeric" />
+                </label>
+                <label>
+                  Verse
+                  <input id="verseInput" type="number" min="1" value="12" inputmode="numeric" />
+                </label>
+                <button type="submit">Go</button>
+              </form>
+            </section>
+
+            <section class="metric-grid">
+              <article class="metric-card">
+                <span class="metric-label">Chapters</span>
+                <strong id="loadedCount">0</strong>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">DOM</span>
+                <strong id="domHeight">0 px</strong>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Scroll</span>
+                <strong id="scrollTop">0 px</strong>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Cache</span>
+                <strong id="cacheState">0 books</strong>
+              </article>
+            </section>
+
+            <section class="threshold-card">
+              <div class="threshold-row">
+                <span>Scroll up to load previous</span>
+                <span id="topDistance">0 px</span>
+              </div>
+              <div class="threshold-meter">
+                <div id="topPressureBar" class="threshold-fill"></div>
+                <i class="threshold-line"></i>
+              </div>
+              <div class="threshold-row">
+                <span>Scroll down to load next</span>
+                <span id="bottomDistance">0 px</span>
+              </div>
+              <div class="threshold-meter">
+                <div id="bottomPressureBar" class="threshold-fill"></div>
+                <i class="threshold-line"></i>
+              </div>
+              <div id="thresholdDetails" class="threshold-details"></div>
+            </section>
+          </div>
+
+          <section class="minimap-card">
+            <div class="panel-title-row">
+              <h3>Minimap + Triggers</h3>
+              <span id="minimapScale">scale</span>
+            </div>
+            <div id="minimap" class="minimap">
+              <div id="minimapBlocks" class="minimap-blocks"></div>
+              <div id="minimapLines" class="minimap-lines"></div>
+              <div id="minimapViewport" class="minimap-viewport"></div>
+            </div>
+            <div class="minimap-legend">
+              <span><i class="legend-viewport"></i>viewport</span>
+              <span><i class="legend-preload"></i>load</span>
+              <span><i class="legend-unload"></i>unload</span>
+            </div>
+          </section>
+        </section>
+
+        <section class="details-card">
+          <h3>Loaded Window</h3>
+          <div id="loadedWindow" class="loaded-window"></div>
+        </section>
+
+        <section class="events-card">
+          <div class="panel-title-row">
+            <h3>Event Ticker</h3>
+            <button id="clearEvents" type="button">Clear</button>
+          </div>
+          <ol id="eventTicker" class="event-ticker"></ol>
+        </section>
+      </aside>
+    </div>
+
+  </body>
+</html>

@@ -1,7 +1,7 @@
 # Scripture PWA Pivot — Iteration Log
 
 **Prompt slug:** `scripture-pwa-pivot`  
-**Last updated:** 2026-04-05
+**Last updated:** 2026-05-13
 
 **Context:** The interface-refinements work (Prompts 1–8 in `20260309-200000_scripture-pwa-interface-refinements-*`) was not making sufficient progress. This spec marks a fresh start from Prompt 9 of that series. Update this spec from here forward.
 
@@ -54,8 +54,148 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | R12 AI retrieval log channel prep | Done | `getLogsForAiShare()` in `src/logger.js` + "Copy AI-share" action in debug drawer |
 | Build/test verification | Done | `npm test` and `npm run build` passing |
 
+### Prompt 12: New infinite scroller debug UI
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Isolated scroller lab page | Done | `scroller-lab.html`, built as `docs/scroller-lab.html` |
+| Modular infinite scroller | Done | `src/scriptureScroller.js`; jump, prepend, append, unload, cross-book sequence, and telemetry hooks |
+| Jacob 2:12 direct URL target | Done | Default route is `#/jacob/2/12`; hash route supports `#/:bookId/:chapter/:verse` |
+| 25% verse alignment | Done | `ScriptureScroller.jumpTo()` aligns the requested verse to the 25% viewport guide |
+| Split telemetry view | Done | `src/scrollerLab.js` and `src/scrollerLab.css`; metrics, threshold bars, minimap, loaded-window details, event ticker |
+| Build verification | Done | `npm run build` passing |
+
+### Prompt 13: Tighten scroller telemetry cockpit
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Move jump controls to telemetry side | Done | `scroller-lab.html`; left pane is now reader-only |
+| Prevent right-pane page scrolling | Done | `src/scrollerLab.css`; telemetry pane is fixed to viewport with internal ticker scroll |
+| Compact telemetry layout | Done | Dense metric/control/minimap/details/event grid replaces roomy card stack |
+| Add minimap trigger lines | Done | `src/scrollerLab.js`, `src/scrollerLab.css`; shows viewport, load, and unload thresholds |
+| Build verification | Done | `npm run build` passing |
+
+### Prompt 14: Minimap placement and trigger semantics
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Move minimap beside top telemetry controls | Done | `scroller-lab.html`, `src/scrollerLab.css`; top dashboard is split into controls/metrics and minimap columns |
+| Correct minimap viewport scale | Done | `src/scrollerLab.js`; removed oversized minimum viewport height that overstated the red rectangle |
+| Clarify unload trigger visualization | Done | `src/scrollerLab.js`; unload markers now attach to chapter-specific trigger positions instead of moving with viewport |
+| Build verification | Done | `npm run build` passing |
+
+### Prompt 15: Next actionable trigger lines and ticker noise
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Show only next load/unload minimap triggers | Done | `src/scrollerLab.js`; green load line and red unload line now represent nearest actionable crossing |
+| Reduce event ticker height | Done | `src/scrollerLab.css`; ticker uses a smaller fixed bottom region |
+| Compress `preload_not_needed` noise | Done | `src/scrollerLab.js`; repeated threshold misses update one rolling counter with top/bottom counts |
+| Build verification | Done | `npm run build` passing |
+
+### Prompt 16: Accurate trigger counters and hide anchor noise
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Hide anchor-change ticker noise | Done | `src/scrollerLab.js`; anchor changes still update current reference but do not add ticker rows |
+| Use engine-owned trigger diagnostics | Done | `src/scriptureScroller.js`; snapshots include load/unload targets, pixel countdowns, and unload gating |
+| Show concrete pixel countdowns | Done | `scroller-lab.html`, `src/scrollerLab.js`, `src/scrollerLab.css`; up/down load and unload counters name the affected chapter |
+| Prevent false unload lines | Done | Red minimap unload line only appears when loaded count exceeds `maxLoadedChapters`, matching `unloadFarChapters()` |
+| Build verification | Done | `npm run build` passing |
+
+### Prompt 17: Unload gate and downward jump bug
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Reduce unload chapter floor | Done | `src/scriptureScroller.js`; minimum retained chapters lowered from 9/10 threshold to 5/6 threshold |
+| Switch unload distance to viewport pages | Done | `src/scriptureScroller.js`; unload distance is now `2 * viewportHeight` instead of a fixed pixel constant |
+| Avoid same-frame down-load/top-unload jump | Done | `src/scriptureScroller.js`; a down append no longer immediately removes an above chapter in the same evaluation frame |
+| Disable browser scroll anchoring | Done | `src/scrollerLab.css`; manual scrollTop preservation is the only scroll compensation |
+| Update trigger text | Done | `src/scrollerLab.js`; counters describe viewport-page unload rule and smaller chapter floor |
+| Build verification | Done | `npm run build` passing |
+
+### Prompt 18: Always show four directional trigger lines
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Remove visible unload gate | Done | `src/scriptureScroller.js`, `src/scrollerLab.js`; no more "gated until > N chapters" counters |
+| Draw directional trigger lines | Done | `src/scrollerLab.js`; shows load-up, load-down, unload-up, and unload-down lines when matching chapters exist |
+| Keep unload from firing during programmatic jump | Done | `src/scriptureScroller.js`; unload waits for real user scroll after jump/initial alignment |
+| Build verification | Done | `npm run build` passing |
+
+### Prompt 19: Directional unload and bottom-edge line
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Make unload directional | Done | `src/scriptureScroller.js`; scrolling down only unloads above, scrolling up only unloads below |
+| Move unload-below marker to viewport bottom crossing | Done | `src/scriptureScroller.js`, `src/scrollerLab.js`; bottom-side unload line now represents the viewport bottom edge |
+| Fix boot/load stall | Done | `src/scriptureScroller.js`; frame waits now have timeout fallback and prepend no longer awaits a frame before measuring |
+| Build/browser verification | Done | `npm run build` passing; browser refresh reaches ready without boot-time unload spam |
+
+### Prompt 20: First-scroll corruption focus
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Identify first-scroll corruption cause | Done | Unload code treated already-far chapters as unloadable on any tiny scroll, instead of requiring threshold crossing |
+| Require actual unload threshold crossing | Done | `src/scriptureScroller.js`; unload only fires when previous/current viewport edge crosses the relevant red line |
+| Preserve focused scope | Done | No broader UI/heuristic changes beyond the corruption fix |
+| Build/browser verification | Done | `npm run build` passing; browser refresh/scroll events no longer unload preloaded chapters immediately |
+
+### Prompt 21: Edge-only unload model
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Fix crossed unload labels | Done | `src/scriptureScroller.js`; diagnostics now target only first loaded chapter for unload-above and last loaded chapter for unload-below |
+| Match engine to diagnostics | Done | `src/scriptureScroller.js`; unload engine only considers the outer loaded edge for the current scroll direction |
+| Replace fixed chapter startup | Done | `src/scriptureScroller.js`; jump startup loads by pixel buffer and guarantees adjacent edge chapters instead of a fixed two-chapter radius |
+| Fix stale first-scroll baseline | Done | `src/scriptureScroller.js`; `lastScrollTop` is reset after programmatic jump/buffer alignment |
+| Build/browser verification | Done | Browser preview shows no false Jacob 2 unload labels at Jacob 2:12; `npm run build` passing |
+
+### Prompt 22: Remove leftover adjacency/loading rules
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Remove reflexive adjacent chapter loading | Done | `src/scriptureScroller.js`; jump startup no longer forces one chapter above and below |
+| Convert preload threshold to viewport-based distance | Done | `src/scriptureScroller.js`; preload distance is now `preloadViewportPages * viewportHeight` instead of fixed `900px` |
+| Align minimap load lines to engine threshold | Done | `src/scriptureScroller.js` and `src/scrollerLab.js`; green lines use the same viewport-based threshold as actual load decisions |
+| Browser verification | Done | Cache-busted preview at Jacob 2:12 settles with only Jacob 2 loaded; Jacob 1/Jacob 3 no longer load unless threshold distance requires them |
+
+### Prompt 23: Align unload lines with viewport collision edge
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Move unload-above visual line | Done | `src/scriptureScroller.js` and `src/scrollerLab.js`; unload-above now draws at the viewport-bottom collision point instead of raw `scrollTop` |
+| Preserve engine behavior | Done | Display-only correction; actual unload crossing logic remains unchanged |
+| Build/browser verification | Done | `npm run build` passing; cache-busted preview boots cleanly at Jacob 2:12 |
+
+### Prompt 24: Move unload-below line up one viewport
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Move unload-below visual line | Done | `src/scrollerLab.js`; unload-below now draws at `targetScrollTop` so the red viewport rectangle does not pass over it |
+| Preserve engine behavior | Done | Display-only correction; actual unload crossing logic remains unchanged |
+| Build verification | Done | `npm run build` passing |
+
+### Prompt 25: Add load/unload hysteresis
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Separate load and unload thresholds | Done | `src/scriptureScroller.js`; load now triggers at `1.75` viewports, unload at `2.25` viewports |
+| Prevent immediate re-crossing after DOM removal | Done | `src/scriptureScroller.js`; `lastScrollTop` is reset after scrollTop compensation during unload |
+| Surface buffer gap in telemetry | Done | `src/scrollerLab.js`; threshold details now show the explicit load/unload gap |
+| Build/browser verification | Done | Cache-busted preview boots cleanly at Jacob 2:12; `npm run build` passing |
+
+### Prompt 26: Diagnose unload/reload loop near Jacob 2
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Identify loop cause | Done | Top unload adjusted from potentially clamped `scrollTop` after DOM removal, which could jump back into the load-up zone |
+| Fix scroll compensation invariant | Done | `src/scriptureScroller.js`; capture pre-removal scroll position and subtract actual removed layout space |
+| Add unload debug metrics | Done | `chapter_unloaded` telemetry now includes before/after scroll, removed layout space, and exact adjustment |
+| Build verification | Done | `npm run build` passing |
+
 ## Next Actions
 
-1. Optional: replace the node-level critical-path integration test with browser-driven Playwright coverage if full UI e2e is required.
-2. Optional: configure a secure remote retrieval endpoint/workflow to move `getLogsForAiShare` from manual-copy contract to direct fetch.
+1. Exercise the scroller lab on iPhone Safari and tune preload/unload distances for touch momentum scrolling.
+2. Optional: add browser-driven checks for direct URL alignment and cross-book boundary scrolling.
 3. Continue iterating from this pivot; append new prompts to the pivot PROMPT log.
