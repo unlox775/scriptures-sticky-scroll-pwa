@@ -31,8 +31,10 @@ export function createScriptureReader({
         button: autoScrollButton,
         panelHost: autoScrollPanelHost || autoScrollButton.parentElement,
         initialSpeed: initialAutoScrollSpeed,
-        onAutoScroll: () => scriptureScroller.markIntentionalScroll(),
+        onAutoScroll: (details) => scriptureScroller.handleAutoScrollTick(details),
         onStateChange: onAutoScrollStateChange,
+        canContinue: () => scriptureScroller.canScrollForward(),
+        onStop: (details) => scriptureScroller.emitAutoScrollStop(details),
       })
     : null;
 

@@ -278,6 +278,16 @@ See `20260512-224600_scripture-pwa-infinite-scroller-PROMPT.txt` for the full mi
 | Surface scroller telemetry in debug logs | Done | `src/services/readerService.js`, `src/visibilityConfig.js`; production infinite-scroller events have a dedicated `domain.infiniteScroller` visibility module |
 | Compact debug log view | Done | `src/main.js`, `src/styles.css`; logs render newest-first as compact strings and collapse repeated consecutive events with `xN` badges |
 
+### Prompt 29: Logging enablement and auto-scroll stop investigation
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Make logging enablement less confusing | Done | `src/services/visibilityService.js`, `src/main.js`; checking any module now enables global logging and bumps verbosity to standard |
+| Prevent false auto-scroll stop at loaded DOM bottom | Done | `src/autoScrollController.js`, `src/scriptureReaderMount.js`, `src/scriptureScroller.js`; auto-scroll only stops at the actual work end and asks the scroller to load when pinned to the loaded bottom |
+| Add auto-scroll stop diagnostics | Done | `src/scriptureScroller.js`; stop events include reason, current anchor, bottom distance, loaded count, pending loads, and work-continuation state |
+| Browser verification | Done | Tested the local app at `#/r/old-testament/ex/28/33`; auto-scroll at 80 px/sec stayed active crossing into Exodus 29 with no console errors |
+| Build verification | Done | `npm run build` passing |
+
 ## Next Actions
 
 1. Exercise the integrated reader on iPhone Safari and tune remaining touch momentum behavior.

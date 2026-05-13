@@ -202,3 +202,13 @@ But WHY is it stuck sometimes?  I want it to resume immediately once I am back i
 
 Also, maybe the debug for this could be in the logs, but I can't figure out if the debug/logging view works any more, whether this new infinite scroller is included, can you make it be included and tell me how to view events/logs?  Also I'd like you to make the logs view look/behave much more like our infinite-scroll telemetryone, with newest-at-top, most messages that we can, converted into a simple string, with dups showing as x1, x2, x18 etc Fix all that and I wil try again
 </user_query>
+
+=== Prompt 29 (logging enablement and auto-scroll stop investigation) ===
+
+<user_query>
+Logging didn't turn on.  I checked the box, even restarted.
+
+I noticed another worrying thing, sometimes the infiniite scroller scrolling from Exodus 28, at even 80px/sec, getting to Exodus 29 it ended up stopping.  can you test that with your own browser?
+
+The sticky thing wasn't improved at all BTW, so I am hoping you have something in the logs to help me/you
+</user_query>

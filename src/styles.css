@@ -617,6 +617,12 @@ body {
   overflow-x: auto;
 }
 
+.dev-help-text {
+  margin: 0 0 0.5rem;
+  color: #bfdbfe;
+  font-size: 0.75rem;
+}
+
 .dev-log-entries {
   flex: 1;
   min-height: 0;

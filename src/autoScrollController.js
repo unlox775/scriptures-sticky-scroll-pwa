@@ -17,7 +17,17 @@ function saveSpeed(speed) {
 }
 
 export class AutoScrollController {
-  constructor({ scroller, content, button, panelHost, initialSpeed = 20, onAutoScroll = null, onStateChange = null }) {
+  constructor({
+    scroller,
+    content,
+    button,
+    panelHost,
+    initialSpeed = 20,
+    onAutoScroll = null,
+    onStateChange = null,
+    canContinue = null,
+    onStop = null,
+  }) {
     this.scroller = scroller;
     this.content = content;
     this.button = button;
@@ -25,6 +35,8 @@ export class AutoScrollController {
     this.speed = readSavedSpeed(initialSpeed);
     this.onAutoScroll = onAutoScroll;
     this.onStateChange = onStateChange;
+    this.canContinue = canContinue;
+    this.onStop = onStop;
     this.raf = 0;
     this.lastTs = 0;
     this.floatScrollTop = 0;
@@ -58,7 +70,8 @@ export class AutoScrollController {
     return Boolean(this.raf);
   }
 
-  stop() {
+  stop(reason = "manual") {
+    const wasActive = this.isActive;
     if (this.raf) cancelAnimationFrame(this.raf);
     this.raf = 0;
     this.lastTs = 0;
@@ -67,6 +80,7 @@ export class AutoScrollController {
     if (this.button) this.button.textContent = "Auto scroll";
     document.querySelectorAll(".auto-scroll-panel").forEach((node) => node.remove());
     this.onStateChange?.(false);
+    if (wasActive) this.onStop?.({ reason, scrollTop: this.scroller.scrollTop, speed: this.speed });
   }
 
   open() {
@@ -104,7 +118,7 @@ export class AutoScrollController {
     if (!this.lastTs) this.lastTs = ts;
     const elapsedSeconds = Math.min((ts - this.lastTs) / 1000, 0.1);
     this.lastTs = ts;
-    this.onAutoScroll?.();
+    this.onAutoScroll?.({ phase: "before-scroll", atLoadedBottom: false });
     this.floatScrollTop += this.speed * elapsedSeconds;
     const nextScrollTop = Math.round(this.floatScrollTop);
     if (nextScrollTop !== Math.round(this.scroller.scrollTop)) {
@@ -113,8 +127,11 @@ export class AutoScrollController {
 
     const atBottom = this.scroller.scrollTop + this.scroller.clientHeight >= this.content.scrollHeight - 1;
     if (atBottom) {
-      this.stop();
-      return;
+      if (!this.canContinue?.()) {
+        this.stop("work-end");
+        return;
+      }
+      this.onAutoScroll?.({ phase: "loaded-bottom", atLoadedBottom: true });
     }
 
     this.raf = requestAnimationFrame(this.step);
@@ -139,7 +156,7 @@ export class AutoScrollController {
       ["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " ", "Spacebar"].includes(event.key);
 
     if (isMeaningfulWheel || isMeaningfulTouch || isMeaningfulKey) {
-      this.stop();
+      this.stop("manual-scroll");
     }
   }
 }

@@ -338,6 +338,38 @@ export class ScriptureScroller {
     this.userScrollSinceJump = true;
   }
 
+  handleAutoScrollTick(details = {}) {
+    this.markIntentionalScroll();
+    if (details.atLoadedBottom && !this.scrollRaf) {
+      void this.evaluateWindow();
+    }
+  }
+
+  canScrollForward() {
+    const loadedSeqs = Array.from(this.loaded.keys()).sort(compareSeq);
+    const lastSeq = loadedSeqs.at(-1);
+    return Number.isFinite(lastSeq) && lastSeq < this.sequence.length - 1;
+  }
+
+  emitAutoScrollStop(details = {}) {
+    const snapshot = this.getSnapshot("auto-scroll-stop");
+    this.emit("auto_scroll_stop", {
+      level: details.reason === "work-end" ? "info" : "debug",
+      summary: `Auto-scroll stopped: ${details.reason || "unknown"}`,
+      refs: { reference: snapshot.anchor?.reference, reason: details.reason },
+      metrics: {
+        scrollTop: snapshot.scrollTop,
+        viewportHeight: snapshot.viewportHeight,
+        contentHeight: snapshot.contentHeight,
+        bottomDistance: snapshot.bottomDistance,
+        loadedCount: snapshot.loadedCount,
+        pendingLoads: snapshot.pendingLoads,
+        canScrollForward: this.canScrollForward(),
+        speed: details.speed,
+      },
+    });
+  }
+
   async evaluateWindow() {
     const snapshot = this.getSnapshot("scroll");
     const previousScrollTop = this.lastScrollTop;

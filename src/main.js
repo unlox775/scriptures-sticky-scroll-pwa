@@ -633,6 +633,7 @@ function handleAnchorChange(anchor, meta) {
         maxUpdateJump: STICKY_FOLLOW_MAX_UPDATE_VERSE_JUMP,
         velocity: Number((meta?.velocity ?? 0).toFixed(1)),
         averageVelocity: Number(followDecision.averageVelocity.toFixed(1)),
+        slowReadingThreshold: SLOW_READING_THRESHOLD,
       },
       throttleMs: 650,
       minVerbosity: "standard",
@@ -958,6 +959,7 @@ function renderVisibilityPanel(container) {
   container.innerHTML = `
     <section class="dev-object-section">
       <h4>Visibility Controls</h4>
+      <p class="dev-help-text">Tip: checking any module enables global logging and standard verbosity automatically. Use the Reader performance preset for scroller debugging.</p>
       <label class="dev-filter-chip"><input type="checkbox" id="devVisibilityEnabled" ${config.enabled ? "checked" : ""} /><span>Global visibility enabled</span></label>
       <label class="dev-inline-label">Verbosity:
         <select id="devVisibilityVerbosity">

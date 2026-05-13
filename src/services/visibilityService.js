@@ -48,7 +48,13 @@ export function createVisibilityService() {
   }
 
   function setModule(moduleId, enabled) {
-    const result = setModuleVisibility(moduleId, enabled);
+    let result = setModuleVisibility(moduleId, enabled);
+    if (enabled && !result.enabled) {
+      result = setVisibilityEnabled(true);
+    }
+    if (enabled && result.verbosity === "minimal") {
+      result = setVisibilityVerbosity("standard");
+    }
     emit({
       level: "debug",
       event: "visibility_module_toggle",
