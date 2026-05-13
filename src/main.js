@@ -1,4 +1,5 @@
 import "./styles.css";
+import "./scriptureReader.css";
 import { loadIndex, BookCache } from "./data.js";
 import { BookmarkStore } from "./bookmarks.js";
 import { getLogsForCopy, getLogsForAiShare, getAllSessions, getEntriesForSession, setOnLogCallback, logInfo } from "./logger.js";
@@ -53,10 +54,6 @@ const readerStatusEl = document.getElementById("readerStatus");
 const bookmarkStatusEl = document.getElementById("bookmarkStatus");
 const readerRibbonsOverlay = document.getElementById("readerRibbonsOverlay");
 const autoScrollStart = document.getElementById("autoScrollStart");
-const autoScrollPanel = document.getElementById("autoScrollPanel");
-const autoScrollStop = document.getElementById("autoScrollStop");
-const autoScrollSpeed = document.getElementById("autoScrollSpeed");
-const autoScrollSpeedLabel = document.getElementById("autoScrollSpeedLabel");
 const scroller = document.getElementById("readerScroller");
 const content = document.getElementById("readerContent");
 
@@ -129,8 +126,7 @@ function setView(viewId) {
   addBookmarkButton.hidden = !inReader;
   moveBookmarkButton.hidden = !inReader;
   autoScrollStart.hidden = !inReader;
-  autoScrollPanel.hidden = inReader ? !state.autoScrollActive : true;
-  autoScrollStart.textContent = state.autoScrollActive ? "Stop" : "Auto-scroll";
+  autoScrollStart.textContent = state.autoScrollActive ? "Auto scrolling" : "Auto scroll";
   updateHeader(viewId);
   updateInstallVisibility(viewId);
   updateDevEasterEggVisibility();
@@ -165,8 +161,7 @@ function updateHeader(viewId) {
 function stopAutoScrollAndUpdateUI() {
   readerService?.stopAutoScroll?.();
   state.autoScrollActive = false;
-  autoScrollPanel.hidden = true;
-  autoScrollStart.textContent = "Auto-scroll";
+  autoScrollStart.textContent = "Auto scroll";
 }
 
 function routeFromState() {
@@ -184,13 +179,20 @@ function pushRouteAndSave(route) {
 function ensureReaderService() {
   if (readerService) return readerService;
   readerService = createReaderService({
+    index: state.index,
     scroller,
     content,
+    autoScrollButton: autoScrollStart,
+    autoScrollPanelHost: document.querySelector(".app-header"),
     getWorkMeta(location) {
       return state.index.works.find((item) => item.id === location.workId) || state.index.works[0];
     },
     bookCache: cache,
     onAnchorChange: handleAnchorChange,
+    onAutoScrollStateChange(active) {
+      state.autoScrollActive = active;
+      autoScrollStart.textContent = active ? "Auto scrolling" : "Auto scroll";
+    },
   });
   return readerService;
 }
@@ -198,6 +200,7 @@ function ensureReaderService() {
 function openWork(workId) {
   state.currentWork = state.index.works.find((work) => work.id === workId) || null;
   state.currentBook = null;
+  state.currentLocation = null;
   pushRouteAndSave(`#/w/${workId}`);
   renderBooksView();
 }
@@ -205,6 +208,7 @@ function openWork(workId) {
 function openBook(bookId) {
   if (!state.currentWork) return;
   state.currentBook = state.currentWork.books.find((book) => book.id === bookId) || null;
+  state.currentLocation = null;
   pushRouteAndSave(`#/b/${state.currentWork.id}/${bookId}`);
   renderChaptersView();
   uiEmit.books({
@@ -242,8 +246,6 @@ async function openReader(location) {
   });
 
   const reader = ensureReaderService();
-  autoScrollSpeedLabel.textContent = `${autoScrollSpeed.value} px/s`;
-  reader.setAutoScrollSpeed(Number(autoScrollSpeed.value));
   await reader.open(safeLocation);
   uiEmit.reader({
     level: "info",
@@ -292,6 +294,9 @@ function renderHistoryView(bookmark) {
 }
 
 function renderHomeView() {
+  state.currentWork = null;
+  state.currentBook = null;
+  state.currentLocation = null;
   setView("homeView");
   const bookmarks = bookmarkService.getBookmarks();
   uiEmit.home({
@@ -439,7 +444,14 @@ function shouldAutoFollow(anchor, meta) {
 }
 
 function handleAnchorChange(anchor, meta) {
+  if (readerView.hidden) return;
   state.currentLocation = anchor;
+  if (anchor?.workId) {
+    state.currentWork = state.index.works.find((work) => work.id === anchor.workId) || state.currentWork;
+  }
+  if (anchor?.bookId && state.currentWork) {
+    state.currentBook = state.currentWork.books.find((book) => book.id === anchor.bookId) || state.currentBook;
+  }
   const chapterRef = anchor ? `${anchor.bookTitle ?? ""} ${anchor.chapter ?? 1}` : "";
   if (chapterRef && chapterRef !== state.lastChapterRef) {
     state.lastChapterRef = chapterRef;
@@ -1111,6 +1123,8 @@ function wireGlobalEvents() {
   homeButton.addEventListener("click", () => {
     stopAutoScrollAndUpdateUI();
     pushRouteAndSave("#/");
+    readerService?.destroy?.();
+    readerService = null;
     renderHomeView();
   });
 
@@ -1182,6 +1196,8 @@ function wireGlobalEvents() {
     stopAutoScrollAndUpdateUI();
     if (!readerView.hidden) {
       pushRouteAndSave(`#/b/${state.currentWork?.id || ""}/${state.currentBook?.id || ""}`);
+      readerService?.destroy?.();
+      readerService = null;
       renderChaptersView();
     } else if (!chaptersView.hidden) {
       pushRouteAndSave(`#/w/${state.currentWork?.id || ""}`);
@@ -1192,26 +1208,6 @@ function wireGlobalEvents() {
     }
   });
 
-  autoScrollStart.addEventListener("click", () => {
-    if (state.autoScrollActive) {
-      stopAutoScrollAndUpdateUI();
-      return;
-    }
-    ensureReaderService().startAutoScroll();
-    state.autoScrollActive = true;
-    autoScrollPanel.hidden = false;
-    autoScrollStart.textContent = "Stop";
-  });
-
-  autoScrollStop.addEventListener("click", () => {
-    stopAutoScrollAndUpdateUI();
-  });
-
-  autoScrollSpeed.addEventListener("input", () => {
-    const speed = Number(autoScrollSpeed.value);
-    autoScrollSpeedLabel.textContent = `${speed} px/s`;
-    ensureReaderService().setAutoScrollSpeed(speed);
-  });
 }
 
 async function restoreFromRoute(route) {
@@ -1240,6 +1236,7 @@ async function restoreFromRoute(route) {
     if (work && book) {
       state.currentWork = work;
       state.currentBook = book;
+      state.currentLocation = null;
       renderChaptersView();
       return;
     }
@@ -1249,6 +1246,7 @@ async function restoreFromRoute(route) {
     if (work) {
       state.currentWork = work;
       state.currentBook = null;
+      state.currentLocation = null;
       renderBooksView();
       return;
     }
@@ -1283,7 +1281,7 @@ async function init() {
   } else {
     renderHomeView();
   }
-  navigationService.push(routeFromState());
+  pushRouteAndSave(routeFromState());
 
   window.addEventListener("hashchange", () => {
     const h = window.location.hash;

@@ -18,7 +18,7 @@
           <span class="ribbon-plus-icon" aria-hidden="true">+</span>
         </button>
         <button id="moveBookmarkButton" class="header-btn" title="Move bookmark to current location" hidden aria-label="Move bookmark to current location">↻</button>
-        <button id="autoScrollStart" class="header-btn" hidden>Auto-scroll</button>
+        <button id="autoScrollStart" class="header-btn" hidden>Auto scroll</button>
         <button id="installButton" class="header-btn" hidden>Install</button>
       </header>
 
@@ -29,21 +29,13 @@
         <section id="historyView" class="view" hidden></section>
 
         <section id="readerView" class="view reader-view" hidden>
-          <div id="autoScrollPanel" class="auto-scroll-panel" hidden>
-            <button id="autoScrollStop" class="stop-btn" aria-label="Stop auto-scroll">×</button>
-            <label for="autoScrollSpeed">Speed</label>
-            <div class="auto-scroll-slider-wrap">
-              <input id="autoScrollSpeed" type="range" min="8" max="100" step="5" value="90" />
-            </div>
-            <span id="autoScrollSpeedLabel">90 px/s</span>
-          </div>
           <div id="bookmarkRibbons" class="bookmark-ribbons" aria-hidden="true"></div>
           <div id="readerStatus" class="reader-status" hidden>
             <span id="bookmarkStatus"></span>
           </div>
-          <div id="readerScroller" class="reader-scroller">
+          <div id="readerScroller" class="scripture-scroller reader-scroller" aria-label="Scripture reader">
             <div id="readerRibbonsOverlay" class="reader-ribbons-overlay" aria-hidden="true"></div>
-            <div id="readerContent" class="reader-content"></div>
+            <div id="readerContent" class="scripture-content reader-content"></div>
           </div>
         </section>
       </main>

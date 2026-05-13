@@ -5,8 +5,12 @@ export function createScriptureReader({
   index,
   scroller,
   content,
+  workId,
+  bookCache = null,
   autoScrollButton = null,
   autoScrollPanelHost = null,
+  initialAutoScrollSpeed = 24,
+  onAutoScrollStateChange = null,
   location = defaultLocation(),
   onTelemetry = null,
   onReady = null,
@@ -15,6 +19,8 @@ export function createScriptureReader({
     index,
     scroller,
     content,
+    ...(workId ? { workId } : {}),
+    ...(bookCache ? { bookCache } : {}),
     onTelemetry,
   });
 
@@ -24,7 +30,9 @@ export function createScriptureReader({
         content,
         button: autoScrollButton,
         panelHost: autoScrollPanelHost || autoScrollButton.parentElement,
+        initialSpeed: initialAutoScrollSpeed,
         onAutoScroll: () => scriptureScroller.markIntentionalScroll(),
+        onStateChange: onAutoScrollStateChange,
       })
     : null;
 

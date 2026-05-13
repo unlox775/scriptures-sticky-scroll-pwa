@@ -244,9 +244,30 @@ See `20260309-210000_scripture-pwa-pivot-PROMPT.txt` for the full prompt history
 | Stop auto-scroll on manual scroll intent | Done | `src/autoScrollController.js`; meaningful wheel, touch drag, or scroll-key input stops auto-scroll |
 | Build verification | Done | `npm run build` passing |
 
+### Prompt 32: Replace main app reader with new scroller
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Replace production reader engine | Done | `src/services/readerService.js`; main app now mounts `createScriptureReader()` / `ScriptureScroller` instead of the legacy `ReaderEngine` |
+| Remove legacy reader implementation | Done | Deleted `src/readerEngine.js`; unit coverage now targets `ScriptureScroller` sequence mapping |
+| Wire bookmarks to 25% anchor | Done | `src/scriptureScroller.js`, `src/services/readerService.js`; anchor telemetry now includes work/book/chapter/verse reference for bookmark create/move/auto-follow |
+| Keep lab-only UI out of production reader | Done | `index.html`, `src/main.js`, `src/styles.css`; no lab header or 25% guide in the default app reader |
+| Reuse new auto-scroll controls | Done | App header Auto scroll button now mounts the reusable controller and speed/Stop bar outside the scroller viewport |
+| Browser verification | Done | Main route `#/r/book-of-mormon/jacob/2/12` renders the new scroller; Auto scroll toggles on/off from the header |
+| Build verification | Done | `npm run build` passing |
+| Test verification | Partial | New scroller unit test passes; full `npm test` still fails existing Node harness async `indexedDB is not defined` failures unrelated to this reader swap |
+
+### Prompt 33: Bookmark ribbon anchoring, header book, route memory
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Stabilize bookmark ribbon positioning | Done | `src/views/readerView.js`, `src/styles.css`; ribbons are now placed from the verse screen rect in a sticky overlay beside reader content |
+| Update header across book boundaries | Done | `src/main.js`; current work/book state now follows the scroller anchor, so the app header changes from Exodus to Leviticus when crossing books |
+| Prevent stale reader route after leaving reader | Done | `src/main.js`; Home/Back destroy the active reader and hidden-reader anchor events are ignored before route updates |
+| Build verification | Done | `npm run build` passing |
+
 ## Next Actions
 
-1. Mount `createScriptureReader()` inside the traditional app reader pane and wire existing navigation state to `jumpTo()`.
-2. Exercise the scroller lab on iPhone Safari and tune preload/unload distances for touch momentum scrolling.
-3. Optional: add browser-driven checks for direct URL alignment and cross-book boundary scrolling.
-4. Continue iterating from this pivot; append new prompts to the pivot PROMPT log.
+1. Exercise the integrated reader on iPhone Safari and tune preload/unload distances for touch momentum scrolling.
+2. Optional: add browser-driven checks for direct URL alignment, bookmark move/create, and cross-book boundary scrolling.
+3. Continue iterating from this pivot; append new prompts to the pivot PROMPT log.

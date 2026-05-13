@@ -456,6 +456,8 @@ export class ScriptureScroller {
     const chapter = best.verse.closest(".lab-chapter");
     const pointer = this.sequence[Number(chapter.dataset.seq)];
     return {
+      workId: pointer.workId,
+      workTitle: pointer.workTitle,
       seq: pointer.seq,
       bookId: pointer.bookMeta.id,
       bookTitle: pointer.bookMeta.title,

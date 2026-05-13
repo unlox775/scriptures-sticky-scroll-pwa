@@ -19,6 +19,8 @@ export function renderBookmarkRibbons({
   });
 
   const scrollerRect = scroller.getBoundingClientRect();
+  const contentRect = content.getBoundingClientRect();
+  const ribbonLeft = Math.max(4, contentRect.left - scrollerRect.left - 76);
   const items = [];
   for (const bookmark of inView) {
     const loc = bookmark.location;
@@ -26,20 +28,21 @@ export function renderBookmarkRibbons({
     const bookId = loc.bookId;
     const chapter = String(loc.chapter || 1);
     const verse = String(loc.verse || 1);
-    const verseEl = content.querySelector(
-      `.verse[data-book-id="${CSS.escape(bookId)}"][data-chapter="${chapter}"][data-verse="${verse}"]`,
+    const chapterEl = content.querySelector(
+      `.lab-chapter[data-book-id="${CSS.escape(bookId)}"][data-chapter="${chapter}"]`,
     );
+    const verseEl = chapterEl?.querySelector(`.lab-verse[data-verse="${verse}"]`);
     if (!verseEl) continue;
     const verseRect = verseEl.getBoundingClientRect();
     const top = verseRect.top - scrollerRect.top + verseRect.height / 2;
     if (top < -20 || top > scrollerRect.height + 20) continue;
-    items.push({ bookmark, top });
+    items.push({ bookmark, top, left: ribbonLeft });
   }
 
   overlay.innerHTML = items
     .map(
-      ({ bookmark, top }) =>
-        `<span class="bookmark-ribbon" data-bookmark-id="${bookmark.id}" title="${(bookmark.location?.reference || bookmark.name).replace(/"/g, "&quot;")}" style="top: ${Math.round(top)}px">${escapeHtml(bookmark.name)}</span>`,
+      ({ bookmark, top, left }) =>
+        `<span class="bookmark-ribbon" data-bookmark-id="${bookmark.id}" title="${(bookmark.location?.reference || bookmark.name).replace(/"/g, "&quot;")}" style="top: ${Math.round(top)}px; left: ${Math.round(left)}px">${escapeHtml(bookmark.name)}</span>`,
     )
     .join("");
 

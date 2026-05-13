@@ -1,13 +1,14 @@
 const MANUAL_SCROLL_CANCEL_PX = 12;
 
 export class AutoScrollController {
-  constructor({ scroller, content, button, panelHost, initialSpeed = 24, onAutoScroll = null }) {
+  constructor({ scroller, content, button, panelHost, initialSpeed = 24, onAutoScroll = null, onStateChange = null }) {
     this.scroller = scroller;
     this.content = content;
     this.button = button;
     this.panelHost = panelHost;
     this.speed = initialSpeed;
     this.onAutoScroll = onAutoScroll;
+    this.onStateChange = onStateChange;
     this.raf = 0;
     this.lastTs = 0;
     this.touchStartY = null;
@@ -47,6 +48,7 @@ export class AutoScrollController {
     this.touchStartY = null;
     if (this.button) this.button.textContent = "Auto scroll";
     document.querySelectorAll(".auto-scroll-panel").forEach((node) => node.remove());
+    this.onStateChange?.(false);
   }
 
   open() {
@@ -74,6 +76,7 @@ export class AutoScrollController {
 
     this.panelHost?.insertAdjacentElement("afterend", panel);
     if (this.button) this.button.textContent = "Auto scrolling";
+    this.onStateChange?.(true);
     this.raf = requestAnimationFrame(this.step);
   }
 

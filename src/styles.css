@@ -232,39 +232,6 @@ body {
   background: #2d4a6f;
 }
 
-.auto-scroll-panel {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 1rem;
-  background: #e2e8f0;
-  border-bottom: 1px solid var(--border);
-  width: 100%;
-}
-
-.reader-view > .auto-scroll-panel {
-  position: sticky;
-  top: 0;
-  z-index: 15;
-  margin-left: -1rem;
-  margin-right: -1rem;
-  width: calc(100% + 2rem);
-}
-
-.auto-scroll-panel[hidden] {
-  display: none !important;
-}
-
-.auto-scroll-slider-wrap {
-  flex: 1;
-  min-width: 0;
-  max-width: 400px;
-}
-
-.auto-scroll-slider-wrap input[type="range"] {
-  width: 100%;
-}
-
 .bookmark-actions {
   display: flex;
   gap: 0.35rem;
@@ -313,21 +280,15 @@ body {
 
 .reader-scroller {
   position: relative;
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  background: #fff;
-  scroll-behavior: auto;
-  margin: 0 -1rem;
-  width: calc(100% + 2rem);
+  background: #f8fafc;
 }
 
 .reader-ribbons-overlay {
-  position: absolute;
+  position: sticky;
   left: 0;
   top: 0;
-  width: 44px;
-  height: 100%;
+  width: 0;
+  height: 0;
   pointer-events: none;
   z-index: 5;
 }
@@ -335,44 +296,12 @@ body {
 .reader-ribbons-overlay .bookmark-ribbon {
   pointer-events: auto;
   position: absolute;
-  left: 4px;
   transform: translateY(-50%);
-  transition: top 0.25s ease-out;
+  transition: top 0.12s linear;
 }
 
 .reader-content {
-  padding: 1rem min(8vw, 3rem);
   max-width: 860px;
-  margin: 0 auto;
-}
-
-.chapter-block {
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 1.2rem;
-  margin-bottom: 1rem;
-}
-
-.chapter-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.8rem;
-}
-
-.chapter-link {
-  font-size: 0.85rem;
-}
-
-.verse {
-  line-height: 1.65;
-  margin: 0.35rem 0;
-}
-
-.verse-num {
-  color: #334155;
-  font-weight: 600;
-  margin-right: 0.35rem;
 }
 
 .history-list {
@@ -412,11 +341,6 @@ body {
     color: #e2e8f0;
   }
 
-  .auto-scroll-panel {
-    background: #1e293b;
-    border-color: #334155;
-  }
-
   .bookmark-ribbon {
     background: #1e293b;
   }
@@ -433,9 +357,6 @@ body {
     background: #1e293b;
   }
 
-  .verse-num {
-    color: #93c5fd;
-  }
 }
 
 /* Developer mode */

@@ -1,8 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ReaderEngine } from "../../src/readerEngine.js";
+import { ScriptureScroller } from "../../src/scriptureScroller.js";
 
 function setupEnv() {
+  class ResizeObserver {
+    observe() {}
+    disconnect() {}
+  }
+
   Object.defineProperty(globalThis, "window", {
     value: {
       addEventListener() {},
@@ -31,6 +36,10 @@ function setupEnv() {
         return null;
       },
     },
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "ResizeObserver", {
+    value: ResizeObserver,
     configurable: true,
   });
 }
@@ -64,26 +73,33 @@ function createContent() {
   };
 }
 
-test("ReaderEngine locationToSeq resolves known and fallback seq", () => {
+test("ScriptureScroller locationToSeq resolves known and fallback seq", () => {
   setupEnv();
-  const engine = new ReaderEngine({
+  const index = {
+    works: [
+      {
+        id: "w",
+        title: "Work",
+        books: [
+          { id: "a", title: "A", chapterCount: 2, workId: "w" },
+          { id: "b", title: "B", chapterCount: 1, workId: "w" },
+        ],
+      },
+    ],
+  };
+  const engine = new ScriptureScroller({
     scroller: createScroller(),
     content: createContent(),
-    workMeta: {
-      id: "w",
-      title: "Work",
-      books: [
-        { id: "a", title: "A", chapterCount: 2 },
-        { id: "b", title: "B", chapterCount: 1 },
-      ],
-    },
+    index,
+    workId: "w",
     bookCache: {
       async getBook() {
         return { chapters: [] };
       },
     },
-    onAnchorChange() {},
   });
+  engine.work = index.works[0];
+  engine.sequence = engine.buildSequence(engine.work);
   assert.equal(engine.locationToSeq({ bookId: "a", chapter: 1 }), 0);
   assert.equal(engine.locationToSeq({ bookId: "a", chapter: 2 }), 1);
   assert.equal(engine.locationToSeq({ bookId: "b", chapter: 1 }), 2);

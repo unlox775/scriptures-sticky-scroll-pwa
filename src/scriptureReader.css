@@ -1,4 +1,4 @@
-.reader-pane {
+:where(.reader-pane, .reader-view) {
   --reader-panel: var(--panel, #ffffff);
   --reader-line: var(--line, #cbd5e1);
   --reader-blue: var(--blue, #2563eb);
