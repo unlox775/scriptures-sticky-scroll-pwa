@@ -41,7 +41,7 @@ export function renderHomeView({
     </section>
     <section class="panel" style="margin-top: 1rem;">
       <h2>Bookmarks</h2>
-      <p>Scroll slowly and a bookmark at your location will auto-follow. Tap to open.</p>
+      <p>Open a bookmark to start sticky-follow. Tap its ribbon in the reader to toggle follow on or off.</p>
       <div class="bookmark-list">${bookmarkItems}</div>
     </section>
   `;

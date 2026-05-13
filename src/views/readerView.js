@@ -4,7 +4,8 @@ export function renderBookmarkRibbons({
   content,
   bookmarks,
   currentLocation,
-  onOpenBookmarkLocation,
+  activeStickyBookmarkId,
+  onToggleStickyFollow,
 }) {
   if (!overlay || !scroller) return;
   const inView = bookmarks.filter((bookmark) => {
@@ -42,11 +43,12 @@ export function renderBookmarkRibbons({
       node.className = "bookmark-ribbon";
       node.dataset.bookmarkId = bookmark.id;
       node.addEventListener("click", () => {
-        const target = bookmarks.find((x) => x.id === node.dataset.bookmarkId);
-        if (target?.location) onOpenBookmarkLocation?.(target.location);
+        onToggleStickyFollow?.(node.dataset.bookmarkId);
       });
       overlay.appendChild(node);
     }
+    node.classList.toggle("bookmark-ribbon-active", bookmark.id === activeStickyBookmarkId);
+    node.setAttribute("aria-pressed", bookmark.id === activeStickyBookmarkId ? "true" : "false");
     node.title = title;
     node.textContent = bookmark.name;
     node.style.top = `${Math.round(top)}px`;

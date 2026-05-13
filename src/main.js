@@ -26,6 +26,8 @@ const state = {
   lastChapterRef: "",
   velocitySamples: [],
   autoScrollActive: false,
+  stickyFollowBookmarkId: null,
+  stickyFollowOutOfRangeSince: null,
   historyBookmarkName: "History",
   devTapCount: 0,
   devTapResetTimer: null,
@@ -201,6 +203,8 @@ function openWork(workId) {
   state.currentWork = state.index.works.find((work) => work.id === workId) || null;
   state.currentBook = null;
   state.currentLocation = null;
+  state.stickyFollowBookmarkId = null;
+  state.stickyFollowOutOfRangeSince = null;
   pushRouteAndSave(`#/w/${workId}`);
   renderBooksView();
 }
@@ -209,6 +213,8 @@ function openBook(bookId) {
   if (!state.currentWork) return;
   state.currentBook = state.currentWork.books.find((book) => book.id === bookId) || null;
   state.currentLocation = null;
+  state.stickyFollowBookmarkId = null;
+  state.stickyFollowOutOfRangeSince = null;
   pushRouteAndSave(`#/b/${state.currentWork.id}/${bookId}`);
   renderChaptersView();
   uiEmit.books({
@@ -264,8 +270,19 @@ function renderBookmarkRibbons() {
     content,
     bookmarks: bookmarkService.getBookmarks(),
     currentLocation: state.currentLocation,
-    onOpenBookmarkLocation: (location) => openReader(location),
+    activeStickyBookmarkId: state.stickyFollowBookmarkId,
+    onToggleStickyFollow: toggleStickyFollow,
   });
+}
+
+function toggleStickyFollow(bookmarkId) {
+  state.stickyFollowBookmarkId = state.stickyFollowBookmarkId === bookmarkId ? null : bookmarkId;
+  state.stickyFollowOutOfRangeSince = null;
+  state.lastAutoBookmarkAt = 0;
+  state.lastAutoReference = "";
+  readerStatusEl.hidden = true;
+  bookmarkStatusEl.textContent = "";
+  renderBookmarkRibbons();
 }
 
 function renderHistoryView(bookmark) {
@@ -297,6 +314,8 @@ function renderHomeView() {
   state.currentWork = null;
   state.currentBook = null;
   state.currentLocation = null;
+  state.stickyFollowBookmarkId = null;
+  state.stickyFollowOutOfRangeSince = null;
   setView("homeView");
   const bookmarks = bookmarkService.getBookmarks();
   uiEmit.home({
@@ -342,6 +361,10 @@ function renderHomeView() {
       const bookmark = bookmarkService.getBookmarks().find((x) => x.id === bookmarkId);
       if (!bookmark) return;
       const loc = bookmark.location || defaultLocationFromIndex();
+      state.stickyFollowBookmarkId = bookmark.id;
+      state.stickyFollowOutOfRangeSince = null;
+      state.lastAutoBookmarkAt = 0;
+      state.lastAutoReference = "";
       await openReader(loc);
     },
   });
@@ -395,6 +418,8 @@ function renderChaptersView() {
     container: chaptersView,
     book: state.currentBook,
     onOpenChapter: async (chapter) => {
+      state.stickyFollowBookmarkId = null;
+      state.stickyFollowOutOfRangeSince = null;
       uiEmit.chapters({
         level: "info",
         event: "chapters_open_chapter_click",
@@ -423,6 +448,10 @@ function renderChaptersView() {
 
 const VELOCITY_WINDOW_MS = 30_000;
 const SLOW_READING_THRESHOLD = 150;
+const STICKY_FOLLOW_RESUME_VERSE_GAP = 18;
+const STICKY_FOLLOW_MAX_UPDATE_VERSE_JUMP = 8;
+const STICKY_FOLLOW_MAX_CHAPTER_GAP = 1;
+const STICKY_FOLLOW_OUT_OF_RANGE_DISABLE_MS = 5 * 60 * 1000;
 
 function getAverageVelocityOverWindow() {
   const now = Date.now();
@@ -438,9 +467,27 @@ function shouldAutoFollow(anchor, meta) {
   state.velocitySamples.push({ v: meta.velocity, ts: now });
   const avg = getAverageVelocityOverWindow();
   if (avg > SLOW_READING_THRESHOLD) return false;
-  if (anchor.reference === state.lastAutoReference && now - state.lastAutoBookmarkAt < 2200) return false;
-  if (now - state.lastAutoBookmarkAt < 1200) return false;
+  if (anchor.reference === state.lastAutoReference && now - state.lastAutoBookmarkAt < 900) return false;
+  if (now - state.lastAutoBookmarkAt < 350) return false;
   return true;
+}
+
+function stickyFollowDelta(bookmark, anchor) {
+  if (!bookmark?.location || !anchor) return null;
+  const loc = bookmark.location;
+  if (loc.workId !== anchor.workId || loc.bookId !== anchor.bookId) return null;
+  if (Number.isFinite(loc.seq) && Number.isFinite(anchor.seq)) {
+    const seqGap = anchor.seq - loc.seq;
+    if (seqGap < 0 || seqGap > STICKY_FOLLOW_MAX_CHAPTER_GAP) return null;
+    return seqGap === 0
+      ? Math.abs((anchor.verse || 0) - (loc.verse || 0))
+      : (anchor.verse || 0);
+  }
+  const chapterGap = (anchor.chapter || 0) - (loc.chapter || 0);
+  if (chapterGap < 0 || chapterGap > STICKY_FOLLOW_MAX_CHAPTER_GAP) return null;
+  return chapterGap === 0
+    ? Math.abs((anchor.verse || 0) - (loc.verse || 0))
+    : (anchor.verse || 0);
 }
 
 function handleAnchorChange(anchor, meta) {
@@ -486,22 +533,45 @@ function handleAnchorChange(anchor, meta) {
     minVerbosity: "standard",
   });
 
-  const toFollow = bookmarkService.getBookmarkToFollow(anchor);
+  const toFollow = state.stickyFollowBookmarkId
+    ? bookmarkService.getBookmarks().find((bookmark) => bookmark.id === state.stickyFollowBookmarkId)
+    : null;
   if (!toFollow) {
     bookmarkStatusEl.textContent = "";
     readerStatusEl.hidden = true;
     return;
   }
-  if (shouldAutoFollow(anchor, meta)) {
+  const delta = stickyFollowDelta(toFollow, anchor);
+  const now = meta?.timestamp ?? Date.now();
+  const canResume = delta !== null && delta <= STICKY_FOLLOW_RESUME_VERSE_GAP;
+  const canUpdate = delta !== null && delta <= STICKY_FOLLOW_MAX_UPDATE_VERSE_JUMP;
+
+  if (!canResume) {
+    state.stickyFollowOutOfRangeSince ??= now;
+    if (now - state.stickyFollowOutOfRangeSince >= STICKY_FOLLOW_OUT_OF_RANGE_DISABLE_MS) {
+      state.stickyFollowBookmarkId = null;
+      state.stickyFollowOutOfRangeSince = null;
+      state.lastAutoBookmarkAt = 0;
+      state.lastAutoReference = "";
+      renderBookmarkRibbons();
+    }
+    bookmarkStatusEl.textContent = "";
+    readerStatusEl.hidden = true;
+    return;
+  }
+
+  state.stickyFollowOutOfRangeSince = null;
+  if (canUpdate && shouldAutoFollow(anchor, meta)) {
     bookmarkService.updateBookmarkLocation(toFollow.id, anchor, meta.autoScrolling ? "auto-scroll" : "scroll");
     state.lastAutoBookmarkAt = meta.timestamp;
     state.lastAutoReference = anchor.reference;
-    bookmarkStatusEl.textContent = `${toFollow.name} updated`;
-    readerStatusEl.hidden = false;
+    bookmarkStatusEl.textContent = "";
+    readerStatusEl.hidden = true;
   } else {
     bookmarkStatusEl.textContent = "";
     readerStatusEl.hidden = true;
   }
+  renderBookmarkRibbons();
 }
 
 function isStandaloneOrDesktopInstall() {
@@ -1153,6 +1223,10 @@ function wireGlobalEvents() {
     }
     if (list.length === 1) {
       bookmarkService.updateBookmarkLocation(list[0].id, state.currentLocation, "manual");
+      state.stickyFollowBookmarkId = list[0].id;
+      state.stickyFollowOutOfRangeSince = null;
+      state.lastAutoBookmarkAt = 0;
+      state.lastAutoReference = "";
       bookmarkStatusEl.textContent = `Moved ${list[0].name} to ${state.currentLocation.reference}`;
       readerStatusEl.hidden = false;
       renderBookmarkRibbons();
@@ -1169,6 +1243,10 @@ function wireGlobalEvents() {
       btn.textContent = b.name;
       btn.addEventListener("click", () => {
         bookmarkService.updateBookmarkLocation(b.id, state.currentLocation, "manual");
+        state.stickyFollowBookmarkId = b.id;
+        state.stickyFollowOutOfRangeSince = null;
+        state.lastAutoBookmarkAt = 0;
+        state.lastAutoReference = "";
         bookmarkStatusEl.textContent = `Moved ${b.name} to ${state.currentLocation.reference}`;
         readerStatusEl.hidden = false;
         picker.remove();

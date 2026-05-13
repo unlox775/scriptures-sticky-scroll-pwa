@@ -1,4 +1,20 @@
 const MANUAL_SCROLL_CANCEL_PX = 12;
+const AUTO_SCROLL_SPEED_KEY = "scripture-pwa-auto-scroll-speed-v1";
+
+function readSavedSpeed(fallback) {
+  try {
+    const saved = Number(localStorage.getItem(AUTO_SCROLL_SPEED_KEY));
+    return Number.isFinite(saved) && saved > 0 ? saved : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveSpeed(speed) {
+  try {
+    localStorage.setItem(AUTO_SCROLL_SPEED_KEY, String(speed));
+  } catch {}
+}
 
 export class AutoScrollController {
   constructor({ scroller, content, button, panelHost, initialSpeed = 24, onAutoScroll = null, onStateChange = null }) {
@@ -6,7 +22,7 @@ export class AutoScrollController {
     this.content = content;
     this.button = button;
     this.panelHost = panelHost;
-    this.speed = initialSpeed;
+    this.speed = readSavedSpeed(initialSpeed);
     this.onAutoScroll = onAutoScroll;
     this.onStateChange = onStateChange;
     this.raf = 0;
@@ -72,6 +88,7 @@ export class AutoScrollController {
     const speedLabel = panel.querySelector("[data-auto-speed]");
     input.addEventListener("input", () => {
       this.speed = Number(input.value) || this.speed;
+      saveSpeed(this.speed);
       speedLabel.textContent = `${this.speed} px/s`;
     });
     panel.querySelector("[data-auto-stop]").addEventListener("click", this.stop);
