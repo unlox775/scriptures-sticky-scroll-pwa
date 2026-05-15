@@ -532,7 +532,7 @@ export class ScriptureScroller {
 
   findUnloadAnchorNode(removingNode) {
     const targetY = this.scroller.getBoundingClientRect().top + this.scroller.clientHeight * this.config.alignRatio;
-    const candidates = Array.from(this.content.querySelectorAll(".lab-verse, .chapter-heading"))
+    const candidates = Array.from(this.content.querySelectorAll(".lab-verse"))
       .filter((candidate) => !removingNode.contains(candidate));
     let best = null;
     for (const candidate of candidates) {

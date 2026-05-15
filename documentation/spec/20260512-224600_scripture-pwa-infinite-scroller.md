@@ -325,6 +325,17 @@ See `20260512-224600_scripture-pwa-infinite-scroller-PROMPT.txt` for the full mi
 | Keep dev server readiness aligned to deployed base | Done | `playwright.config.mjs`; web server readiness still checks `/scriptures-sticky-scroll-pwa/scroller-lab.html` |
 | Focused test verification | Done | `node --test tests/unit/readerEngine.test.mjs` passing |
 
+### Prompt 34: Video repro still skips Alma 36 to 37
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Fix sticky-heading anchor trap | Done | `src/scriptureScroller.js`; unload preservation now anchors only to real verse nodes, not sticky chapter headings |
+| Strengthen browser regression | Done | `tests/playwright/scroller-unload.spec.mjs`; every scroll step must remain in Alma 36 and under verse 31 |
+| Add sticky-heading unit regression | Done | `tests/unit/readerEngine.test.mjs`; proves a sticky heading is ignored in favor of the verse anchor |
+| Playwright execution | Deferred | Sandbox still cannot launch Chromium; test is ready for local `npm run test:e2e` |
+| Build verification | Done | `npm run build` passing |
+| Focused test verification | Done | `node --test tests/unit/readerEngine.test.mjs` passing |
+
 ## Next Actions
 
 1. Exercise the integrated reader on iPhone Safari and tune remaining touch momentum behavior.

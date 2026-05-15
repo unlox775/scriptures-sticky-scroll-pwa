@@ -19,13 +19,14 @@ test("unloading above near Alma 36 does not skip into Alma 37", async ({ page })
 
   let beforeUnload = await snapshot(page);
   let sawUnload = false;
-  for (let i = 0; i < 160; i += 1) {
-    await page.evaluate(() => window.__scriptureScrollerLab.scrollBy(24));
-    await page.waitForTimeout(25);
+  for (let i = 0; i < 260; i += 1) {
+    await page.evaluate(() => window.__scriptureScrollerLab.scrollBy(18));
+    await page.waitForTimeout(35);
     const next = await snapshot(page);
+    expect(next.anchor.reference, `step ${i} anchor`).toMatch(/^Alma 36:/);
+    expect(next.anchor.verse, `step ${i} verse`).toBeLessThanOrEqual(30);
     if (next.loadedChapters[0]?.seq > beforeUnload.loadedChapters[0]?.seq) {
       sawUnload = true;
-      break;
     }
     beforeUnload = next;
   }

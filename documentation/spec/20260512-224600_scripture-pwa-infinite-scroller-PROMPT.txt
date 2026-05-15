@@ -245,3 +245,11 @@ It stil jumped, see the logs here.  Same test.  and why did it not do the "x12" 
 <user_query>
 @/Users/dave/.cursor/projects/1778633115361/terminals/8.txt:80-126 @/Users/dave/.cursor/projects/1778633115361/terminals/8.txt:128-174 
 </user_query>
+
+=== Prompt 34 (video repro still skips Alma 36 to 37) ===
+
+<user_query>
+@/Users/dave/Downloads/Screen Recording 2026-05-15 at 8.56.06 AM.mov  No change.  Look at this (extract screenshots if you can't directly observe the video).  I thought your test would be basically running this.
+
+FAIL: it still skips mid 36 to the early chapter 37.  Fix the  test and iterate until you are confident of the fix
+</user_query>
