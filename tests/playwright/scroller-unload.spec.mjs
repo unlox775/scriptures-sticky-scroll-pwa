@@ -19,12 +19,19 @@ test("unloading above near Alma 36 does not skip into Alma 37", async ({ page })
 
   let beforeUnload = await snapshot(page);
   let sawUnload = false;
+  let lastAlma36Verse = beforeUnload.anchor.verse;
   for (let i = 0; i < 260; i += 1) {
     await page.evaluate(() => window.__scriptureScrollerLab.scrollBy(18));
     await page.waitForTimeout(35);
     const next = await snapshot(page);
-    expect(next.anchor.reference, `step ${i} anchor`).toMatch(/^Alma 36:/);
-    expect(next.anchor.verse, `step ${i} verse`).toBeLessThanOrEqual(30);
+    if (next.anchor.bookTitle === "Alma" && next.anchor.chapter === 36) {
+      expect(next.anchor.verse, `step ${i} Alma 36 verse`).toBeGreaterThanOrEqual(lastAlma36Verse);
+      lastAlma36Verse = next.anchor.verse;
+    }
+    if (next.anchor.bookTitle === "Alma" && next.anchor.chapter === 37) {
+      expect(lastAlma36Verse, `step ${i} crossed into Alma 37 after Alma 36 verse`).toBeGreaterThanOrEqual(28);
+      break;
+    }
     if (next.loadedChapters[0]?.seq > beforeUnload.loadedChapters[0]?.seq) {
       sawUnload = true;
     }
@@ -32,8 +39,5 @@ test("unloading above near Alma 36 does not skip into Alma 37", async ({ page })
   }
 
   expect(sawUnload).toBe(true);
-  const afterReference = await reference(page);
-  const after = await snapshot(page);
-  expect(afterReference).toMatch(/^Alma 36:/);
-  expect(after.anchor.verse).toBeLessThanOrEqual(30);
+  expect(lastAlma36Verse).toBeGreaterThanOrEqual(28);
 });

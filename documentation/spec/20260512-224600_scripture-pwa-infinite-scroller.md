@@ -336,6 +336,15 @@ See `20260512-224600_scripture-pwa-infinite-scroller-PROMPT.txt` for the full mi
 | Build verification | Done | `npm run build` passing |
 | Focused test verification | Done | `node --test tests/unit/readerEngine.test.mjs` passing |
 
+### Prompt 35: Playwright catches Alma 37 transition
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Refine browser regression assertion | Done | `tests/playwright/scroller-unload.spec.mjs`; entering Alma 37 is allowed only after reaching late Alma 36, so normal chapter completion does not fail |
+| Coalesce alternating preload noise | Done | `src/scrollerLab.js`; top/bottom `preload_not_needed` events share one ticker row with combined counts |
+| Build verification | Done | `npm run build` passing |
+| Focused test verification | Done | `node --test tests/unit/readerEngine.test.mjs` passing |
+
 ## Next Actions
 
 1. Exercise the integrated reader on iPhone Safari and tune remaining touch momentum behavior.

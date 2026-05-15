@@ -253,3 +253,9 @@ It stil jumped, see the logs here.  Same test.  and why did it not do the "x12" 
 
 FAIL: it still skips mid 36 to the early chapter 37.  Fix the  test and iterate until you are confident of the fix
 </user_query>
+
+=== Prompt 35 (Playwright catches Alma 37 transition) ===
+
+<user_query>
+@/Users/dave/.cursor/projects/1778633115361/terminals/8.txt:188-228 
+</user_query>

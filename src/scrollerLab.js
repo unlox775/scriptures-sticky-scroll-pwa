@@ -48,7 +48,9 @@ function setStatus(text, level = "info") {
 
 function addEvent(entry) {
   if (entry.event === "metrics_updated") return;
-  const key = `${entry.event || "event"}:${entry.summary || ""}`;
+  const key = entry.event === "preload_not_needed"
+    ? "preload_not_needed"
+    : `${entry.event || "event"}:${entry.summary || ""}`;
   if (entry.event === "preload_not_needed") {
     const edge = entry.metrics?.edge === "top" ? "top" : "bottom";
     if (tickerRepeat?.key === key) {
