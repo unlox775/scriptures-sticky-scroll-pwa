@@ -288,6 +288,25 @@ See `20260512-224600_scripture-pwa-infinite-scroller-PROMPT.txt` for the full mi
 | Browser verification | Done | Tested the local app at `#/r/old-testament/ex/28/33`; auto-scroll at 80 px/sec stayed active crossing into Exodus 29 with no console errors |
 | Build verification | Done | `npm run build` passing |
 
+### Prompt 30: Skip-ahead unload regression and integration test
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Harden top-unload scroll compensation | Done | `src/scriptureScroller.js`; unload now restores a real remaining anchor element after removing the offscreen chapter |
+| Add focused unload regression coverage | Done | `tests/unit/readerEngine.test.mjs`; verifies visible anchor position survives an unload-above operation |
+| Add browser regression scaffold | Done | `playwright.config.mjs`, `tests/playwright/scroller-unload.spec.mjs`, `src/scrollerLab.js`; test drives the Alma 36 scenario through the lab debug hook |
+| Playwright execution | Deferred | Browser install was paused per user request; test is written for manual/local run with `npm run test:e2e` |
+
+### Prompt 31: Serialize scroller load/unload mutations
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Serialize window mutations | Done | `src/scriptureScroller.js`; each evaluation pass performs at most one append/prepend/unload |
+| Add settle window between mutations | Done | `src/scriptureScroller.js`; threshold re-checks defer during a 450 ms load/unload settle window |
+| Add settle diagnostics | Done | `src/scriptureScroller.js`; emits `window_mutation_settling` and `window_evaluation_deferred` events |
+| Build verification | Done | `npm run build` passing |
+| Focused test verification | Done | `node --test tests/unit/readerEngine.test.mjs` passing |
+
 ## Next Actions
 
 1. Exercise the integrated reader on iPhone Safari and tune remaining touch momentum behavior.

@@ -48,6 +48,7 @@ function compareSeq(a, b) {
 }
 
 const UNLOAD_EPSILON_PX = 4;
+const WINDOW_MUTATION_SETTLE_MS = 450;
 
 export class ScriptureScroller {
   constructor(options) {
@@ -66,10 +67,14 @@ export class ScriptureScroller {
     this.isJumping = false;
     this.lastLoadDirection = null;
     this.userScrollSinceJump = false;
+    this.windowMutationInFlight = false;
+    this.windowMutationTimer = 0;
+    this.pendingWindowEvaluation = false;
     this.resizeObserver = new ResizeObserver(() => this.queueMeasure("resize"));
 
     this.handleScroll = this.handleScroll.bind(this);
     this.markUserScroll = this.markUserScroll.bind(this);
+    this.evaluateWindow = this.evaluateWindow.bind(this);
   }
 
   async init(location = {}) {
@@ -99,6 +104,7 @@ export class ScriptureScroller {
     this.scroller.removeEventListener("keydown", this.markUserScroll);
     this.resizeObserver.disconnect();
     if (this.scrollRaf) cancelAnimationFrame(this.scrollRaf);
+    if (this.windowMutationTimer) clearTimeout(this.windowMutationTimer);
   }
 
   buildSequence(work) {
@@ -345,6 +351,27 @@ export class ScriptureScroller {
     }
   }
 
+  startWindowMutationSettle(reason) {
+    this.windowMutationInFlight = true;
+    if (this.windowMutationTimer) clearTimeout(this.windowMutationTimer);
+    this.emit("window_mutation_settling", {
+      level: "debug",
+      summary: `Settling after ${reason}`,
+      metrics: {
+        settleMs: WINDOW_MUTATION_SETTLE_MS,
+        pendingEvaluation: this.pendingWindowEvaluation,
+      },
+    });
+    this.windowMutationTimer = setTimeout(() => {
+      this.windowMutationTimer = 0;
+      this.windowMutationInFlight = false;
+      if (this.pendingWindowEvaluation) {
+        this.pendingWindowEvaluation = false;
+        void this.evaluateWindow();
+      }
+    }, WINDOW_MUTATION_SETTLE_MS);
+  }
+
   canScrollForward() {
     const loadedSeqs = Array.from(this.loaded.keys()).sort(compareSeq);
     const lastSeq = loadedSeqs.at(-1);
@@ -371,6 +398,16 @@ export class ScriptureScroller {
   }
 
   async evaluateWindow() {
+    if (this.windowMutationInFlight) {
+      this.pendingWindowEvaluation = true;
+      this.emit("window_evaluation_deferred", {
+        level: "debug",
+        summary: "Window evaluation deferred while load/unload settles",
+        metrics: { settleMs: WINDOW_MUTATION_SETTLE_MS },
+      });
+      return;
+    }
+
     const snapshot = this.getSnapshot("scroll");
     const previousScrollTop = this.lastScrollTop;
     const direction = snapshot.scrollTop >= this.lastScrollTop ? "down" : "up";
@@ -380,7 +417,14 @@ export class ScriptureScroller {
     const lastSeq = loadedSeqs.at(-1);
 
     if (snapshot.topDistance < snapshot.preloadDistancePx) {
-      if (firstSeq > 0) await this.ensureLoaded(firstSeq - 1, "prepend");
+      if (firstSeq > 0) {
+        const didLoad = await this.ensureLoaded(firstSeq - 1, "prepend");
+        if (didLoad) {
+          this.startWindowMutationSettle("prepend");
+          this.queueMeasure("load-settle");
+          return;
+        }
+      }
       else this.emit("work_boundary_hit", { level: "debug", summary: "At beginning of work", refs: { edge: "top" } });
     } else {
       this.emit("preload_not_needed", {
@@ -391,7 +435,14 @@ export class ScriptureScroller {
     }
 
     if (snapshot.bottomDistance < snapshot.preloadDistancePx) {
-      if (lastSeq < this.sequence.length - 1) await this.ensureLoaded(lastSeq + 1, "append");
+      if (lastSeq < this.sequence.length - 1) {
+        const didLoad = await this.ensureLoaded(lastSeq + 1, "append");
+        if (didLoad) {
+          this.startWindowMutationSettle("append");
+          this.queueMeasure("load-settle");
+          return;
+        }
+      }
       else this.emit("work_boundary_hit", { level: "debug", summary: "At end of work", refs: { edge: "bottom" } });
     } else if (direction === "down") {
       this.emit("preload_not_needed", {
@@ -401,7 +452,10 @@ export class ScriptureScroller {
       });
     }
 
-    this.unloadFarChapters(direction, previousScrollTop);
+    const didUnload = this.unloadFarChapters(direction, previousScrollTop);
+    if (didUnload) {
+      this.startWindowMutationSettle("unload");
+    }
   }
 
   unloadFarChapters(direction, previousScrollTop) {
@@ -412,7 +466,7 @@ export class ScriptureScroller {
     const entries = Array.from(this.loaded.entries()).sort(([a], [b]) => a - b);
     if (!this.userScrollSinceJump || entries.length <= 1) {
       this.lastLoadDirection = null;
-      return;
+      return false;
     }
 
     const [seq, node] = direction === "down" ? entries[0] : entries.at(-1);
@@ -429,17 +483,30 @@ export class ScriptureScroller {
 
     if (!shouldUnloadAbove && !shouldUnloadBelow) {
       this.lastLoadDirection = null;
-      return;
+      return false;
     }
 
     const beforeScroll = this.scroller.scrollTop;
     const nextNode = node.nextElementSibling;
+    const anchorNode = shouldUnloadAbove ? this.findUnloadAnchorNode(node) : null;
+    const anchorTopBefore = anchorNode?.getBoundingClientRect().top ?? null;
+    const anchorChapter = anchorNode?.closest?.(".lab-chapter") ?? null;
+    const anchorLabel = anchorChapter?.dataset.seq
+      ? `${this.pointerLabel(this.sequence[Number(anchorChapter.dataset.seq)])}:${anchorNode.dataset?.verse || "heading"}`
+      : null;
     const removedSpace = shouldUnloadAbove && nextNode
       ? nextNode.offsetTop - node.offsetTop
       : node.offsetHeight;
     node.remove();
     this.loaded.delete(seq);
-    if (shouldUnloadAbove) this.scroller.scrollTop = Math.max(0, beforeScroll - removedSpace);
+    if (shouldUnloadAbove) {
+      if (anchorNode && Number.isFinite(anchorTopBefore)) {
+        const anchorTopAfter = anchorNode.getBoundingClientRect().top;
+        this.scroller.scrollTop = Math.max(0, beforeScroll + anchorTopAfter - anchorTopBefore);
+      } else {
+        this.scroller.scrollTop = Math.max(0, beforeScroll - removedSpace);
+      }
+    }
     this.lastScrollTop = this.scroller.scrollTop;
     this.emit("chapter_unloaded", {
       level: "info",
@@ -452,9 +519,30 @@ export class ScriptureScroller {
         removedSpace: Math.round(removedSpace),
         mode: crossedAbove || crossedBelow ? "crossed" : "catch-up",
         scrollAdjustedBy: shouldUnloadAbove ? Math.round(this.scroller.scrollTop - beforeScroll) : 0,
+        anchorLabel,
+        anchorDelta: shouldUnloadAbove && anchorNode && Number.isFinite(anchorTopBefore)
+          ? Math.round(anchorNode.getBoundingClientRect().top - anchorTopBefore)
+          : null,
       },
     });
     this.lastLoadDirection = null;
+    return true;
+  }
+
+  findUnloadAnchorNode(removingNode) {
+    const targetY = this.scroller.getBoundingClientRect().top + this.scroller.clientHeight * this.config.alignRatio;
+    const candidates = Array.from(this.content.querySelectorAll(".lab-verse, .chapter-heading"))
+      .filter((candidate) => !removingNode.contains(candidate));
+    let best = null;
+    for (const candidate of candidates) {
+      const rect = candidate.getBoundingClientRect();
+      if (rect.bottom < this.scroller.getBoundingClientRect().top) continue;
+      const distance = Math.abs(rect.top - targetY);
+      if (!best || distance < best.distance) {
+        best = { node: candidate, distance };
+      }
+    }
+    return best?.node ?? removingNode.nextElementSibling;
   }
 
   queueMeasure(reason) {

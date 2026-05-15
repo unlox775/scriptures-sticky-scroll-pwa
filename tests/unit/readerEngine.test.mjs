@@ -106,3 +106,79 @@ test("ScriptureScroller locationToSeq resolves known and fallback seq", () => {
   assert.equal(engine.locationToSeq({ bookId: "missing", chapter: 1 }), 0);
 });
 
+test("ScriptureScroller unload above preserves the visible anchor", () => {
+  setupEnv();
+  const scroller = createScroller();
+  scroller.clientHeight = 1000;
+  scroller.scrollTop = 2350;
+  const anchor = {
+    documentTop: 2610,
+    getBoundingClientRect() {
+      const top = this.documentTop - scroller.scrollTop;
+      return { top, bottom: top + 40 };
+    },
+  };
+  const removed = {
+    offsetTop: 0,
+    offsetHeight: 1200,
+    nextElementSibling: null,
+    contains(candidate) {
+      return candidate === this;
+    },
+    removeCalled: false,
+    remove() {
+      this.removeCalled = true;
+      anchor.documentTop -= 1200;
+    },
+  };
+  const visible = {
+    offsetTop: 1200,
+    offsetHeight: 5000,
+    nextElementSibling: null,
+    contains() {
+      return false;
+    },
+    querySelectorAll(selector) {
+      return selector === ".lab-verse, .chapter-heading" ? [anchor] : [];
+    },
+    remove() {},
+  };
+  removed.nextElementSibling = visible;
+  const content = createContent();
+  content.querySelectorAll = (selector) => (selector === ".lab-verse, .chapter-heading" ? [anchor] : []);
+  const index = {
+    works: [
+      {
+        id: "w",
+        title: "Work",
+        books: [{ id: "a", title: "Alma", chapterCount: 2, workId: "w" }],
+      },
+    ],
+  };
+  const engine = new ScriptureScroller({
+    scroller,
+    content,
+    index,
+    workId: "w",
+    unloadViewportPages: 1,
+    bookCache: {
+      async getBook() {
+        return { chapters: [] };
+      },
+    },
+  });
+  engine.work = index.works[0];
+  engine.sequence = engine.buildSequence(engine.work);
+  engine.loaded.set(0, removed);
+  engine.loaded.set(1, visible);
+  engine.userScrollSinceJump = true;
+
+  engine.unloadFarChapters("down", 2200);
+
+  assert.equal(removed.removeCalled, true);
+  assert.equal(scroller.scrollTop, 1150);
+  assert.equal(anchor.getBoundingClientRect().top, 260);
+  assert.equal(engine.loaded.has(0), false);
+  assert.equal(engine.loaded.has(1), true);
+});
+

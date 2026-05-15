@@ -307,6 +307,21 @@ async function boot() {
     updateHash(anchor);
     renderSnapshot(initialSnapshot);
     setStatus("ready", "ok");
+    window.__scriptureScrollerLab = {
+      getSnapshot(reason = "test") {
+        return reader.getSnapshot(reason);
+      },
+      getReference() {
+        return reader.getSnapshot("test").anchor?.reference ?? null;
+      },
+      jumpTo(location) {
+        return reader.jumpTo(location);
+      },
+      scrollBy(deltaY) {
+        els.scroller.scrollTop += deltaY;
+        scroller.markIntentionalScroll();
+      },
+    };
   } catch (error) {
     setStatus("error", "error");
     addEvent({

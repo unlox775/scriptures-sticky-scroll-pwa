@@ -212,3 +212,24 @@ I noticed another worrying thing, sometimes the infiniite scroller scrolling fro
 
 The sticky thing wasn't improved at all BTW, so I am hoping you have something in the logs to help me/you
 </user_query>
+
+=== Prompt 30 (skip-ahead unload regression and integration test) ===
+
+<user_query>
+So, we have a skip-ahead scenario, Look at the 3 screenshots.  I am wondering if you could develop an integration test with playwright or something to test this kind of thing.  I'm not sure if the issue is that the load/unload lines are so close.
+
+What I do:
+1.  Go to Alma 36 vs 8 (not specifically that verse, but somewhere mid chapter 36
+2. Start auto-scrolling (still happens if I manuallyt scroll though)
+3. Once it scrolls down so the viewport crosses the Load/Unload lines, it flilckers and I jump from ~60% through Chapter 36 to ~20%ish into Chapter 37
+
+Behavior is pretty close to the same with auto-scroll/not.  However I noticed possibly-unrelated oddity.  The moment I hit autoscroll the Load/Unload lines shift slightly, so they are almost aligned.  I don't think this is the cause of the problem as even manual scrolling it still ends up jumping for half a chapter like that.
+</user_query>
+
+=== Prompt 31 (serialize scroller load/unload mutations) ===
+
+<user_query>
+What if we were to make the load/unload chunks wait until a quieter moment, when no other potentially-conflicting events are firing.  This would be a queue of sorts, so load/unload events that happen nearly simultaneously would end up firing one after each other.  I think we don't have to wait long, maybe a half second of no-danger-event-firing time.  I am not sure what these danger events may be.  Not scrolling, or auto-scrolling, maybe just redraw/load spikes.  Maybe I am just saying we need to make sure load/unload events take turns and have a small delay in-between which would let what-is-my-current-scroll-position stabilize (for render delays) before making decision and firing the next.  Maybe we don't even let items be added to the queue if another is pending, to wait for it to resolve before even determining if the next load/unload is unnecessary.  That would stop any race-condition (oh-shit-my-my-scroll-viewport-is-less-than-2-screens-from-the-end false alarms) from happening during the render-post-check routine to complete.
+
+And don't worry about the playwright for now.  I forgot the STUPID sandbox in cursor perpetually makes agents THINK playwright is not installed, even though it is.  Wait on that for now, or write the test and I will run it.
+</user_query>
