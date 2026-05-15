@@ -182,3 +182,63 @@ test("ScriptureScroller unload above preserves the visible anchor", () => {
   assert.equal(engine.loaded.has(1), true);
 });
 
+test("ScriptureScroller unload above never advances scrollTop", () => {
+  setupEnv();
+  const scroller = createScroller();
+  scroller.clientHeight = 1000;
+  scroller.scrollTop = 2350;
+  const anchor = {
+    getBoundingClientRect() {
+      return { top: 300, bottom: 340 };
+    },
+  };
+  const removed = {
+    offsetTop: 0,
+    offsetHeight: 1200,
+    nextElementSibling: null,
+    contains() {
+      return false;
+    },
+    remove() {},
+  };
+  const visible = {
+    offsetTop: 1200,
+    offsetHeight: 5000,
+    nextElementSibling: null,
+    remove() {},
+  };
+  removed.nextElementSibling = visible;
+  const content = createContent();
+  content.querySelectorAll = () => [anchor];
+  const index = {
+    works: [
+      {
+        id: "w",
+        title: "Work",
+        books: [{ id: "a", title: "Alma", chapterCount: 2, workId: "w" }],
+      },
+    ],
+  };
+  const engine = new ScriptureScroller({
+    scroller,
+    content,
+    index,
+    workId: "w",
+    unloadViewportPages: 1,
+    bookCache: {
+      async getBook() {
+        return { chapters: [] };
+      },
+    },
+  });
+  engine.work = index.works[0];
+  engine.sequence = engine.buildSequence(engine.work);
+  engine.loaded.set(0, removed);
+  engine.loaded.set(1, visible);
+  engine.userScrollSinceJump = true;
+
+  engine.unloadFarChapters("down", 2200);
+
+  assert.equal(scroller.scrollTop <= 2350, true);
+});
+

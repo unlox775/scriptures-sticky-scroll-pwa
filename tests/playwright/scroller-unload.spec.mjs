@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 async function waitForLab(page) {
-  await page.goto("/scroller-lab.html#/alma/36/8");
+  await page.goto("scroller-lab.html#/alma/36/8");
   await expect(page.locator("#statusPill")).toHaveText("ready");
   await page.waitForFunction(() => Boolean(window.__scriptureScrollerLab?.getSnapshot));
 }

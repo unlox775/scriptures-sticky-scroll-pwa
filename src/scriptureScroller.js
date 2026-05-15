@@ -502,7 +502,8 @@ export class ScriptureScroller {
     if (shouldUnloadAbove) {
       if (anchorNode && Number.isFinite(anchorTopBefore)) {
         const anchorTopAfter = anchorNode.getBoundingClientRect().top;
-        this.scroller.scrollTop = Math.max(0, beforeScroll + anchorTopAfter - anchorTopBefore);
+        const anchorDelta = Math.min(0, anchorTopAfter - anchorTopBefore);
+        this.scroller.scrollTop = Math.max(0, beforeScroll + anchorDelta);
       } else {
         this.scroller.scrollTop = Math.max(0, beforeScroll - removedSpace);
       }

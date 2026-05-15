@@ -233,3 +233,15 @@ What if we were to make the load/unload chunks wait until a quieter moment, when
 
 And don't worry about the playwright for now.  I forgot the STUPID sandbox in cursor perpetually makes agents THINK playwright is not installed, even though it is.  Wait on that for now, or write the test and I will run it.
 </user_query>
+
+=== Prompt 32 (remaining Alma jump and lab ticker dedupe) ===
+
+<user_query>
+It stil jumped, see the logs here.  Same test.  and why did it not do the "x12" deduping on those repeated messages?
+</user_query>
+
+=== Prompt 33 (Playwright lab route mismatch) ===
+
+<user_query>
+@/Users/dave/.cursor/projects/1778633115361/terminals/8.txt:80-126 @/Users/dave/.cursor/projects/1778633115361/terminals/8.txt:128-174 
+</user_query>

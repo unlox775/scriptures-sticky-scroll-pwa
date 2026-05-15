@@ -12,7 +12,7 @@ export default defineConfig({
     timeout: 30_000,
   },
   use: {
-    baseURL: "http://127.0.0.1:5173/scriptures-sticky-scroll-pwa",
+    baseURL: "http://127.0.0.1:5173/scriptures-sticky-scroll-pwa/",
     trace: "retain-on-failure",
     ...devices["Desktop Chrome"],
   },

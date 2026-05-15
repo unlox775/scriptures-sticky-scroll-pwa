@@ -35,7 +35,7 @@ const els = {
 let scroller = null;
 let reader = null;
 let lastSnapshot = null;
-let preloadNoise = null;
+let tickerRepeat = null;
 
 function fmtPx(value) {
   return `${Math.round(value || 0).toLocaleString()} px`;
@@ -48,21 +48,28 @@ function setStatus(text, level = "info") {
 
 function addEvent(entry) {
   if (entry.event === "metrics_updated") return;
+  const key = `${entry.event || "event"}:${entry.summary || ""}`;
   if (entry.event === "preload_not_needed") {
     const edge = entry.metrics?.edge === "top" ? "top" : "bottom";
-    if (preloadNoise?.node) {
-      preloadNoise.total += 1;
-      preloadNoise[edge] += 1;
-      preloadNoise.node.querySelector("span").textContent = new Date(entry.ts).toLocaleTimeString();
-      preloadNoise.node.querySelector("[data-repeat-count]").textContent = `x${preloadNoise.total}`;
-      preloadNoise.node.querySelector("em").textContent =
-        `Threshold not crossed · top ${preloadNoise.top} · bottom ${preloadNoise.bottom}`;
-      els.eventTicker.prepend(preloadNoise.node);
+    if (tickerRepeat?.key === key) {
+      tickerRepeat.total += 1;
+      tickerRepeat[edge] += 1;
+      tickerRepeat.node.querySelector("span").textContent = new Date(entry.ts).toLocaleTimeString();
+      tickerRepeat.node.querySelector("[data-repeat-count]").textContent = `x${tickerRepeat.total}`;
+      tickerRepeat.node.querySelector("em").textContent =
+        `Threshold not crossed · top ${tickerRepeat.top} · bottom ${tickerRepeat.bottom}`;
+      els.eventTicker.prepend(tickerRepeat.node);
       return;
     }
-    preloadNoise = { total: 1, top: edge === "top" ? 1 : 0, bottom: edge === "bottom" ? 1 : 0, node: null };
+    tickerRepeat = { key, total: 1, top: edge === "top" ? 1 : 0, bottom: edge === "bottom" ? 1 : 0, node: null };
+  } else if (tickerRepeat?.key === key) {
+    tickerRepeat.total += 1;
+    tickerRepeat.node.querySelector("span").textContent = new Date(entry.ts).toLocaleTimeString();
+    tickerRepeat.node.querySelector("[data-repeat-count]").textContent = `x${tickerRepeat.total}`;
+    els.eventTicker.prepend(tickerRepeat.node);
+    return;
   } else {
-    preloadNoise = null;
+    tickerRepeat = { key, total: 1, node: null };
   }
   const li = document.createElement("li");
   li.className = `ticker-item level-${entry.level || "debug"}`;
@@ -76,9 +83,11 @@ function addEvent(entry) {
   if (entry.event === "preload_not_needed") {
     li.querySelector("[data-repeat-count]").textContent = "x1";
     li.querySelector("em").textContent =
-      `Threshold not crossed · top ${preloadNoise.top} · bottom ${preloadNoise.bottom}`;
-    preloadNoise.node = li;
+      `Threshold not crossed · top ${tickerRepeat.top} · bottom ${tickerRepeat.bottom}`;
+  } else {
+    li.querySelector("[data-repeat-count]").textContent = "x1";
   }
+  tickerRepeat.node = li;
   els.eventTicker.prepend(li);
   while (els.eventTicker.children.length > 80) {
     els.eventTicker.lastChild.remove();
@@ -297,7 +306,7 @@ async function boot() {
     });
     els.clearEvents.addEventListener("click", () => {
       els.eventTicker.innerHTML = "";
-      preloadNoise = null;
+      tickerRepeat = null;
     });
     window.addEventListener("resize", () => renderSnapshot(lastSnapshot));
 

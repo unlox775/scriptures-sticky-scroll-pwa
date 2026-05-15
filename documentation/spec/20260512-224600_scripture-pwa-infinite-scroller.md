@@ -307,6 +307,24 @@ See `20260512-224600_scripture-pwa-infinite-scroller-PROMPT.txt` for the full mi
 | Build verification | Done | `npm run build` passing |
 | Focused test verification | Done | `node --test tests/unit/readerEngine.test.mjs` passing |
 
+### Prompt 32: Remaining Alma jump and lab ticker dedupe
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Prevent unload-above from skipping forward | Done | `src/scriptureScroller.js`; anchor compensation is clamped so removing content above can never increase `scrollTop` |
+| Add regression for forward scroll clamp | Done | `tests/unit/readerEngine.test.mjs`; verifies top unload never advances the viewport |
+| Generalize lab ticker dedupe | Done | `src/scrollerLab.js`; repeated adjacent event+summary rows now collapse to `xN`, including `window_evaluation_deferred` |
+| Build verification | Done | `npm run build` passing |
+| Focused test verification | Done | `node --test tests/unit/readerEngine.test.mjs` passing |
+
+### Prompt 33: Playwright lab route mismatch
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Fix Playwright lab navigation | Done | `tests/playwright/scroller-unload.spec.mjs`; uses a relative lab URL so the configured GitHub Pages base path is preserved |
+| Keep dev server readiness aligned to deployed base | Done | `playwright.config.mjs`; web server readiness still checks `/scriptures-sticky-scroll-pwa/scroller-lab.html` |
+| Focused test verification | Done | `node --test tests/unit/readerEngine.test.mjs` passing |
+
 ## Next Actions
 
 1. Exercise the integrated reader on iPhone Safari and tune remaining touch momentum behavior.
