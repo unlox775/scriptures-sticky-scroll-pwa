@@ -119,6 +119,11 @@ export class AutoScrollController {
     const elapsedSeconds = Math.min((ts - this.lastTs) / 1000, 0.1);
     this.lastTs = ts;
     this.onAutoScroll?.({ phase: "before-scroll", atLoadedBottom: false });
+
+    if (Math.abs(this.scroller.scrollTop - this.floatScrollTop) > 1) {
+      this.floatScrollTop = this.scroller.scrollTop;
+    }
+
     this.floatScrollTop += this.speed * elapsedSeconds;
     const nextScrollTop = Math.round(this.floatScrollTop);
     if (nextScrollTop !== Math.round(this.scroller.scrollTop)) {

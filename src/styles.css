@@ -324,8 +324,7 @@ body {
 .reader-ribbons-overlay .bookmark-ribbon {
   pointer-events: auto;
   position: absolute;
-  transform: translateY(-50%);
-  transition: top 0.12s linear;
+  transform: translateY(-100%);
 }
 
 .reader-content {

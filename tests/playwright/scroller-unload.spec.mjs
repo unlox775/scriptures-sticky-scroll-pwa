@@ -14,30 +14,52 @@ async function reference(page) {
   return page.evaluate(() => window.__scriptureScrollerLab.getReference());
 }
 
-test("unloading above near Alma 36 does not skip into Alma 37", async ({ page }) => {
+async function targetReference(page) {
+  return page.evaluate(() => window.__scriptureScrollerLab.getTargetReference());
+}
+
+function ordinal(ref) {
+  return ref.seq * 1_000 + ref.verse;
+}
+
+test("auto-scroll near Alma 36 keeps the target-line verse continuous", async ({ page }) => {
   await waitForLab(page);
 
-  let beforeUnload = await snapshot(page);
+  const initial = await targetReference(page);
+  expect(initial.reference).toBe("Alma 36:8");
+
+  await page.evaluate(() => window.__scriptureScrollerLab.startAutoScroll(96));
+
+  const samples = [initial];
+  let previousFirstSeq = (await snapshot(page)).loadedChapters[0]?.seq;
   let sawUnload = false;
-  let lastAlma36Verse = beforeUnload.anchor.verse;
-  for (let i = 0; i < 260; i += 1) {
-    await page.evaluate(() => window.__scriptureScrollerLab.scrollBy(18));
-    await page.waitForTimeout(35);
-    const next = await snapshot(page);
-    if (next.anchor.bookTitle === "Alma" && next.anchor.chapter === 36) {
-      expect(next.anchor.verse, `step ${i} Alma 36 verse`).toBeGreaterThanOrEqual(lastAlma36Verse);
-      lastAlma36Verse = next.anchor.verse;
-    }
-    if (next.anchor.bookTitle === "Alma" && next.anchor.chapter === 37) {
-      expect(lastAlma36Verse, `step ${i} crossed into Alma 37 after Alma 36 verse`).toBeGreaterThanOrEqual(28);
-      break;
-    }
-    if (next.loadedChapters[0]?.seq > beforeUnload.loadedChapters[0]?.seq) {
+  for (let i = 0; i < 320; i += 1) {
+    await page.waitForTimeout(75);
+    const current = await targetReference(page);
+    const currentSnapshot = await snapshot(page);
+    const previous = samples.at(-1);
+    samples.push(current);
+
+    const previousOrdinal = ordinal(previous);
+    const currentOrdinal = ordinal(current);
+    expect(currentOrdinal, `step ${i} moved backward from ${previous.reference} to ${current.reference}`).toBeGreaterThanOrEqual(previousOrdinal);
+    expect(
+      currentOrdinal - previousOrdinal,
+      `step ${i} skipped from ${previous.reference} to ${current.reference}`,
+    ).toBeLessThanOrEqual(3);
+
+    const currentFirstSeq = currentSnapshot.loadedChapters[0]?.seq;
+    if (Number.isFinite(previousFirstSeq) && currentFirstSeq > previousFirstSeq) {
       sawUnload = true;
     }
-    beforeUnload = next;
+    previousFirstSeq = currentFirstSeq;
+    if (current.bookTitle === "Alma" && current.chapter === 37) {
+      expect(previous.reference, `entered Alma 37 from ${previous.reference}`).toBe("Alma 36:30");
+      break;
+    }
   }
 
+  await page.evaluate(() => window.__scriptureScrollerLab.stopAutoScroll());
   expect(sawUnload).toBe(true);
-  expect(lastAlma36Verse).toBeGreaterThanOrEqual(28);
+  expect(samples.at(-1).bookTitle).toBe("Alma");
 });

@@ -196,6 +196,9 @@ function ensureReaderService() {
       state.autoScrollActive = active;
       autoScrollStart.textContent = active ? "Auto scrolling" : "Auto scroll";
     },
+    onAutoScrollFrame() {
+      if (!readerView.hidden) renderBookmarkRibbons();
+    },
   });
   return readerService;
 }

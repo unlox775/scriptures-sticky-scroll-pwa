@@ -345,6 +345,21 @@ See `20260512-224600_scripture-pwa-infinite-scroller-PROMPT.txt` for the full mi
 | Build verification | Done | `npm run build` passing |
 | Focused test verification | Done | `node --test tests/unit/readerEngine.test.mjs` passing |
 
+### Prompt 39: Generated artifact cleanup
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Add one-command artifact cleanup | Done | `scripts/clean-artifacts.mjs`, `package.json`; `npm run clean:artifacts` removes Playwright/debug artifacts without one-by-one delete prompts |
+| Cleanup coverage | Done | Removes `documentation/debug-frames`, `playwright-report`, and `test-results`; reports `removed` or `skip` for each path |
+
+### Prompt 38/40: Bookmark ribbon auto-scroll lag follow-up
+
+| Item | Status | Where / Notes |
+|------|--------|---------------|
+| Acknowledge missed prompt | Done | Prompt 38 asked for the auto-scrolling bookmark ribbon lag to be fixed; this was not completed before Prompt 39 cleanup work |
+| Reduce first-line coverage | Done | `src/views/readerView.js`; ribbon anchor is moved higher relative to the verse line so it does not ride over the first line during motion |
+| Update ribbons during auto-scroll frames | Done | `src/scriptureReaderMount.js`, `src/services/readerService.js`, `src/main.js`; bookmark ribbons rerender from the auto-scroll animation callback instead of waiting for a later scroll event |
+
 ## Next Actions
 
 1. Exercise the integrated reader on iPhone Safari and tune remaining touch momentum behavior.

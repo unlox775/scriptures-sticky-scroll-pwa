@@ -259,3 +259,41 @@ FAIL: it still skips mid 36 to the early chapter 37.  Fix the  test and iterate 
 <user_query>
 @/Users/dave/.cursor/projects/1778633115361/terminals/8.txt:188-228 
 </user_query>
+
+=== Prompt 36 (raise sticky bookmark ribbon) ===
+
+<user_query>
+Can you adjust the bookmark look and behavior?  It currently centers the bookmark over the middle and it covers the text.  There is a large enough gap already in place bewteen  verses, I want you to move it up so it overlaps covering the top-third of the first line of the verse (I should see 2/3 of the verses number showing out beneath the bookmark.
+</user_query>
+
+=== Prompt 37 (match video repro and run Playwright in Docker) ===
+
+<user_query>
+NO!!!!  Did you look at my video?  In what way does your playwright test not match what my video did?  So far I see NOTHING different: same scroll, same jump to mid chapter 37.  WHAT are you going to start doing differently to STOP wasting my time.
+
+Also, can you run the test within a docker container?  That should allow you to bypass the playwright sandbox fail, and you can run it yourself
+</user_query>
+
+=== Prompt 38 (resume with internet) ===
+
+<user_query>
+Please resume now. You should have internet again.
+</user_query>
+
+=== Prompt 38 (remove bookmark auto-scroll lag) ===
+
+<user_query>
+While not scrolling, it looks OK.  But when auto-scrolling, the elastic reposition keeps it persistently covering the firstr line
+</user_query>
+
+=== Prompt 39 (add artifact cleanup action) ===
+
+<user_query>
+Make some kind of cleanup action instead of manually requesting deletion. This way using tool calls that I have to specifically accept each one. But if you're just cleaning up artifacts from a previous run, you should have some cleanup routine that does that for you.
+</user_query>
+
+=== Prompt 40 (missed prior request accountability) ===
+
+<user_query>
+And did you actually go and complete the request that I gave you? I gave you a note along the way, did you choose to stop doing what I asked you to do before?
+</user_query>

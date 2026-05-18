@@ -11,6 +11,7 @@ export function createScriptureReader({
   autoScrollPanelHost = null,
   initialAutoScrollSpeed = 20,
   onAutoScrollStateChange = null,
+  onAutoScrollFrame = null,
   location = defaultLocation(),
   onTelemetry = null,
   onReady = null,
@@ -31,7 +32,10 @@ export function createScriptureReader({
         button: autoScrollButton,
         panelHost: autoScrollPanelHost || autoScrollButton.parentElement,
         initialSpeed: initialAutoScrollSpeed,
-        onAutoScroll: (details) => scriptureScroller.handleAutoScrollTick(details),
+        onAutoScroll: (details) => {
+          scriptureScroller.handleAutoScrollTick(details);
+          onAutoScrollFrame?.(details);
+        },
         onStateChange: onAutoScrollStateChange,
         canContinue: () => scriptureScroller.canScrollForward(),
         onStop: (details) => scriptureScroller.emitAutoScrollStop(details),

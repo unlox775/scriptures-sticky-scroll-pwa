@@ -2,7 +2,18 @@ import { createScriptureReader } from "../scriptureReader.js";
 import { createTelemetryEmitter } from "../telemetry.js";
 import { createRuntimeMetrics } from "../runtimeMetrics.js";
 
-export function createReaderService({ index, scroller, content, getWorkMeta, bookCache, autoScrollButton, autoScrollPanelHost, onAnchorChange, onAutoScrollStateChange }) {
+export function createReaderService({
+  index,
+  scroller,
+  content,
+  getWorkMeta,
+  bookCache,
+  autoScrollButton,
+  autoScrollPanelHost,
+  onAnchorChange,
+  onAutoScrollStateChange,
+  onAutoScrollFrame,
+}) {
   const emit = createTelemetryEmitter("domain.readerEngine");
   const scrollerEmit = createTelemetryEmitter("domain.infiniteScroller");
   const metrics = createRuntimeMetrics();
@@ -116,6 +127,7 @@ export function createReaderService({ index, scroller, content, getWorkMeta, boo
         autoScrollPanelHost,
         initialAutoScrollSpeed: 20,
         onAutoScrollStateChange,
+        onAutoScrollFrame,
         onTelemetry: handleTelemetry,
       });
       const start = performance.now();

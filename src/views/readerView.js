@@ -33,7 +33,10 @@ export function renderBookmarkRibbons({
     const verseEl = chapterEl?.querySelector(`.lab-verse[data-verse="${verse}"]`);
     if (!verseEl) continue;
     const verseRect = verseEl.getBoundingClientRect();
-    const top = verseRect.top - scrollerRect.top + verseRect.height / 2;
+    const verseStyle = getComputedStyle(verseEl);
+    const lineHeight = Number.parseFloat(verseStyle.lineHeight) || verseRect.height;
+    const paddingTop = Number.parseFloat(verseStyle.paddingTop) || 0;
+    const top = verseRect.top - scrollerRect.top + paddingTop + lineHeight * 0.2;
     if (top < -20 || top > scrollerRect.height + 20) continue;
     visibleIds.add(bookmark.id);
     const title = (bookmark.location?.reference || bookmark.name).replace(/"/g, "&quot;");
