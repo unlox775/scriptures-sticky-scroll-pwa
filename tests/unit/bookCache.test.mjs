@@ -3,13 +3,15 @@ import assert from "node:assert/strict";
 import { BookCache } from "../../src/data.js";
 
 test("BookCache evicts least recently used entry", async () => {
+  const fetches = [];
   const payloads = {
     "a::one": { chapters: [{ chapter: 1 }] },
     "a::two": { chapters: [{ chapter: 2 }] },
     "a::three": { chapters: [{ chapter: 3 }] },
   };
   Object.defineProperty(globalThis, "fetch", {
-    value: async (url) => {
+    value: async (url, options = {}) => {
+      fetches.push({ url, options });
       const key = url.includes("one") ? "a::one" : url.includes("two") ? "a::two" : "a::three";
       return {
         ok: true,
@@ -32,4 +34,5 @@ test("BookCache evicts least recently used entry", async () => {
   assert.deepEqual(cache.snapshot().keysByRecency, ["a::two", "a::one"]);
   await cache.getBook(three); // should evict two
   assert.deepEqual(cache.snapshot().keysByRecency, ["a::one", "a::three"]);
+  assert.equal(fetches.every((entry) => entry.options.cache === "no-cache"), true);
 });

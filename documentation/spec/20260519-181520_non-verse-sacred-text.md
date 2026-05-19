@@ -29,6 +29,8 @@ These passages are not footnotes or modern study helps. They are part of the scr
 - Implemented ordered `chapter.blocks` output in `scripts/build-scripture-data.mjs`, preserving available book titles, subtitles, book headings, chapter headings, and verse blocks.
 - Updated `src/scriptureScroller.js` to render shared `.scripture-block` elements, including non-verse heading/title/subtitle blocks.
 - Updated anchor detection, unload anchoring, scroller lab diagnostics, and bookmark ribbon lookup to use shared scripture blocks while preserving direct verse targeting.
+- Fixed stale book payload caching by versioning generated book URLs from `data/index.json` and fetching book payloads with `cache: "no-cache"`.
+- Browser-verified `scroller-lab.html#/alma/36/1` renders `The commandments of Alma to his son Helaman.` above Alma 36:1.
 
 ### 🚧 In Progress / Placeholders
 

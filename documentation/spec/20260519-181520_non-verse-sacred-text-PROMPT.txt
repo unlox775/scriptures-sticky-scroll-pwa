@@ -3,3 +3,5 @@ Next item, add a brand new documentation slash spec for this, don't add to an ex
 Yeah, I didn't remember exactly which verses had headings like the words of Alma to his son Shablon. I don't know where that actually is, which chapters that is. Please identify that. Let me know if you're ready to go. And if you are ready to go, I'd say go actually implement the change. Go do it.
 
 Next thing I want you to do is just a simple stupid cleanup. All the spec names. Why are they all named with the exact same freaking name except the end? Scripture-PWA- at the beginning is not helpful. Did that start and then you just kept following that first one? I mean, that's the freaking name of the whole repository. It's Tiki Scripture-Stiki-Stroll-PWA. Why the hell? like I think scripture PWA initial makes sense but all the ones after that don't update the agent instructions or whatever it is that's making you do that and go fix those ones rename them all so they're not so dumb
+
+Did you not actually do the work to make these non-verse things show up? I ran the thing and it is still not showing anything here.

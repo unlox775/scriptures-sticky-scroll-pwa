@@ -201,6 +201,8 @@ async function main() {
   const packageManifest = JSON.parse(
     await fs.readFile(path.join(packageRoot, "package.json"), "utf8"),
   );
+  const generatedAt = new Date().toISOString();
+  const dataVersion = encodeURIComponent(generatedAt);
   const works = [];
 
   for (const config of worksConfig) {
@@ -234,8 +236,8 @@ async function main() {
         slug: normalizedBook.slug,
         chapterCount: normalizedBook.chapterCount,
         workId: config.id,
-        pathJson: `data/books/${config.id}/${normalizedBook.id}.json`,
-        pathGz: `data/books/${config.id}/${normalizedBook.id}.json.gz`,
+        pathJson: `data/books/${config.id}/${normalizedBook.id}.json?v=${dataVersion}`,
+        pathGz: `data/books/${config.id}/${normalizedBook.id}.json.gz?v=${dataVersion}`,
       });
     }
 
@@ -243,7 +245,8 @@ async function main() {
   }
 
   const index = {
-    generatedAt: new Date().toISOString(),
+    generatedAt,
+    dataVersion,
     source: {
       package: "@bencrowder/scriptures-json",
       version: packageManifest.version,

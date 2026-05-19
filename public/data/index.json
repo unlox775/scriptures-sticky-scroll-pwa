@@ -1,5 +1,6 @@
 {
-  "generatedAt": "2026-05-19T18:21:46.695Z",
+  "generatedAt": "2026-05-19T18:39:59.143Z",
+  "dataVersion": "2026-05-19T18%3A39%3A59.143Z",
   "source": {
     "package": "@bencrowder/scriptures-json",
     "version": "1.0.1",
@@ -19,8 +20,8 @@
           "slug": "1-ne",
           "chapterCount": 22,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/1-ne.json",
-          "pathGz": "data/books/book-of-mormon/1-ne.json.gz"
+          "pathJson": "data/books/book-of-mormon/1-ne.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/1-ne.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "2-ne",
@@ -30,8 +31,8 @@
           "slug": "2-ne",
           "chapterCount": 33,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/2-ne.json",
-          "pathGz": "data/books/book-of-mormon/2-ne.json.gz"
+          "pathJson": "data/books/book-of-mormon/2-ne.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/2-ne.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "jacob",
@@ -42,8 +43,8 @@
           "slug": "jacob",
           "chapterCount": 7,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/jacob.json",
-          "pathGz": "data/books/book-of-mormon/jacob.json.gz"
+          "pathJson": "data/books/book-of-mormon/jacob.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/jacob.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "enos",
@@ -52,8 +53,8 @@
           "slug": "enos",
           "chapterCount": 1,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/enos.json",
-          "pathGz": "data/books/book-of-mormon/enos.json.gz"
+          "pathJson": "data/books/book-of-mormon/enos.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/enos.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "jarom",
@@ -62,8 +63,8 @@
           "slug": "jarom",
           "chapterCount": 1,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/jarom.json",
-          "pathGz": "data/books/book-of-mormon/jarom.json.gz"
+          "pathJson": "data/books/book-of-mormon/jarom.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/jarom.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "omni",
@@ -72,8 +73,8 @@
           "slug": "omni",
           "chapterCount": 1,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/omni.json",
-          "pathGz": "data/books/book-of-mormon/omni.json.gz"
+          "pathJson": "data/books/book-of-mormon/omni.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/omni.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "w-of-m",
@@ -82,8 +83,8 @@
           "slug": "w-of-m",
           "chapterCount": 1,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/w-of-m.json",
-          "pathGz": "data/books/book-of-mormon/w-of-m.json.gz"
+          "pathJson": "data/books/book-of-mormon/w-of-m.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/w-of-m.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "mosiah",
@@ -92,8 +93,8 @@
           "slug": "mosiah",
           "chapterCount": 29,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/mosiah.json",
-          "pathGz": "data/books/book-of-mormon/mosiah.json.gz"
+          "pathJson": "data/books/book-of-mormon/mosiah.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/mosiah.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "alma",
@@ -104,8 +105,8 @@
           "slug": "alma",
           "chapterCount": 63,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/alma.json",
-          "pathGz": "data/books/book-of-mormon/alma.json.gz"
+          "pathJson": "data/books/book-of-mormon/alma.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/alma.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "hel",
@@ -115,8 +116,8 @@
           "slug": "hel",
           "chapterCount": 16,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/hel.json",
-          "pathGz": "data/books/book-of-mormon/hel.json.gz"
+          "pathJson": "data/books/book-of-mormon/hel.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/hel.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "3-ne",
@@ -127,8 +128,8 @@
           "slug": "3-ne",
           "chapterCount": 30,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/3-ne.json",
-          "pathGz": "data/books/book-of-mormon/3-ne.json.gz"
+          "pathJson": "data/books/book-of-mormon/3-ne.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/3-ne.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "4-ne",
@@ -139,8 +140,8 @@
           "slug": "4-ne",
           "chapterCount": 1,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/4-ne.json",
-          "pathGz": "data/books/book-of-mormon/4-ne.json.gz"
+          "pathJson": "data/books/book-of-mormon/4-ne.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/4-ne.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "morm",
@@ -149,8 +150,8 @@
           "slug": "morm",
           "chapterCount": 9,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/morm.json",
-          "pathGz": "data/books/book-of-mormon/morm.json.gz"
+          "pathJson": "data/books/book-of-mormon/morm.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/morm.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "ether",
@@ -159,8 +160,8 @@
           "slug": "ether",
           "chapterCount": 15,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/ether.json",
-          "pathGz": "data/books/book-of-mormon/ether.json.gz"
+          "pathJson": "data/books/book-of-mormon/ether.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/ether.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "moro",
@@ -169,8 +170,8 @@
           "slug": "moro",
           "chapterCount": 10,
           "workId": "book-of-mormon",
-          "pathJson": "data/books/book-of-mormon/moro.json",
-          "pathGz": "data/books/book-of-mormon/moro.json.gz"
+          "pathJson": "data/books/book-of-mormon/moro.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/book-of-mormon/moro.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         }
       ]
     },
@@ -186,8 +187,8 @@
           "slug": "gen",
           "chapterCount": 50,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/gen.json",
-          "pathGz": "data/books/old-testament/gen.json.gz"
+          "pathJson": "data/books/old-testament/gen.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/gen.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "ex",
@@ -196,8 +197,8 @@
           "slug": "ex",
           "chapterCount": 40,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/ex.json",
-          "pathGz": "data/books/old-testament/ex.json.gz"
+          "pathJson": "data/books/old-testament/ex.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/ex.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "lev",
@@ -206,8 +207,8 @@
           "slug": "lev",
           "chapterCount": 27,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/lev.json",
-          "pathGz": "data/books/old-testament/lev.json.gz"
+          "pathJson": "data/books/old-testament/lev.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/lev.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "num",
@@ -216,8 +217,8 @@
           "slug": "num",
           "chapterCount": 36,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/num.json",
-          "pathGz": "data/books/old-testament/num.json.gz"
+          "pathJson": "data/books/old-testament/num.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/num.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "deut",
@@ -226,8 +227,8 @@
           "slug": "deut",
           "chapterCount": 34,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/deut.json",
-          "pathGz": "data/books/old-testament/deut.json.gz"
+          "pathJson": "data/books/old-testament/deut.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/deut.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "josh",
@@ -236,8 +237,8 @@
           "slug": "josh",
           "chapterCount": 24,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/josh.json",
-          "pathGz": "data/books/old-testament/josh.json.gz"
+          "pathJson": "data/books/old-testament/josh.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/josh.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "judg",
@@ -246,8 +247,8 @@
           "slug": "judg",
           "chapterCount": 21,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/judg.json",
-          "pathGz": "data/books/old-testament/judg.json.gz"
+          "pathJson": "data/books/old-testament/judg.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/judg.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "ruth",
@@ -256,8 +257,8 @@
           "slug": "ruth",
           "chapterCount": 4,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/ruth.json",
-          "pathGz": "data/books/old-testament/ruth.json.gz"
+          "pathJson": "data/books/old-testament/ruth.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/ruth.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "1-sam",
@@ -267,8 +268,8 @@
           "slug": "1-sam",
           "chapterCount": 31,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/1-sam.json",
-          "pathGz": "data/books/old-testament/1-sam.json.gz"
+          "pathJson": "data/books/old-testament/1-sam.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/1-sam.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "2-sam",
@@ -278,8 +279,8 @@
           "slug": "2-sam",
           "chapterCount": 24,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/2-sam.json",
-          "pathGz": "data/books/old-testament/2-sam.json.gz"
+          "pathJson": "data/books/old-testament/2-sam.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/2-sam.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "1-kgs",
@@ -289,8 +290,8 @@
           "slug": "1-kgs",
           "chapterCount": 22,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/1-kgs.json",
-          "pathGz": "data/books/old-testament/1-kgs.json.gz"
+          "pathJson": "data/books/old-testament/1-kgs.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/1-kgs.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "2-kgs",
@@ -300,8 +301,8 @@
           "slug": "2-kgs",
           "chapterCount": 25,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/2-kgs.json",
-          "pathGz": "data/books/old-testament/2-kgs.json.gz"
+          "pathJson": "data/books/old-testament/2-kgs.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/2-kgs.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "1-chr",
@@ -310,8 +311,8 @@
           "slug": "1-chr",
           "chapterCount": 29,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/1-chr.json",
-          "pathGz": "data/books/old-testament/1-chr.json.gz"
+          "pathJson": "data/books/old-testament/1-chr.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/1-chr.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "2-chr",
@@ -320,8 +321,8 @@
           "slug": "2-chr",
           "chapterCount": 36,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/2-chr.json",
-          "pathGz": "data/books/old-testament/2-chr.json.gz"
+          "pathJson": "data/books/old-testament/2-chr.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/2-chr.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "ezra",
@@ -330,8 +331,8 @@
           "slug": "ezra",
           "chapterCount": 10,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/ezra.json",
-          "pathGz": "data/books/old-testament/ezra.json.gz"
+          "pathJson": "data/books/old-testament/ezra.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/ezra.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "neh",
@@ -340,8 +341,8 @@
           "slug": "neh",
           "chapterCount": 13,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/neh.json",
-          "pathGz": "data/books/old-testament/neh.json.gz"
+          "pathJson": "data/books/old-testament/neh.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/neh.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "esth",
@@ -350,8 +351,8 @@
           "slug": "esth",
           "chapterCount": 10,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/esth.json",
-          "pathGz": "data/books/old-testament/esth.json.gz"
+          "pathJson": "data/books/old-testament/esth.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/esth.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "job",
@@ -360,8 +361,8 @@
           "slug": "job",
           "chapterCount": 42,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/job.json",
-          "pathGz": "data/books/old-testament/job.json.gz"
+          "pathJson": "data/books/old-testament/job.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/job.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "ps",
@@ -370,8 +371,8 @@
           "slug": "ps",
           "chapterCount": 150,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/ps.json",
-          "pathGz": "data/books/old-testament/ps.json.gz"
+          "pathJson": "data/books/old-testament/ps.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/ps.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "prov",
@@ -380,8 +381,8 @@
           "slug": "prov",
           "chapterCount": 31,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/prov.json",
-          "pathGz": "data/books/old-testament/prov.json.gz"
+          "pathJson": "data/books/old-testament/prov.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/prov.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "eccl",
@@ -391,8 +392,8 @@
           "slug": "eccl",
           "chapterCount": 12,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/eccl.json",
-          "pathGz": "data/books/old-testament/eccl.json.gz"
+          "pathJson": "data/books/old-testament/eccl.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/eccl.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "song",
@@ -401,8 +402,8 @@
           "slug": "song",
           "chapterCount": 8,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/song.json",
-          "pathGz": "data/books/old-testament/song.json.gz"
+          "pathJson": "data/books/old-testament/song.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/song.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "isa",
@@ -411,8 +412,8 @@
           "slug": "isa",
           "chapterCount": 66,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/isa.json",
-          "pathGz": "data/books/old-testament/isa.json.gz"
+          "pathJson": "data/books/old-testament/isa.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/isa.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "jer",
@@ -421,8 +422,8 @@
           "slug": "jer",
           "chapterCount": 52,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/jer.json",
-          "pathGz": "data/books/old-testament/jer.json.gz"
+          "pathJson": "data/books/old-testament/jer.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/jer.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "lam",
@@ -431,8 +432,8 @@
           "slug": "lam",
           "chapterCount": 5,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/lam.json",
-          "pathGz": "data/books/old-testament/lam.json.gz"
+          "pathJson": "data/books/old-testament/lam.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/lam.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "ezek",
@@ -441,8 +442,8 @@
           "slug": "ezek",
           "chapterCount": 48,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/ezek.json",
-          "pathGz": "data/books/old-testament/ezek.json.gz"
+          "pathJson": "data/books/old-testament/ezek.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/ezek.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "dan",
@@ -451,8 +452,8 @@
           "slug": "dan",
           "chapterCount": 12,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/dan.json",
-          "pathGz": "data/books/old-testament/dan.json.gz"
+          "pathJson": "data/books/old-testament/dan.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/dan.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "hosea",
@@ -461,8 +462,8 @@
           "slug": "hosea",
           "chapterCount": 14,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/hosea.json",
-          "pathGz": "data/books/old-testament/hosea.json.gz"
+          "pathJson": "data/books/old-testament/hosea.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/hosea.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "joel",
@@ -471,8 +472,8 @@
           "slug": "joel",
           "chapterCount": 3,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/joel.json",
-          "pathGz": "data/books/old-testament/joel.json.gz"
+          "pathJson": "data/books/old-testament/joel.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/joel.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "amos",
@@ -481,8 +482,8 @@
           "slug": "amos",
           "chapterCount": 9,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/amos.json",
-          "pathGz": "data/books/old-testament/amos.json.gz"
+          "pathJson": "data/books/old-testament/amos.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/amos.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "obad",
@@ -491,8 +492,8 @@
           "slug": "obad",
           "chapterCount": 1,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/obad.json",
-          "pathGz": "data/books/old-testament/obad.json.gz"
+          "pathJson": "data/books/old-testament/obad.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/obad.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "jonah",
@@ -501,8 +502,8 @@
           "slug": "jonah",
           "chapterCount": 4,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/jonah.json",
-          "pathGz": "data/books/old-testament/jonah.json.gz"
+          "pathJson": "data/books/old-testament/jonah.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/jonah.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "micah",
@@ -511,8 +512,8 @@
           "slug": "micah",
           "chapterCount": 7,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/micah.json",
-          "pathGz": "data/books/old-testament/micah.json.gz"
+          "pathJson": "data/books/old-testament/micah.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/micah.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "nahum",
@@ -521,8 +522,8 @@
           "slug": "nahum",
           "chapterCount": 3,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/nahum.json",
-          "pathGz": "data/books/old-testament/nahum.json.gz"
+          "pathJson": "data/books/old-testament/nahum.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/nahum.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "hab",
@@ -531,8 +532,8 @@
           "slug": "hab",
           "chapterCount": 3,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/hab.json",
-          "pathGz": "data/books/old-testament/hab.json.gz"
+          "pathJson": "data/books/old-testament/hab.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/hab.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "zeph",
@@ -541,8 +542,8 @@
           "slug": "zeph",
           "chapterCount": 3,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/zeph.json",
-          "pathGz": "data/books/old-testament/zeph.json.gz"
+          "pathJson": "data/books/old-testament/zeph.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/zeph.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "hag",
@@ -551,8 +552,8 @@
           "slug": "hag",
           "chapterCount": 2,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/hag.json",
-          "pathGz": "data/books/old-testament/hag.json.gz"
+          "pathJson": "data/books/old-testament/hag.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/hag.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "zech",
@@ -561,8 +562,8 @@
           "slug": "zech",
           "chapterCount": 14,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/zech.json",
-          "pathGz": "data/books/old-testament/zech.json.gz"
+          "pathJson": "data/books/old-testament/zech.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/zech.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "mal",
@@ -571,8 +572,8 @@
           "slug": "mal",
           "chapterCount": 4,
           "workId": "old-testament",
-          "pathJson": "data/books/old-testament/mal.json",
-          "pathGz": "data/books/old-testament/mal.json.gz"
+          "pathJson": "data/books/old-testament/mal.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/old-testament/mal.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         }
       ]
     },
@@ -588,8 +589,8 @@
           "slug": "matt",
           "chapterCount": 28,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/matt.json",
-          "pathGz": "data/books/new-testament/matt.json.gz"
+          "pathJson": "data/books/new-testament/matt.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/matt.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "mark",
@@ -598,8 +599,8 @@
           "slug": "mark",
           "chapterCount": 16,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/mark.json",
-          "pathGz": "data/books/new-testament/mark.json.gz"
+          "pathJson": "data/books/new-testament/mark.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/mark.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "luke",
@@ -608,8 +609,8 @@
           "slug": "luke",
           "chapterCount": 24,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/luke.json",
-          "pathGz": "data/books/new-testament/luke.json.gz"
+          "pathJson": "data/books/new-testament/luke.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/luke.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "john",
@@ -618,8 +619,8 @@
           "slug": "john",
           "chapterCount": 21,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/john.json",
-          "pathGz": "data/books/new-testament/john.json.gz"
+          "pathJson": "data/books/new-testament/john.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/john.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "acts",
@@ -628,8 +629,8 @@
           "slug": "acts",
           "chapterCount": 28,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/acts.json",
-          "pathGz": "data/books/new-testament/acts.json.gz"
+          "pathJson": "data/books/new-testament/acts.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/acts.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "rom",
@@ -638,8 +639,8 @@
           "slug": "rom",
           "chapterCount": 16,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/rom.json",
-          "pathGz": "data/books/new-testament/rom.json.gz"
+          "pathJson": "data/books/new-testament/rom.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/rom.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "1-cor",
@@ -648,8 +649,8 @@
           "slug": "1-cor",
           "chapterCount": 16,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/1-cor.json",
-          "pathGz": "data/books/new-testament/1-cor.json.gz"
+          "pathJson": "data/books/new-testament/1-cor.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/1-cor.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "2-cor",
@@ -658,8 +659,8 @@
           "slug": "2-cor",
           "chapterCount": 13,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/2-cor.json",
-          "pathGz": "data/books/new-testament/2-cor.json.gz"
+          "pathJson": "data/books/new-testament/2-cor.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/2-cor.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "gal",
@@ -668,8 +669,8 @@
           "slug": "gal",
           "chapterCount": 6,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/gal.json",
-          "pathGz": "data/books/new-testament/gal.json.gz"
+          "pathJson": "data/books/new-testament/gal.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/gal.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "eph",
@@ -678,8 +679,8 @@
           "slug": "eph",
           "chapterCount": 6,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/eph.json",
-          "pathGz": "data/books/new-testament/eph.json.gz"
+          "pathJson": "data/books/new-testament/eph.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/eph.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "philip",
@@ -688,8 +689,8 @@
           "slug": "philip",
           "chapterCount": 4,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/philip.json",
-          "pathGz": "data/books/new-testament/philip.json.gz"
+          "pathJson": "data/books/new-testament/philip.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/philip.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "col",
@@ -698,8 +699,8 @@
           "slug": "col",
           "chapterCount": 4,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/col.json",
-          "pathGz": "data/books/new-testament/col.json.gz"
+          "pathJson": "data/books/new-testament/col.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/col.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "1-thes",
@@ -708,8 +709,8 @@
           "slug": "1-thes",
           "chapterCount": 5,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/1-thes.json",
-          "pathGz": "data/books/new-testament/1-thes.json.gz"
+          "pathJson": "data/books/new-testament/1-thes.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/1-thes.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "2-thes",
@@ -718,8 +719,8 @@
           "slug": "2-thes",
           "chapterCount": 3,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/2-thes.json",
-          "pathGz": "data/books/new-testament/2-thes.json.gz"
+          "pathJson": "data/books/new-testament/2-thes.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/2-thes.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "1-tim",
@@ -728,8 +729,8 @@
           "slug": "1-tim",
           "chapterCount": 6,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/1-tim.json",
-          "pathGz": "data/books/new-testament/1-tim.json.gz"
+          "pathJson": "data/books/new-testament/1-tim.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/1-tim.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "2-tim",
@@ -738,8 +739,8 @@
           "slug": "2-tim",
           "chapterCount": 4,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/2-tim.json",
-          "pathGz": "data/books/new-testament/2-tim.json.gz"
+          "pathJson": "data/books/new-testament/2-tim.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/2-tim.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "titus",
@@ -748,8 +749,8 @@
           "slug": "titus",
           "chapterCount": 3,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/titus.json",
-          "pathGz": "data/books/new-testament/titus.json.gz"
+          "pathJson": "data/books/new-testament/titus.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/titus.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "philem",
@@ -758,8 +759,8 @@
           "slug": "philem",
           "chapterCount": 1,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/philem.json",
-          "pathGz": "data/books/new-testament/philem.json.gz"
+          "pathJson": "data/books/new-testament/philem.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/philem.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "heb",
@@ -768,8 +769,8 @@
           "slug": "heb",
           "chapterCount": 13,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/heb.json",
-          "pathGz": "data/books/new-testament/heb.json.gz"
+          "pathJson": "data/books/new-testament/heb.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/heb.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "james",
@@ -778,8 +779,8 @@
           "slug": "james",
           "chapterCount": 5,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/james.json",
-          "pathGz": "data/books/new-testament/james.json.gz"
+          "pathJson": "data/books/new-testament/james.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/james.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "1-pet",
@@ -788,8 +789,8 @@
           "slug": "1-pet",
           "chapterCount": 5,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/1-pet.json",
-          "pathGz": "data/books/new-testament/1-pet.json.gz"
+          "pathJson": "data/books/new-testament/1-pet.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/1-pet.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "2-pet",
@@ -798,8 +799,8 @@
           "slug": "2-pet",
           "chapterCount": 3,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/2-pet.json",
-          "pathGz": "data/books/new-testament/2-pet.json.gz"
+          "pathJson": "data/books/new-testament/2-pet.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/2-pet.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "1-jn",
@@ -808,8 +809,8 @@
           "slug": "1-jn",
           "chapterCount": 5,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/1-jn.json",
-          "pathGz": "data/books/new-testament/1-jn.json.gz"
+          "pathJson": "data/books/new-testament/1-jn.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/1-jn.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "2-jn",
@@ -818,8 +819,8 @@
           "slug": "2-jn",
           "chapterCount": 1,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/2-jn.json",
-          "pathGz": "data/books/new-testament/2-jn.json.gz"
+          "pathJson": "data/books/new-testament/2-jn.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/2-jn.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "3-jn",
@@ -828,8 +829,8 @@
           "slug": "3-jn",
           "chapterCount": 1,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/3-jn.json",
-          "pathGz": "data/books/new-testament/3-jn.json.gz"
+          "pathJson": "data/books/new-testament/3-jn.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/3-jn.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "jude",
@@ -838,8 +839,8 @@
           "slug": "jude",
           "chapterCount": 1,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/jude.json",
-          "pathGz": "data/books/new-testament/jude.json.gz"
+          "pathJson": "data/books/new-testament/jude.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/jude.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "rev",
@@ -849,8 +850,8 @@
           "slug": "rev",
           "chapterCount": 22,
           "workId": "new-testament",
-          "pathJson": "data/books/new-testament/rev.json",
-          "pathGz": "data/books/new-testament/rev.json.gz"
+          "pathJson": "data/books/new-testament/rev.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/new-testament/rev.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         }
       ]
     },
@@ -865,8 +866,8 @@
           "slug": "dc",
           "chapterCount": 138,
           "workId": "doctrine-and-covenants",
-          "pathJson": "data/books/doctrine-and-covenants/dc.json",
-          "pathGz": "data/books/doctrine-and-covenants/dc.json.gz"
+          "pathJson": "data/books/doctrine-and-covenants/dc.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/doctrine-and-covenants/dc.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         }
       ]
     },
@@ -882,8 +883,8 @@
           "slug": "moses",
           "chapterCount": 8,
           "workId": "pearl-of-great-price",
-          "pathJson": "data/books/pearl-of-great-price/moses.json",
-          "pathGz": "data/books/pearl-of-great-price/moses.json.gz"
+          "pathJson": "data/books/pearl-of-great-price/moses.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/pearl-of-great-price/moses.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "abr",
@@ -893,8 +894,8 @@
           "slug": "abr",
           "chapterCount": 5,
           "workId": "pearl-of-great-price",
-          "pathJson": "data/books/pearl-of-great-price/abr.json",
-          "pathGz": "data/books/pearl-of-great-price/abr.json.gz"
+          "pathJson": "data/books/pearl-of-great-price/abr.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/pearl-of-great-price/abr.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "js-m",
@@ -903,8 +904,8 @@
           "slug": "js-m",
           "chapterCount": 1,
           "workId": "pearl-of-great-price",
-          "pathJson": "data/books/pearl-of-great-price/js-m.json",
-          "pathGz": "data/books/pearl-of-great-price/js-m.json.gz"
+          "pathJson": "data/books/pearl-of-great-price/js-m.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/pearl-of-great-price/js-m.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "js-h",
@@ -914,8 +915,8 @@
           "slug": "js-h",
           "chapterCount": 1,
           "workId": "pearl-of-great-price",
-          "pathJson": "data/books/pearl-of-great-price/js-h.json",
-          "pathGz": "data/books/pearl-of-great-price/js-h.json.gz"
+          "pathJson": "data/books/pearl-of-great-price/js-h.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/pearl-of-great-price/js-h.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         },
         {
           "id": "a-of-f",
@@ -925,8 +926,8 @@
           "slug": "a-of-f",
           "chapterCount": 1,
           "workId": "pearl-of-great-price",
-          "pathJson": "data/books/pearl-of-great-price/a-of-f.json",
-          "pathGz": "data/books/pearl-of-great-price/a-of-f.json.gz"
+          "pathJson": "data/books/pearl-of-great-price/a-of-f.json?v=2026-05-19T18%3A39%3A59.143Z",
+          "pathGz": "data/books/pearl-of-great-price/a-of-f.json.gz?v=2026-05-19T18%3A39%3A59.143Z"
         }
       ]
     }

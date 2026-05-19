@@ -114,7 +114,7 @@ export class BookCache {
 
     let payload;
     try {
-      const gzResponse = await fetch(bookMeta.pathGz, { cache: "force-cache" });
+      const gzResponse = await fetch(bookMeta.pathGz, { cache: "no-cache" });
       if (!gzResponse.ok) {
         throw new Error(`Failed to fetch gzip data for ${bookMeta.title}`);
       }
@@ -131,7 +131,7 @@ export class BookCache {
       }
     } catch (_error) {
       // Fallback for browsers without DecompressionStream support.
-      const jsonResponse = await fetch(bookMeta.pathJson, { cache: "force-cache" });
+      const jsonResponse = await fetch(bookMeta.pathJson, { cache: "no-cache" });
       if (!jsonResponse.ok) {
         logEvent({
           level: "error",
