@@ -7,12 +7,12 @@ This file documents how we keep human + agent collaboration transparent and audi
 
 ## Spec & Prompt Logging
 
-- Maintain spec/prompt pairs under `documentation/spec/` (e.g., `20260309-120000_scripture-pwa-standard-works.*`).
+- Maintain spec/prompt pairs under `documentation/spec/` (e.g., `20260309-184530_standard-works.*`).
 - Every material update must append to the corresponding pair under `documentation/spec/`:
   - `YYYYMMDD-HHMMSS_slug.md` — living Markdown changelog describing what changed, what remains undone, and follow-up actions.
   - `YYYYMMDD-HHMMSS_slug-PROMPT.txt` — plaintext transcript capturing **every** user prompt or follow-up, appended newest-last and kept verbatim (no formatting edits). Captures the whole agentic process.
 - Use 24-hour UTC timestamps (retrieved via `date -u +%Y%m%d-%H%M%S`) to keep ordering unambiguous.
-- Slugs should be short and hyphenated (e.g., `scripture-pwa-standard-works`).
+- Slugs should be short, hyphenated, and specific to the topic (e.g., `standard-works`, `infinite-scroller`). Do not prefix slugs with the repository/app name unless the spec is explicitly about the whole app, such as the initial intake spec.
 - For each new instruction, append the raw transcript to the prompt log before writing code.
 - Spec files should clearly list:
   - ✅ Done (call out tangible code or configuration changes)

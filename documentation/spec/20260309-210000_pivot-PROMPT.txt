@@ -1,4 +1,4 @@
-This pivot prompt log now covers only the pre-infinite-scroller pivot work. The infinite-scroller rewrite originally recorded here as Prompts 12+ was moved to `20260512-224600_scripture-pwa-infinite-scroller-PROMPT.txt`.
+This pivot prompt log now covers only the pre-infinite-scroller pivot work. The infinite-scroller rewrite originally recorded here as Prompts 12+ was moved to `20260512-224600_infinite-scroller-PROMPT.txt`.
 
 === Prompt 1 (URL/state, layout, reader bubble, scroller, debug mode) ===
 
@@ -32,4 +32,4 @@ I don’t know what happened on    I think I am OK with you looking at the chang
 </user_query>
 
 ---
-[SUPERSEDED] Prompts 12+ moved to `20260512-224600_scripture-pwa-infinite-scroller-*`.
+[SUPERSEDED] Prompts 12+ moved to `20260512-224600_infinite-scroller-*`.

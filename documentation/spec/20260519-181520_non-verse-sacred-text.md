@@ -1,10 +1,10 @@
-# Scripture PWA Non-Verse Sacred Text
+# Non-Verse Sacred Text
 
-**Prompt slug:** `scripture-pwa-non-verse-sacred-text`  
+**Prompt slug:** `non-verse-sacred-text`  
 **Started:** 2026-05-19  
 **Last updated:** 2026-05-19
 
-See `20260519-181520_scripture-pwa-non-verse-sacred-text-PROMPT.txt` for the raw prompt history.
+See `20260519-181520_non-verse-sacred-text-PROMPT.txt` for the raw prompt history.
 
 ## Problem
 

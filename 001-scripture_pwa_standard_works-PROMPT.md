@@ -1,4 +1,4 @@
-**Superseded by:** `documentation/spec/20260309-184530_scripture-pwa-standard-works-PROMPT.txt` — that file captures the full agentic process; this tracker is retained for reference only.
+**Superseded by:** `documentation/spec/20260309-184530_standard-works-PROMPT.txt` — that file captures the full agentic process; this tracker is retained for reference only.
 
 ## User Prompt (raw)
 

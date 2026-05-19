@@ -1,12 +1,12 @@
-# Scripture PWA Infinite Scroller Rewrite — Iteration Log
+# Infinite Scroller Rewrite — Iteration Log
 
-**Prompt slug:** `scripture-pwa-infinite-scroller`  
+**Prompt slug:** `infinite-scroller`  
 **Started:** 2026-05-12  
 **Last updated:** 2026-05-13
 
-**Context:** This spec was split out of `20260309-210000_scripture-pwa-pivot-*` after the fact. Git history shows the scroller rewrite began on May 12 local time (`Working infinite scroller!` commits), so this new pair is dated May 12 as requested. The prompt log was migrated from the already-recorded sections in the older pivot prompt log.
+**Context:** This spec was split out of `20260309-210000_pivot-*` after the fact. Git history shows the scroller rewrite began on May 12 local time (`Working infinite scroller!` commits), so this new pair is dated May 12 as requested. The prompt log was migrated from the already-recorded sections in the older pivot prompt log.
 
-See `20260512-224600_scripture-pwa-infinite-scroller-PROMPT.txt` for the full migrated prompt history.
+See `20260512-224600_infinite-scroller-PROMPT.txt` for the full migrated prompt history.
 
 ## Delivery Summary
 
@@ -257,9 +257,9 @@ See `20260512-224600_scripture-pwa-infinite-scroller-PROMPT.txt` for the full mi
 
 | Item | Status | Where / Notes |
 |------|--------|---------------|
-| Create dedicated infinite-scroller spec pair | Done | `20260512-224600_scripture-pwa-infinite-scroller.md` and `20260512-224600_scripture-pwa-infinite-scroller-PROMPT.txt` |
+| Create dedicated infinite-scroller spec pair | Done | `20260512-224600_infinite-scroller.md` and `20260512-224600_infinite-scroller-PROMPT.txt` |
 | Migrate recorded prompts | Done | Old pivot Prompts 12–37 were copied here as Prompts 1–26 |
-| Trim old pivot spec | Done | `20260309-210000_scripture-pwa-pivot-*` now points to this spec for the scroller rewrite |
+| Trim old pivot spec | Done | `20260309-210000_pivot-*` now points to this spec for the scroller rewrite |
 
 ### Prompt 27: Loosen sticky-follow and lower default auto-scroll speed
 

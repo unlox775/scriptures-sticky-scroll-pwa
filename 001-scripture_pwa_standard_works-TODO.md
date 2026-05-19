@@ -1,4 +1,4 @@
-**Superseded by:** `documentation/spec/20260309-184530_scripture-pwa-standard-works.md` — intake items and integration status live there; this tracker is retained for reference only.
+**Superseded by:** `documentation/spec/20260309-184530_standard-works.md` — intake items and integration status live there; this tracker is retained for reference only.
 
 ## Intake Items
 

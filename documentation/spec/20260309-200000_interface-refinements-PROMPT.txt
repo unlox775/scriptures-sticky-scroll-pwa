@@ -45,4 +45,4 @@ Back button: Replace "‹ Back" with just a larger ‹ icon.
 Bookmarks: Still not showing over verses. Improve positioning so the left-side ribbon appears over the verse the bookmark is set for. Add scroll-based updates to keep ribbons positioned correctly (virtualization/infinite scroll may make this tricky).
 
 ---
-[SUPERSEDED] Prompt 9 moved to new pivot spec: `20260309-210000_scripture-pwa-pivot-*`. Iterate there from here forward.
+[SUPERSEDED] Prompt 9 moved to new pivot spec: `20260309-210000_pivot-*`. Iterate there from here forward.
