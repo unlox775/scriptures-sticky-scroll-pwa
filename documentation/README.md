@@ -15,6 +15,7 @@ This directory contains technical documentation for the Scripture Reader PWA. St
 | Daily bookmark history | 🟩 Ready | Per-bookmark chronology snapshots persisted locally. |
 | Auto-scroll controls | 🟩 Ready | Top-mounted start/stop and speed slider. |
 | LRU book cache (max 2) | 🟩 Ready | Per-book gzip assets; runtime cache caps decompressed books. |
+| Non-verse sacred text | 🟨 Partial | Some source headings exist but are dropped by the build; other chapter prefaces need a supplemental source. |
 | Footnote/page references | 🟨 Partial | Current data source lacks official footnotes; links out to Gospel Library. |
 | Spec + prompt logging | 🟩 Ready | `documentation/spec/` entries; prompt transcripts stored alongside. |
 | Service/view modular boundaries | 🟩 Ready | `src/services/` contracts + `src/views/` rendering modules split from orchestration. |
@@ -27,6 +28,7 @@ This directory contains technical documentation for the Scripture Reader PWA. St
 - Validate the integrated reusable reader in the main app on mobile Safari, using the standalone scroller lab as the debug harness.
 - Continue polishing mobile UX and long-session performance.
 - Tune bookmark auto-follow heuristics for variable scroll speeds.
+- Preserve and render non-verse sacred text such as book headings and chapter prefaces.
 - If a footnote-capable data source becomes available, wire footnote rendering.
 - Optionally replace the node-level critical-path integration check with full browser e2e automation.
 
