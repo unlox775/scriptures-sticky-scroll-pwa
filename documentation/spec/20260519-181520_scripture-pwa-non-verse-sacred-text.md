@@ -22,13 +22,18 @@ These passages are not footnotes or modern study helps. They are part of the scr
 - Confirmed the current build drops available source fields such as `book.heading`, `book.full_title`, `book.full_subtitle`, and `chapter.heading`.
 - Confirmed the known Alma source split: Alma 36 includes `chapter.heading` (`The commandments of Alma to his son Helaman.`), while Alma 33 and Alma 34 have only `chapter`, `reference`, and `verses` in the installed package.
 - Audited the reader assumptions. `src/scriptureScroller.js`, `src/views/readerView.js`, and `src/scrollerLab.js` currently locate display/anchor/bookmark targets through `.lab-verse` elements and numeric `data-verse` values.
+- Identified the "Alma to his son" chapter headings in the current package:
+  - Alma 36: `The commandments of Alma to his son Helaman.`
+  - Alma 38: `The commandments of Alma to his son Shiblon.`
+  - Alma 39: `The commandments of Alma to his son Corianton.`
+- Implemented ordered `chapter.blocks` output in `scripts/build-scripture-data.mjs`, preserving available book titles, subtitles, book headings, chapter headings, and verse blocks.
+- Updated `src/scriptureScroller.js` to render shared `.scripture-block` elements, including non-verse heading/title/subtitle blocks.
+- Updated anchor detection, unload anchoring, scroller lab diagnostics, and bookmark ribbon lookup to use shared scripture blocks while preserving direct verse targeting.
 
 ### 🚧 In Progress / Placeholders
 
 - Determine whether non-verse sacred text occurs only at chapter boundaries or can appear inside a chapter body.
-- Preserve the non-verse text already present in the current source package.
 - Acquire or generate a supplemental source for missing blocks that are not present in the package, including the requested Alma 33 and Alma 34 top-of-chapter text if confirmed as in scope.
-- Design and implement a data model that preserves references, loading, anchoring, and scrolling behavior without treating every display block as a numbered verse.
 
 ## Findings
 
@@ -56,7 +61,7 @@ The fragile part is not chapter loading; it is the assumption that every meaning
 
 ### Recommended Model
 
-Use ordered chapter content blocks while keeping `verses` available for compatibility during migration:
+Use ordered chapter content blocks while keeping `verses` available for compatibility:
 
 ```js
 {
@@ -66,14 +71,13 @@ Use ordered chapter content blocks while keeping `verses` available for compatib
     {
       type: "heading",
       role: "chapter-preface",
-      key: "alma-33-preface",
+      key: "chapter-heading",
       reference: "Alma 33",
-      placement: "before-verse-1",
       text: "..."
     },
     {
       type: "verse",
-      key: "alma-33-1",
+      key: "verse-1",
       verse: 1,
       reference: "Alma 33:1",
       text: "..."
@@ -83,7 +87,7 @@ Use ordered chapter content blocks while keeping `verses` available for compatib
 }
 ```
 
-This keeps the scroller's chapter-window architecture intact. The chapter is still the unit of loading, measuring, preloading, and unloading, but the rendered chapter body becomes an ordered list of content blocks instead of a verse-only list.
+This keeps the scroller's chapter-window architecture intact. The chapter is still the unit of loading, measuring, preloading, and unloading, but the rendered chapter body is now an ordered list of content blocks instead of a verse-only list.
 
 ### Placement Guidance
 
@@ -103,6 +107,4 @@ Only introduce a separate "mid-chapter gap" concept if source audit proves that 
 
 - Identify the authoritative source for the missing chapter prefaces/superscriptions and confirm license/usage constraints.
 - Build a source audit list: all non-verse sacred text blocks currently present in `@bencrowder/scriptures-json`, all known missing blocks, their references, and whether each appears before verse 1 or between numbered verses.
-- Extend `scripts/build-scripture-data.mjs` to emit book/chapter metadata and `chapter.blocks`, preserving `chapter.verses` until all readers and tests consume blocks.
-- Update rendering and anchor logic to use shared block elements while preserving direct verse route behavior.
-- Add focused tests around Alma 33/34/36 once the source text is available.
+- Add focused tests around Alma 36/38/39 and any supplemental Alma 33/34 text once the source text is available.

@@ -55,6 +55,69 @@ function chapterExternalUrl(studyPath, bookSlug, chapter) {
   return `https://www.churchofjesuschrist.org/study/scriptures/${chapterPath}?lang=eng`;
 }
 
+function blockKey(...parts) {
+  return parts.filter(Boolean).join("-");
+}
+
+function textBlock({ type = "heading", role, key, reference, text }) {
+  if (!text) return null;
+  return {
+    type,
+    role,
+    key,
+    reference,
+    text,
+  };
+}
+
+function verseBlock(verse) {
+  return {
+    type: "verse",
+    key: blockKey("verse", verse.verse),
+    verse: Number(verse.verse),
+    reference: verse.reference,
+    text: verse.text,
+  };
+}
+
+function normalizeChapterBlocks({ book, chapter, verses }) {
+  const blocks = [];
+  if (Number(chapter.chapter) === 1) {
+    blocks.push(
+      textBlock({
+        type: "title",
+        role: "book-title",
+        key: "book-title",
+        reference: book.book,
+        text: book.full_title,
+      }),
+      textBlock({
+        type: "subtitle",
+        role: "book-subtitle",
+        key: "book-subtitle",
+        reference: book.book,
+        text: book.full_subtitle,
+      }),
+      textBlock({
+        role: "book-heading",
+        key: "book-heading",
+        reference: book.book,
+        text: book.heading,
+      }),
+    );
+  }
+  blocks.push(
+    textBlock({
+      role: "chapter-heading",
+      key: "chapter-heading",
+      reference: chapter.reference,
+      text: chapter.heading,
+    }),
+  );
+  blocks.push(...verses.map(verseBlock));
+  return blocks.filter(Boolean);
+}
+
 async function writeBookPayload(workId, bookId, payload) {
   const bookDir = path.join(outputRoot, "books", workId);
   await fs.mkdir(bookDir, { recursive: true });
@@ -69,19 +132,27 @@ function normalizeBookWork(config, sourceData) {
   return sourceData.books.map((book) => {
     const bookId = book.lds_slug || slugify(book.book);
     const bookSlug = book.lds_slug || slugify(book.book);
-    const chapters = book.chapters.map((chapter) => ({
-      chapter: Number(chapter.chapter),
-      reference: chapter.reference,
-      externalUrl: chapterExternalUrl(config.studyPath, bookSlug, chapter.chapter),
-      verses: chapter.verses.map((verse) => ({
+    const chapters = book.chapters.map((chapter) => {
+      const verses = chapter.verses.map((verse) => ({
         verse: Number(verse.verse),
         reference: verse.reference,
         text: verse.text,
-      })),
-    }));
+      }));
+      return {
+        chapter: Number(chapter.chapter),
+        reference: chapter.reference,
+        heading: chapter.heading,
+        externalUrl: chapterExternalUrl(config.studyPath, bookSlug, chapter.chapter),
+        blocks: normalizeChapterBlocks({ book, chapter, verses }),
+        verses,
+      };
+    });
     return {
       id: bookId,
       title: book.book,
+      fullTitle: book.full_title,
+      fullSubtitle: book.full_subtitle,
+      heading: book.heading,
       slug: bookSlug,
       chapterCount: chapters.length,
       chapters,
@@ -91,16 +162,30 @@ function normalizeBookWork(config, sourceData) {
 
 function normalizeSectionsWork(config, sourceData) {
   const bookId = "dc";
-  const chapters = sourceData.sections.map((section) => ({
-    chapter: Number(section.section),
-    reference: section.reference,
-    externalUrl: chapterExternalUrl(config.studyPath, null, section.section),
-    verses: section.verses.map((verse) => ({
+  const chapters = sourceData.sections.map((section) => {
+    const verses = section.verses.map((verse) => ({
       verse: Number(verse.verse),
       reference: verse.reference,
       text: verse.text,
-    })),
-  }));
+    }));
+    const blocks = [
+      textBlock({
+        role: "section-heading",
+        key: "section-heading",
+        reference: section.reference,
+        text: section.heading,
+      }),
+      ...verses.map(verseBlock),
+    ].filter(Boolean);
+    return {
+      chapter: Number(section.section),
+      reference: section.reference,
+      heading: section.heading,
+      externalUrl: chapterExternalUrl(config.studyPath, null, section.section),
+      blocks,
+      verses,
+    };
+  });
   return [
     {
       id: bookId,
@@ -143,6 +228,9 @@ async function main() {
       workRecord.books.push({
         id: normalizedBook.id,
         title: normalizedBook.title,
+        fullTitle: normalizedBook.fullTitle,
+        fullSubtitle: normalizedBook.fullSubtitle,
+        heading: normalizedBook.heading,
         slug: normalizedBook.slug,
         chapterCount: normalizedBook.chapterCount,
         workId: config.id,
@@ -160,7 +248,7 @@ async function main() {
       package: "@bencrowder/scriptures-json",
       version: packageManifest.version,
       notes:
-        "No copyrighted footnotes/chapter summaries included in upstream data source.",
+        "Includes public-domain text fields present in upstream data; official footnotes are not included.",
     },
     works,
   };

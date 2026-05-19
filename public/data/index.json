@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-05-15T16:13:35.086Z",
+  "generatedAt": "2026-05-19T18:21:46.695Z",
   "source": {
     "package": "@bencrowder/scriptures-json",
     "version": "1.0.1",
-    "notes": "No copyrighted footnotes/chapter summaries included in upstream data source."
+    "notes": "Includes public-domain text fields present in upstream data; official footnotes are not included."
   },
   "works": [
     {
@@ -14,6 +14,8 @@
         {
           "id": "1-ne",
           "title": "1 Nephi",
+          "fullTitle": "The First Book of Nephi",
+          "heading": "An account of Lehi and his wife Sariah, and his four sons, being called, (beginning at the eldest) Laman, Lemuel, Sam, and Nephi. The Lord warns Lehi to depart out of the land of Jerusalem, because he prophesieth unto the people concerning their iniquity and they seek to destroy his life. He taketh three days' journey into the wilderness with his family. Nephi taketh his brethren and returneth to the land of Jerusalem after the record of the Jews. The account of their sufferings. They take the daughters of Ishmael to wife. They take their families and depart into the wilderness. Their sufferings and afflictions in the wilderness. The course of their travels. They come to the large waters. Nephi's brethren rebel against him. He confoundeth them, and buildeth a ship. They call the name of the place Bountiful. They cross the large waters into the promised land, and so forth. This is according to the account of Nephi; or in other words, I, Nephi, wrote this record.",
           "slug": "1-ne",
           "chapterCount": 22,
           "workId": "book-of-mormon",
@@ -23,6 +25,8 @@
         {
           "id": "2-ne",
           "title": "2 Nephi",
+          "fullTitle": "The Second Book of Nephi",
+          "heading": "An account of the death of Lehi. Nephi's brethren rebel against him. The Lord warns Nephi to depart into the wilderness. His journeyings in the wilderness, and so forth.",
           "slug": "2-ne",
           "chapterCount": 33,
           "workId": "book-of-mormon",
@@ -32,6 +36,9 @@
         {
           "id": "jacob",
           "title": "Jacob",
+          "fullTitle": "The Book of Jacob",
+          "fullSubtitle": "the Brother of Nephi",
+          "heading": "The words of his preaching unto his brethren. He confoundeth a man who seeketh to overthrow the doctrine of Christ. A few words concerning the history of the people of Nephi.",
           "slug": "jacob",
           "chapterCount": 7,
           "workId": "book-of-mormon",
@@ -41,6 +48,7 @@
         {
           "id": "enos",
           "title": "Enos",
+          "fullTitle": "The Book of Enos",
           "slug": "enos",
           "chapterCount": 1,
           "workId": "book-of-mormon",
@@ -50,6 +58,7 @@
         {
           "id": "jarom",
           "title": "Jarom",
+          "fullTitle": "The Book of Jarom",
           "slug": "jarom",
           "chapterCount": 1,
           "workId": "book-of-mormon",
@@ -59,6 +68,7 @@
         {
           "id": "omni",
           "title": "Omni",
+          "fullTitle": "The Book of Omni",
           "slug": "omni",
           "chapterCount": 1,
           "workId": "book-of-mormon",
@@ -68,6 +78,7 @@
         {
           "id": "w-of-m",
           "title": "Words of Mormon",
+          "fullTitle": "The Words of Mormon",
           "slug": "w-of-m",
           "chapterCount": 1,
           "workId": "book-of-mormon",
@@ -77,6 +88,7 @@
         {
           "id": "mosiah",
           "title": "Mosiah",
+          "fullTitle": "The Book of Mosiah",
           "slug": "mosiah",
           "chapterCount": 29,
           "workId": "book-of-mormon",
@@ -86,6 +98,9 @@
         {
           "id": "alma",
           "title": "Alma",
+          "fullTitle": "The Book of Alma",
+          "fullSubtitle": "the Son of Alma",
+          "heading": "The account of Alma, who was the son of Alma, the first and chief judge over the people of Nephi, and also the high priest over the Church. An account of the reign of the judges, and the wars and contentions among the people. And also an account of a war between the Nephites and the Lamanites, according to the record of Alma, the first and chief judge.",
           "slug": "alma",
           "chapterCount": 63,
           "workId": "book-of-mormon",
@@ -95,6 +110,8 @@
         {
           "id": "hel",
           "title": "Helaman",
+          "fullTitle": "The Book of Helaman",
+          "heading": "An account of the Nephites. Their wars and contentions, and their dissensions. And also the prophecies of many holy prophets, before the coming of Christ, according to the records of Helaman, who was the son of Helaman, and also according to the records of his sons, even down to the coming of Christ. And also many of the Lamanites are converted. An account of their conversion. An account of the righteousness of the Lamanites, and the wickedness and abominations of the Nephites, according to the record of Helaman and his sons, even down to the coming of Christ, which is called the book of Helaman, and so forth.",
           "slug": "hel",
           "chapterCount": 16,
           "workId": "book-of-mormon",
@@ -104,6 +121,9 @@
         {
           "id": "3-ne",
           "title": "3 Nephi",
+          "fullTitle": "Third Nephi, The Book of Nephi",
+          "fullSubtitle": "the Son of Nephi, Who Was the Son of Helaman",
+          "heading": "And Helaman was the son of Helaman, who was the son of Alma, who was the son of Alma, being a descendant of Nephi who was the son of Lehi, who came out of Jerusalem in the first year of the reign of Zedekiah, the king of Judah.",
           "slug": "3-ne",
           "chapterCount": 30,
           "workId": "book-of-mormon",
@@ -113,6 +133,9 @@
         {
           "id": "4-ne",
           "title": "4 Nephi",
+          "fullTitle": "Fourth Nephi, The Book of Nephi",
+          "fullSubtitle": "Who Is the Son of Nephi—One of the Disciples of Jesus Christ",
+          "heading": "An account of the people of Nephi, according to his record.",
           "slug": "4-ne",
           "chapterCount": 1,
           "workId": "book-of-mormon",
@@ -122,6 +145,7 @@
         {
           "id": "morm",
           "title": "Mormon",
+          "fullTitle": "The Book of Mormon",
           "slug": "morm",
           "chapterCount": 9,
           "workId": "book-of-mormon",
@@ -131,6 +155,7 @@
         {
           "id": "ether",
           "title": "Ether",
+          "fullTitle": "The Book of Ether",
           "slug": "ether",
           "chapterCount": 15,
           "workId": "book-of-mormon",
@@ -140,6 +165,7 @@
         {
           "id": "moro",
           "title": "Moroni",
+          "fullTitle": "The Book of Moroni",
           "slug": "moro",
           "chapterCount": 10,
           "workId": "book-of-mormon",
@@ -156,6 +182,7 @@
         {
           "id": "gen",
           "title": "Genesis",
+          "fullTitle": "The First Book of Moses Called Genesis",
           "slug": "gen",
           "chapterCount": 50,
           "workId": "old-testament",
@@ -165,6 +192,7 @@
         {
           "id": "ex",
           "title": "Exodus",
+          "fullTitle": "The Second Book of Moses Called Exodus",
           "slug": "ex",
           "chapterCount": 40,
           "workId": "old-testament",
@@ -174,6 +202,7 @@
         {
           "id": "lev",
           "title": "Leviticus",
+          "fullTitle": "The Third Book of Moses Called Leviticus",
           "slug": "lev",
           "chapterCount": 27,
           "workId": "old-testament",
@@ -183,6 +212,7 @@
         {
           "id": "num",
           "title": "Numbers",
+          "fullTitle": "The Fourth Book of Moses Called Numbers",
           "slug": "num",
           "chapterCount": 36,
           "workId": "old-testament",
@@ -192,6 +222,7 @@
         {
           "id": "deut",
           "title": "Deuteronomy",
+          "fullTitle": "The Fifth Book of Moses Called Deuteronomy",
           "slug": "deut",
           "chapterCount": 34,
           "workId": "old-testament",
@@ -201,6 +232,7 @@
         {
           "id": "josh",
           "title": "Joshua",
+          "fullTitle": "The Book of Joshua",
           "slug": "josh",
           "chapterCount": 24,
           "workId": "old-testament",
@@ -210,6 +242,7 @@
         {
           "id": "judg",
           "title": "Judges",
+          "fullTitle": "The Book of Judges",
           "slug": "judg",
           "chapterCount": 21,
           "workId": "old-testament",
@@ -219,6 +252,7 @@
         {
           "id": "ruth",
           "title": "Ruth",
+          "fullTitle": "The Book of Ruth",
           "slug": "ruth",
           "chapterCount": 4,
           "workId": "old-testament",
@@ -228,6 +262,8 @@
         {
           "id": "1-sam",
           "title": "1 Samuel",
+          "fullTitle": "The First Book of Samuel",
+          "fullSubtitle": "Otherwise called the First Book of the Kings",
           "slug": "1-sam",
           "chapterCount": 31,
           "workId": "old-testament",
@@ -237,6 +273,8 @@
         {
           "id": "2-sam",
           "title": "2 Samuel",
+          "fullTitle": "The Second Book of Samuel",
+          "fullSubtitle": "Otherwise called the Second Book of the Kings",
           "slug": "2-sam",
           "chapterCount": 24,
           "workId": "old-testament",
@@ -246,6 +284,8 @@
         {
           "id": "1-kgs",
           "title": "1 Kings",
+          "fullTitle": "The First Book of the Kings",
+          "fullSubtitle": "Commonly called the Third Book of the Kings",
           "slug": "1-kgs",
           "chapterCount": 22,
           "workId": "old-testament",
@@ -255,6 +295,8 @@
         {
           "id": "2-kgs",
           "title": "2 Kings",
+          "fullTitle": "The Second Book of the Kings",
+          "fullSubtitle": "Commonly called the Fourth Book of the Kings",
           "slug": "2-kgs",
           "chapterCount": 25,
           "workId": "old-testament",
@@ -264,6 +306,7 @@
         {
           "id": "1-chr",
           "title": "1 Chronicles",
+          "fullTitle": "The First Book of the Chronicles",
           "slug": "1-chr",
           "chapterCount": 29,
           "workId": "old-testament",
@@ -273,6 +316,7 @@
         {
           "id": "2-chr",
           "title": "2 Chronicles",
+          "fullTitle": "The Second Book of the Chronicles",
           "slug": "2-chr",
           "chapterCount": 36,
           "workId": "old-testament",
@@ -282,6 +326,7 @@
         {
           "id": "ezra",
           "title": "Ezra",
+          "fullTitle": "Ezra",
           "slug": "ezra",
           "chapterCount": 10,
           "workId": "old-testament",
@@ -291,6 +336,7 @@
         {
           "id": "neh",
           "title": "Nehemiah",
+          "fullTitle": "The Book of Nehemiah",
           "slug": "neh",
           "chapterCount": 13,
           "workId": "old-testament",
@@ -300,6 +346,7 @@
         {
           "id": "esth",
           "title": "Esther",
+          "fullTitle": "The Book of Esther",
           "slug": "esth",
           "chapterCount": 10,
           "workId": "old-testament",
@@ -309,6 +356,7 @@
         {
           "id": "job",
           "title": "Job",
+          "fullTitle": "The Book of Job",
           "slug": "job",
           "chapterCount": 42,
           "workId": "old-testament",
@@ -318,6 +366,7 @@
         {
           "id": "ps",
           "title": "Psalms",
+          "fullTitle": "The Book of Psalms",
           "slug": "ps",
           "chapterCount": 150,
           "workId": "old-testament",
@@ -327,6 +376,7 @@
         {
           "id": "prov",
           "title": "Proverbs",
+          "fullTitle": "The Proverbs",
           "slug": "prov",
           "chapterCount": 31,
           "workId": "old-testament",
@@ -336,6 +386,8 @@
         {
           "id": "eccl",
           "title": "Ecclesiastes",
+          "fullTitle": "Ecclesiastes",
+          "fullSubtitle": "or, the Preacher",
           "slug": "eccl",
           "chapterCount": 12,
           "workId": "old-testament",
@@ -345,6 +397,7 @@
         {
           "id": "song",
           "title": "Solomon's Song",
+          "fullTitle": "The Song of Solomon",
           "slug": "song",
           "chapterCount": 8,
           "workId": "old-testament",
@@ -354,6 +407,7 @@
         {
           "id": "isa",
           "title": "Isaiah",
+          "fullTitle": "The Book of the Prophet Isaiah",
           "slug": "isa",
           "chapterCount": 66,
           "workId": "old-testament",
@@ -363,6 +417,7 @@
         {
           "id": "jer",
           "title": "Jeremiah",
+          "fullTitle": "The Book of the Prophet Jeremiah",
           "slug": "jer",
           "chapterCount": 52,
           "workId": "old-testament",
@@ -372,6 +427,7 @@
         {
           "id": "lam",
           "title": "Lamentations",
+          "fullTitle": "The Lamentations of Jeremiah",
           "slug": "lam",
           "chapterCount": 5,
           "workId": "old-testament",
@@ -381,6 +437,7 @@
         {
           "id": "ezek",
           "title": "Ezekiel",
+          "fullTitle": "The Book of the Prophet Ezekiel",
           "slug": "ezek",
           "chapterCount": 48,
           "workId": "old-testament",
@@ -390,6 +447,7 @@
         {
           "id": "dan",
           "title": "Daniel",
+          "fullTitle": "The Book of Daniel",
           "slug": "dan",
           "chapterCount": 12,
           "workId": "old-testament",
@@ -399,6 +457,7 @@
         {
           "id": "hosea",
           "title": "Hosea",
+          "fullTitle": "Hosea",
           "slug": "hosea",
           "chapterCount": 14,
           "workId": "old-testament",
@@ -408,6 +467,7 @@
         {
           "id": "joel",
           "title": "Joel",
+          "fullTitle": "Joel",
           "slug": "joel",
           "chapterCount": 3,
           "workId": "old-testament",
@@ -417,6 +477,7 @@
         {
           "id": "amos",
           "title": "Amos",
+          "fullTitle": "Amos",
           "slug": "amos",
           "chapterCount": 9,
           "workId": "old-testament",
@@ -426,6 +487,7 @@
         {
           "id": "obad",
           "title": "Obadiah",
+          "fullTitle": "Obadiah",
           "slug": "obad",
           "chapterCount": 1,
           "workId": "old-testament",
@@ -435,6 +497,7 @@
         {
           "id": "jonah",
           "title": "Jonah",
+          "fullTitle": "Jonah",
           "slug": "jonah",
           "chapterCount": 4,
           "workId": "old-testament",
@@ -444,6 +507,7 @@
         {
           "id": "micah",
           "title": "Micah",
+          "fullTitle": "Micah",
           "slug": "micah",
           "chapterCount": 7,
           "workId": "old-testament",
@@ -453,6 +517,7 @@
         {
           "id": "nahum",
           "title": "Nahum",
+          "fullTitle": "Nahum",
           "slug": "nahum",
           "chapterCount": 3,
           "workId": "old-testament",
@@ -462,6 +527,7 @@
         {
           "id": "hab",
           "title": "Habakkuk",
+          "fullTitle": "Habakkuk",
           "slug": "hab",
           "chapterCount": 3,
           "workId": "old-testament",
@@ -471,6 +537,7 @@
         {
           "id": "zeph",
           "title": "Zephaniah",
+          "fullTitle": "Zephaniah",
           "slug": "zeph",
           "chapterCount": 3,
           "workId": "old-testament",
@@ -480,6 +547,7 @@
         {
           "id": "hag",
           "title": "Haggai",
+          "fullTitle": "Haggai",
           "slug": "hag",
           "chapterCount": 2,
           "workId": "old-testament",
@@ -489,6 +557,7 @@
         {
           "id": "zech",
           "title": "Zechariah",
+          "fullTitle": "Zechariah",
           "slug": "zech",
           "chapterCount": 14,
           "workId": "old-testament",
@@ -498,6 +567,7 @@
         {
           "id": "mal",
           "title": "Malachi",
+          "fullTitle": "Malachi",
           "slug": "mal",
           "chapterCount": 4,
           "workId": "old-testament",
@@ -514,6 +584,7 @@
         {
           "id": "matt",
           "title": "Matthew",
+          "fullTitle": "The Gospel According to St Matthew",
           "slug": "matt",
           "chapterCount": 28,
           "workId": "new-testament",
@@ -523,6 +594,7 @@
         {
           "id": "mark",
           "title": "Mark",
+          "fullTitle": "The Gospel According to St Mark",
           "slug": "mark",
           "chapterCount": 16,
           "workId": "new-testament",
@@ -532,6 +604,7 @@
         {
           "id": "luke",
           "title": "Luke",
+          "fullTitle": "The Gospel According to St Luke",
           "slug": "luke",
           "chapterCount": 24,
           "workId": "new-testament",
@@ -541,6 +614,7 @@
         {
           "id": "john",
           "title": "John",
+          "fullTitle": "The Gospel According to St John",
           "slug": "john",
           "chapterCount": 21,
           "workId": "new-testament",
@@ -550,6 +624,7 @@
         {
           "id": "acts",
           "title": "Acts",
+          "fullTitle": "The Acts of the Apostles",
           "slug": "acts",
           "chapterCount": 28,
           "workId": "new-testament",
@@ -559,6 +634,7 @@
         {
           "id": "rom",
           "title": "Romans",
+          "fullTitle": "The Epistle of Paul the Apostle to the Romans",
           "slug": "rom",
           "chapterCount": 16,
           "workId": "new-testament",
@@ -568,6 +644,7 @@
         {
           "id": "1-cor",
           "title": "1 Corinthians",
+          "fullTitle": "The First Epistle of Paul the Apostle to the Corinthians",
           "slug": "1-cor",
           "chapterCount": 16,
           "workId": "new-testament",
@@ -577,6 +654,7 @@
         {
           "id": "2-cor",
           "title": "2 Corinthians",
+          "fullTitle": "The Second Epistle of Paul the Apostle to the Corinthians",
           "slug": "2-cor",
           "chapterCount": 13,
           "workId": "new-testament",
@@ -586,6 +664,7 @@
         {
           "id": "gal",
           "title": "Galatians",
+          "fullTitle": "The Epistle of Paul the Apostle to the Galatians",
           "slug": "gal",
           "chapterCount": 6,
           "workId": "new-testament",
@@ -595,6 +674,7 @@
         {
           "id": "eph",
           "title": "Ephesians",
+          "fullTitle": "The Epistle of Paul the Apostle to the Ephesians",
           "slug": "eph",
           "chapterCount": 6,
           "workId": "new-testament",
@@ -604,6 +684,7 @@
         {
           "id": "philip",
           "title": "Philippians",
+          "fullTitle": "The Epistle of Paul the Apostle to the Philippians",
           "slug": "philip",
           "chapterCount": 4,
           "workId": "new-testament",
@@ -613,6 +694,7 @@
         {
           "id": "col",
           "title": "Colossians",
+          "fullTitle": "The Epistle of Paul the Apostle to the Colossians",
           "slug": "col",
           "chapterCount": 4,
           "workId": "new-testament",
@@ -622,6 +704,7 @@
         {
           "id": "1-thes",
           "title": "1 Thessalonians",
+          "fullTitle": "The First Epistle of Paul the Apostle to the Thessalonians",
           "slug": "1-thes",
           "chapterCount": 5,
           "workId": "new-testament",
@@ -631,6 +714,7 @@
         {
           "id": "2-thes",
           "title": "2 Thessalonians",
+          "fullTitle": "The Second Epistle of Paul the Apostle to the Thessalonians",
           "slug": "2-thes",
           "chapterCount": 3,
           "workId": "new-testament",
@@ -640,6 +724,7 @@
         {
           "id": "1-tim",
           "title": "1 Timothy",
+          "fullTitle": "The First Epistle of Paul the Apostle to Timothy",
           "slug": "1-tim",
           "chapterCount": 6,
           "workId": "new-testament",
@@ -649,6 +734,7 @@
         {
           "id": "2-tim",
           "title": "2 Timothy",
+          "fullTitle": "The Second Epistle of Paul the Apostle to Timothy",
           "slug": "2-tim",
           "chapterCount": 4,
           "workId": "new-testament",
@@ -658,6 +744,7 @@
         {
           "id": "titus",
           "title": "Titus",
+          "fullTitle": "The Epistle of Paul to Titus",
           "slug": "titus",
           "chapterCount": 3,
           "workId": "new-testament",
@@ -667,6 +754,7 @@
         {
           "id": "philem",
           "title": "Philemon",
+          "fullTitle": "The Epistle of Paul to Philemon",
           "slug": "philem",
           "chapterCount": 1,
           "workId": "new-testament",
@@ -676,6 +764,7 @@
         {
           "id": "heb",
           "title": "Hebrews",
+          "fullTitle": "The Epistle of Paul the Apostle to the Hebrews",
           "slug": "heb",
           "chapterCount": 13,
           "workId": "new-testament",
@@ -685,6 +774,7 @@
         {
           "id": "james",
           "title": "James",
+          "fullTitle": "The General Epistle of James",
           "slug": "james",
           "chapterCount": 5,
           "workId": "new-testament",
@@ -694,6 +784,7 @@
         {
           "id": "1-pet",
           "title": "1 Peter",
+          "fullTitle": "The First Epistle General of Peter",
           "slug": "1-pet",
           "chapterCount": 5,
           "workId": "new-testament",
@@ -703,6 +794,7 @@
         {
           "id": "2-pet",
           "title": "2 Peter",
+          "fullTitle": "The Second Epistle General of Peter",
           "slug": "2-pet",
           "chapterCount": 3,
           "workId": "new-testament",
@@ -712,6 +804,7 @@
         {
           "id": "1-jn",
           "title": "1 John",
+          "fullTitle": "The First Epistle General of John",
           "slug": "1-jn",
           "chapterCount": 5,
           "workId": "new-testament",
@@ -721,6 +814,7 @@
         {
           "id": "2-jn",
           "title": "2 John",
+          "fullTitle": "The Second Epistle of John",
           "slug": "2-jn",
           "chapterCount": 1,
           "workId": "new-testament",
@@ -730,6 +824,7 @@
         {
           "id": "3-jn",
           "title": "3 John",
+          "fullTitle": "The Third Epistle of John",
           "slug": "3-jn",
           "chapterCount": 1,
           "workId": "new-testament",
@@ -739,6 +834,7 @@
         {
           "id": "jude",
           "title": "Jude",
+          "fullTitle": "The General Epistle of Jude",
           "slug": "jude",
           "chapterCount": 1,
           "workId": "new-testament",
@@ -748,6 +844,8 @@
         {
           "id": "rev",
           "title": "Revelation",
+          "fullTitle": "The Revelation",
+          "fullSubtitle": "of St John the Divine",
           "slug": "rev",
           "chapterCount": 22,
           "workId": "new-testament",
@@ -780,6 +878,7 @@
         {
           "id": "moses",
           "title": "Moses",
+          "fullTitle": "Selections from the Book of Moses",
           "slug": "moses",
           "chapterCount": 8,
           "workId": "pearl-of-great-price",
@@ -789,6 +888,8 @@
         {
           "id": "abr",
           "title": "Abraham",
+          "fullTitle": "The Book of Abraham",
+          "fullSubtitle": "Translated from the Papyrus, by Joseph Smith",
           "slug": "abr",
           "chapterCount": 5,
           "workId": "pearl-of-great-price",
@@ -798,6 +899,7 @@
         {
           "id": "js-m",
           "title": "Joseph Smith—Matthew",
+          "fullTitle": "Joseph Smith—Matthew",
           "slug": "js-m",
           "chapterCount": 1,
           "workId": "pearl-of-great-price",
@@ -807,6 +909,8 @@
         {
           "id": "js-h",
           "title": "Joseph Smith—History",
+          "fullTitle": "Joseph Smith—History",
+          "fullSubtitle": "Extracts from the History of Joseph Smith, the Prophet",
           "slug": "js-h",
           "chapterCount": 1,
           "workId": "pearl-of-great-price",
@@ -816,6 +920,8 @@
         {
           "id": "a-of-f",
           "title": "Articles of Faith",
+          "fullTitle": "The Articles of Faith",
+          "fullSubtitle": "of The Church of Jesus Christ of Latter-day Saints",
           "slug": "a-of-f",
           "chapterCount": 1,
           "workId": "pearl-of-great-price",

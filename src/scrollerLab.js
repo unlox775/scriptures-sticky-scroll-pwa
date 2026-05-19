@@ -37,28 +37,33 @@ let reader = null;
 let lastSnapshot = null;
 let tickerRepeat = null;
 
-function getVerseAtTargetLine() {
+function getBlockAtTargetLine() {
   const targetY = els.scroller.getBoundingClientRect().top + els.scroller.clientHeight * 0.25;
-  const verses = Array.from(els.content.querySelectorAll(".lab-verse"));
+  const blocks = Array.from(els.content.querySelectorAll(".scripture-block"));
   let best = null;
-  for (const verse of verses) {
-    const rect = verse.getBoundingClientRect();
-    const chapter = verse.closest(".lab-chapter");
+  for (const block of blocks) {
+    const rect = block.getBoundingClientRect();
+    const chapter = block.closest(".lab-chapter");
     if (!chapter) continue;
     const distance = Math.abs(rect.top - targetY);
     if (!best || distance < best.distance) {
-      best = { verse, chapter, distance, rect };
+      best = { block, chapter, distance, rect };
     }
   }
   if (!best) return null;
   const pointer = scroller.sequence[Number(best.chapter.dataset.seq)];
+  const verse = best.block.dataset.verse ? Number(best.block.dataset.verse) : null;
   return {
     seq: pointer.seq,
     bookId: pointer.bookMeta.id,
     bookTitle: pointer.bookMeta.title,
     chapter: pointer.chapter,
-    verse: Number(best.verse.dataset.verse),
-    reference: `${pointer.bookMeta.title} ${pointer.chapter}:${best.verse.dataset.verse}`,
+    verse,
+    blockType: best.block.dataset.blockType || "heading",
+    blockRole: best.block.dataset.blockRole || null,
+    reference: verse
+      ? `${pointer.bookMeta.title} ${pointer.chapter}:${verse}`
+      : best.block.dataset.reference || `${pointer.bookMeta.title} ${pointer.chapter}`,
     topDelta: Math.round(best.rect.top - targetY),
     scrollTop: Math.round(els.scroller.scrollTop),
   };
@@ -361,7 +366,7 @@ async function boot() {
         return reader.getSnapshot("test").anchor?.reference ?? null;
       },
       getTargetReference() {
-        return getVerseAtTargetLine();
+        return getBlockAtTargetLine();
       },
       jumpTo(location) {
         return reader.jumpTo(location);

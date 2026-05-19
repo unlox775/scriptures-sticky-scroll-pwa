@@ -10,7 +10,12 @@ const MAX_ENTRIES_PER_SESSION = 500;
 
 let dbPromise = null;
 
+function hasIndexedDB() {
+  return typeof indexedDB !== "undefined" && typeof IDBKeyRange !== "undefined";
+}
+
 function openDB() {
+  if (!hasIndexedDB()) return Promise.resolve(null);
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -35,6 +40,7 @@ export async function createLogSession() {
   const db = await openDB();
   const id = `session-${Date.now()}`;
   const record = { id, startedAt: Date.now() };
+  if (!db) return record;
   await new Promise((resolve, reject) => {
     const t = db.transaction(SESSION_STORE, "readwrite");
     t.objectStore(SESSION_STORE).put(record);
@@ -46,6 +52,7 @@ export async function createLogSession() {
 
 export async function appendLogEntry(sessionId, levelOrEntry, message, details = {}) {
   const db = await openDB();
+  if (!db) return;
   const entry =
     typeof levelOrEntry === "object" && levelOrEntry
       ? levelOrEntry
@@ -82,6 +89,7 @@ export async function appendLogEntry(sessionId, levelOrEntry, message, details =
 
 export async function listLogSessions() {
   const db = await openDB();
+  if (!db) return [];
   const cutoff = Date.now() - SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
   const all = await new Promise((resolve, reject) => {
     const t = db.transaction(SESSION_STORE, "readonly");
@@ -94,6 +102,7 @@ export async function listLogSessions() {
 
 export async function getLogEntries(sessionId, limit = MAX_ENTRIES_PER_SESSION) {
   const db = await openDB();
+  if (!db) return [];
   return new Promise((resolve, reject) => {
     const t = db.transaction(ENTRY_STORE, "readonly");
     const index = t.objectStore(ENTRY_STORE).index("sessionId");
@@ -125,6 +134,7 @@ export async function getLogEntries(sessionId, limit = MAX_ENTRIES_PER_SESSION) 
 
 export async function purgeOldSessions() {
   const db = await openDB();
+  if (!db) return;
   const cutoff = Date.now() - SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
   const all = await new Promise((resolve, reject) => {
     const t = db.transaction(SESSION_STORE, "readonly");

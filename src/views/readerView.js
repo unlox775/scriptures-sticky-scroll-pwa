@@ -30,7 +30,7 @@ export function renderBookmarkRibbons({
     const chapterEl = content.querySelector(
       `.lab-chapter[data-book-id="${CSS.escape(bookId)}"][data-chapter="${chapter}"]`,
     );
-    const verseEl = chapterEl?.querySelector(`.lab-verse[data-verse="${verse}"]`);
+    const verseEl = chapterEl?.querySelector(`.scripture-block[data-verse="${verse}"]`);
     if (!verseEl) continue;
     const verseRect = verseEl.getBoundingClientRect();
     const verseStyle = getComputedStyle(verseEl);

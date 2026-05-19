@@ -47,6 +47,20 @@ function compareSeq(a, b) {
   return Number(a) - Number(b);
 }
 
+function chapterReference(pointer) {
+  return `${pointer.bookMeta.title} ${pointer.chapter}`;
+}
+
+function blockReference(pointer, block) {
+  return block.dataset.verse
+    ? `${chapterReference(pointer)}:${block.dataset.verse}`
+    : block.dataset.reference || chapterReference(pointer);
+}
+
+function blockVerse(block) {
+  return block.dataset.verse ? Number(block.dataset.verse) : null;
+}
+
 const UNLOAD_EPSILON_PX = 4;
 const WINDOW_MUTATION_SETTLE_MS = 450;
 
@@ -226,6 +240,7 @@ export class ScriptureScroller {
     const verse = clamp(parsePositiveInt(requestedVerse, 1), 1, verseCount);
     const target =
       chapterNode?.querySelector(`.lab-verse[data-verse="${verse}"]`) ||
+      chapterNode?.querySelector(".scripture-block") ||
       chapterNode?.querySelector(".chapter-heading");
     if (!target) return { aligned: false };
 
@@ -300,6 +315,16 @@ export class ScriptureScroller {
     section.dataset.bookId = pointer.bookMeta.id;
     section.dataset.chapter = String(pointer.chapter);
 
+    const blocks = chapter.blocks?.length
+      ? chapter.blocks
+      : chapter.verses.map((verse) => ({
+          type: "verse",
+          key: `verse-${verse.verse}`,
+          verse: verse.verse,
+          reference: verse.reference,
+          text: verse.text,
+        }));
+
     section.innerHTML = `
       <header class="chapter-heading">
         <span>${escapeHtml(pointer.bookMeta.title)}</span>
@@ -313,18 +338,46 @@ export class ScriptureScroller {
           title="Open in Gospel Library"
         >↗</a>
       </header>
-      ${chapter.verses
-        .map(
-          (verse) => `
-            <p class="lab-verse" data-verse="${verse.verse}">
-              <span class="verse-ref">${verse.verse}</span>
-              ${escapeHtml(verse.text)}
-            </p>
-          `,
-        )
+      ${blocks
+        .map((block) => this.renderBlock(block, pointer))
         .join("")}
     `;
     return section;
+  }
+
+  renderBlock(block, pointer) {
+    if (block.type === "verse") {
+      return `
+        <p
+          class="scripture-block lab-verse"
+          data-block-type="verse"
+          data-block-key="${escapeHtml(block.key || `verse-${block.verse}`)}"
+          data-reference="${escapeHtml(block.reference || `${chapterReference(pointer)}:${block.verse}`)}"
+          data-verse="${block.verse}"
+        >
+          <span class="verse-ref">${block.verse}</span>
+          ${escapeHtml(block.text)}
+        </p>
+      `;
+    }
+
+    const className = [
+      "scripture-block",
+      "scripture-heading-block",
+      block.type ? `scripture-block-${block.type}` : "",
+      block.role ? `scripture-block-${block.role}` : "",
+    ].filter(Boolean).join(" ");
+    return `
+      <p
+        class="${escapeHtml(className)}"
+        data-block-type="${escapeHtml(block.type || "heading")}"
+        data-block-role="${escapeHtml(block.role || "")}"
+        data-block-key="${escapeHtml(block.key || block.role || "heading")}"
+        data-reference="${escapeHtml(block.reference || chapterReference(pointer))}"
+      >
+        ${escapeHtml(block.text)}
+      </p>
+    `;
   }
 
   handleScroll() {
@@ -491,8 +544,11 @@ export class ScriptureScroller {
     const anchorNode = shouldUnloadAbove ? this.findUnloadAnchorNode(node) : null;
     const anchorTopBefore = anchorNode?.getBoundingClientRect().top ?? null;
     const anchorChapter = anchorNode?.closest?.(".lab-chapter") ?? null;
-    const anchorLabel = anchorChapter?.dataset.seq
-      ? `${this.pointerLabel(this.sequence[Number(anchorChapter.dataset.seq)])}:${anchorNode.dataset?.verse || "heading"}`
+    const anchorPointer = anchorChapter?.dataset.seq
+      ? this.sequence[Number(anchorChapter.dataset.seq)]
+      : null;
+    const anchorLabel = anchorPointer && anchorNode
+      ? blockReference(anchorPointer, anchorNode)
       : null;
     const removedSpace = shouldUnloadAbove && nextNode
       ? nextNode.offsetTop - node.offsetTop
@@ -532,7 +588,7 @@ export class ScriptureScroller {
 
   findUnloadAnchorNode(removingNode) {
     const targetY = this.scroller.getBoundingClientRect().top + this.scroller.clientHeight * this.config.alignRatio;
-    const candidates = Array.from(this.content.querySelectorAll(".lab-verse"))
+    const candidates = Array.from(this.content.querySelectorAll(".scripture-block, .lab-verse"))
       .filter((candidate) => !removingNode.contains(candidate));
     let best = null;
     for (const candidate of candidates) {
@@ -543,7 +599,7 @@ export class ScriptureScroller {
         best = { node: candidate, distance };
       }
     }
-    return best?.node ?? removingNode.nextElementSibling;
+    return best?.node ?? null;
   }
 
   queueMeasure(reason) {
@@ -568,15 +624,15 @@ export class ScriptureScroller {
 
   findAnchor() {
     const targetY = this.scroller.getBoundingClientRect().top + this.scroller.clientHeight * this.config.alignRatio;
-    const verses = Array.from(this.content.querySelectorAll(".lab-verse"));
+    const blocks = Array.from(this.content.querySelectorAll(".scripture-block"));
     let best = null;
-    for (const verse of verses) {
-      const rect = verse.getBoundingClientRect();
+    for (const block of blocks) {
+      const rect = block.getBoundingClientRect();
       const distance = Math.abs(rect.top - targetY);
-      if (!best || distance < best.distance) best = { verse, distance };
+      if (!best || distance < best.distance) best = { block, distance };
     }
     if (!best) return null;
-    const chapter = best.verse.closest(".lab-chapter");
+    const chapter = best.block.closest(".lab-chapter");
     const pointer = this.sequence[Number(chapter.dataset.seq)];
     return {
       workId: pointer.workId,
@@ -585,8 +641,11 @@ export class ScriptureScroller {
       bookId: pointer.bookMeta.id,
       bookTitle: pointer.bookMeta.title,
       chapter: pointer.chapter,
-      verse: Number(best.verse.dataset.verse),
-      reference: `${pointer.bookMeta.title} ${pointer.chapter}:${best.verse.dataset.verse}`,
+      verse: blockVerse(best.block),
+      blockType: best.block.dataset.blockType || "heading",
+      blockRole: best.block.dataset.blockRole || null,
+      blockKey: best.block.dataset.blockKey || null,
+      reference: blockReference(pointer, best.block),
     };
   }
 
