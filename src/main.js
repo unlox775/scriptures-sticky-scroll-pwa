@@ -457,6 +457,7 @@ function renderChaptersView() {
 
 const VELOCITY_WINDOW_MS = 30_000;
 const SLOW_READING_THRESHOLD = 188;
+const STICKY_FOLLOW_FAST_SCROLL_DISABLE_PX_PER_SEC = 900;
 const STICKY_FOLLOW_RESUME_VERSE_GAP = 80;
 const STICKY_FOLLOW_MAX_UPDATE_VERSE_JUMP = 36;
 const STICKY_FOLLOW_MAX_CHAPTER_GAP = 1;
@@ -604,6 +605,29 @@ function handleAnchorChange(anchor, meta) {
   const followDecision = canUpdate
     ? shouldAutoFollow(anchor, meta)
     : { ok: false, reason: "near_but_update_jump_too_large", averageVelocity: getAverageVelocityOverWindow() };
+  const isFastManualScroll = !meta?.autoScrolling && (
+    Math.abs(meta?.velocity ?? 0) > STICKY_FOLLOW_FAST_SCROLL_DISABLE_PX_PER_SEC ||
+    followDecision.reason === "average_velocity_too_high"
+  );
+  if (isFastManualScroll) {
+    clearStickyFollow();
+    bookmarkStatusEl.textContent = "";
+    readerStatusEl.hidden = true;
+    renderBookmarkRibbons();
+    uiEmit.reader({
+      level: "info",
+      event: "sticky_follow_auto_disabled",
+      summary: "Sticky follow disabled during fast manual scroll",
+      refs: { bookmarkId: toFollow.id, bookmarkName: toFollow.name, reference: anchor?.reference },
+      metrics: {
+        velocity: Number((meta?.velocity ?? 0).toFixed(1)),
+        averageVelocity: Number(followDecision.averageVelocity.toFixed(1)),
+        fastScrollThreshold: STICKY_FOLLOW_FAST_SCROLL_DISABLE_PX_PER_SEC,
+      },
+      minVerbosity: "standard",
+    });
+    return;
+  }
   if (canUpdate && followDecision.ok) {
     bookmarkService.updateBookmarkLocation(toFollow.id, anchor, meta.autoScrolling ? "auto-scroll" : "scroll");
     state.lastAutoBookmarkAt = meta.timestamp;

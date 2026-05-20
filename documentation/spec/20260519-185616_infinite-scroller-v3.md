@@ -27,10 +27,10 @@ See `20260519-185616_infinite-scroller-v3-PROMPT.txt` for the full prompt histor
 | Item | Status | Where / Notes |
 |------|--------|---------------|
 | New V3 spec/prompt pair | Done | `documentation/spec/20260519-185616_infinite-scroller-v3.*` |
-| V3 scroller engine | In progress | `src/scriptureScrollerV3.js`; lab-only normal-flow runway with measured chapter insertion and no scrollTop compensation during load/unload |
-| V3 lab page | In progress | `scroller-v3-lab.html`, `src/scrollerV3Lab.js`, `src/scrollerV3Lab.css`; visually closer to V2 with reader cards, sticky chapter headers, red 25% line, right-side telemetry |
+| V3 scroller engine | Done | `src/scriptureScrollerV3.js`; absolute-positioned 30M browser-safe canvas representing a 100M virtual runway, with measured chapter coordinates and no scrollTop compensation during load/unload |
+| V3 lab page | Done | `scroller-v3-lab.html`, `src/scrollerV3Lab.js`, `src/scrollerV3Lab.css`; visually close to V2 with reader cards, sticky chapter headers, red 25% line, right-side telemetry, configurable/fading minimap |
 | Static-window minimap | In progress | 30-screen minimap window now visible in the lab; red viewport starts near center for middle-of-work jumps and near top for beginning-of-work jumps |
-| Production PWA integration | Not started | Explicitly deferred |
+| Production PWA integration | Done | `src/scriptureReaderMount.js` now mounts `ScriptureScrollerV3` behind the existing reader wrapper; V3 provides production spacer/measure scaffolding and V2-compatible auto-scroll methods |
 | Build verification | Done | `npm run build` passes after V3 lab changes |
 | Browser verification | Partial | Checked with Cursor browser MCP, not direct Playwright: `Alma 36:1` and `1 Nephi 1:1` boot routes render correctly with telemetry/minimap visible |
 | Automated Playwright verification | Blocked | Do not run direct Playwright in this sandbox; needs Docker/POC sandbox or manual browser verification |
@@ -46,6 +46,9 @@ See `20260519-185616_infinite-scroller-v3-PROMPT.txt` for the full prompt histor
 - Loaded chapter heights and top coordinates are recorded after measurement; add/remove now inserts/removes absolutely positioned chapter blocks instead of changing normal-flow layout.
 - Minimap bricks now remain briefly as fading ghost blocks for about one second after their chapters unload, making removals visible instead of disappearing instantly.
 - Added an experimental edge spring for true work boundaries. When the first or last chapter is loaded and scrolling drifts beyond the real work edge in the outward direction, V3 samples scroll velocity, emits edge spring telemetry, and animates `scrollTop` back to the valid boundary. The spring now cancels on jumps and when scrolling returns inside the valid work bounds.
+- Swapped the production reader to V3. The main app keeps the existing reader wrapper and services, while V3 now creates its own measurement host and spacer nodes when the lab-only DOM is not present. It also exposes `handleAutoScrollTick`, `canScrollForward`, and `emitAutoScrollStop` so the existing `AutoScrollController` contract remains intact.
+- Added production CSS for the V3 absolute-positioned canvas so main-reader chapters keep the V2 card/header styling while being placed at fixed coordinates internally.
+- Fixed production visual polish after the V3 swap: measurement now mirrors the actual chapter card width and reconciles rendered height after insertion so adjacent absolute chapters keep a real gap; bookmark ribbons layer below sticky chapter headers; fast manual scrolling now disables sticky-follow instead of letting it keep chasing the bookmark.
 - Fast internal-scroller automation is not yet proven because the available browser scroll command targets the page body, not the nested reader scroller. This needs Docker/POC Playwright or manual device/browser testing.
 
 ## Open Design Questions
@@ -54,3 +57,4 @@ See `20260519-185616_infinite-scroller-v3-PROMPT.txt` for the full prompt histor
 - Should measured coordinates be persisted across sessions, or treated as per-viewport/runtime data because font metrics and reader width can change?
 - How aggressive should preloading be for high-velocity scrolls: 10 screens, 25 screens, or adaptive based on observed velocity?
 - On resize, should the lab fully re-seed from the current top/anchor chapter, or remeasure all loaded chapters and keep the current virtual origin?
+- Production follow-up: soak-test bookmark ribbons, auto-scroll, and elastic edge rebound on macOS/iOS hardware now that the main app is using V3.

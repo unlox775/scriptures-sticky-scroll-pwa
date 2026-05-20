@@ -224,7 +224,7 @@ body {
   font-size: 0.8rem;
   background: #1e3a5f;
   color: #e2e8f0;
-  border-radius: 0.2rem 0.2rem 0.2rem 0;
+  border-radius: 0.45rem 0.45rem 0.45rem 0;
   cursor: pointer;
   white-space: nowrap;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
@@ -318,13 +318,14 @@ body {
   width: 0;
   height: 0;
   pointer-events: none;
-  z-index: 5;
+  z-index: 2;
 }
 
 .reader-ribbons-overlay .bookmark-ribbon {
   pointer-events: auto;
   position: absolute;
   transform: translateY(-100%);
+  z-index: 2;
 }
 
 .reader-content {

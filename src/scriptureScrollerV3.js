@@ -72,9 +72,12 @@ export class ScriptureScrollerV3 {
   constructor(options) {
     this.scroller = options.scroller;
     this.content = options.content;
-    this.measureHost = options.measureHost;
-    this.topSpacer = options.topSpacer;
-    this.bottomSpacer = options.bottomSpacer;
+    this.measureHost = options.measureHost || this.createMeasureHost();
+    this.ownsMeasureHost = !options.measureHost;
+    this.topSpacer = options.topSpacer || this.createSpacer("top");
+    this.bottomSpacer = options.bottomSpacer || this.createSpacer("bottom");
+    this.ownsTopSpacer = !options.topSpacer;
+    this.ownsBottomSpacer = !options.bottomSpacer;
     this.index = options.index;
     this.config = { ...DEFAULTS, ...options };
     this.cache = options.bookCache || new BookCache(5);
@@ -105,6 +108,7 @@ export class ScriptureScrollerV3 {
   }
 
   async init(location = {}) {
+    this.prepareContent();
     this.work = this.index.works.find((work) => work.id === this.config.workId) || this.index.works[0];
     this.sequence = this.buildSequence(this.work);
     this.scroller.addEventListener("scroll", this.handleScroll, { passive: true });
@@ -128,6 +132,31 @@ export class ScriptureScrollerV3 {
     if (this.scrollRaf) cancelAnimationFrame(this.scrollRaf);
     if (this.edgeSpringRaf) cancelAnimationFrame(this.edgeSpringRaf);
     if (this.resizeTimer) clearTimeout(this.resizeTimer);
+    if (this.ownsMeasureHost) this.measureHost.remove();
+    if (this.ownsTopSpacer) this.topSpacer.remove();
+    if (this.ownsBottomSpacer) this.bottomSpacer.remove();
+  }
+
+  createMeasureHost() {
+    const host = document.createElement("div");
+    host.className = "v3-measure-host";
+    host.setAttribute("aria-hidden", "true");
+    document.body.appendChild(host);
+    return host;
+  }
+
+  createSpacer(edge) {
+    const spacer = document.createElement("div");
+    spacer.className = `v3-spacer v3-${edge}-spacer`;
+    spacer.setAttribute("aria-hidden", "true");
+    return spacer;
+  }
+
+  prepareContent() {
+    this.scroller.classList.add("scripture-scroller-v3");
+    this.content.classList.add("v3-scripture-content");
+    if (!this.topSpacer.parentNode) this.content.prepend(this.topSpacer);
+    if (!this.bottomSpacer.parentNode) this.content.appendChild(this.bottomSpacer);
   }
 
   buildSequence(work) {
@@ -468,7 +497,54 @@ export class ScriptureScrollerV3 {
     const nextNode = this.findNextChapterNode(seq);
     this.content.insertBefore(node, nextNode || this.bottomSpacer);
     this.positions.set(seq, top);
+    requestAnimationFrame(() => this.reconcileMeasuredHeight(seq));
     return top;
+  }
+
+  reconcileMeasuredHeight(seq) {
+    const node = this.loaded.get(seq);
+    if (!node) return;
+    const actualHeight = Math.ceil(node.getBoundingClientRect().height);
+    const measuredHeight = this.measuredHeights.get(seq) || 0;
+    if (actualHeight <= measuredHeight + 1) return;
+    this.measuredHeights.set(seq, actualHeight);
+    this.reflowLoadedCoordinatesFrom(seq);
+    this.setVirtualSpacerMetrics();
+    this.emit("chapter_measure_reconciled", {
+      level: "debug",
+      summary: `${this.pointerLabel(this.sequence[seq])} height reconciled after render`,
+      refs: { seq },
+      metrics: {
+        measuredHeight: Math.round(measuredHeight),
+        actualHeight: Math.round(actualHeight),
+      },
+    });
+    this.queueMeasure("height-reconcile");
+  }
+
+  reflowLoadedCoordinatesFrom(seq) {
+    const loadedSeqs = this.loadedSeqs();
+    let previousSeq = null;
+    for (const loadedSeq of loadedSeqs) {
+      if (loadedSeq < seq) {
+        previousSeq = loadedSeq;
+        continue;
+      }
+      if (previousSeq !== null) {
+        const previousTop = this.positions.get(previousSeq);
+        const previousHeight = this.measuredHeights.get(previousSeq);
+        const node = this.loaded.get(loadedSeq);
+        if (Number.isFinite(previousTop) && Number.isFinite(previousHeight) && node) {
+          const nextTop = Math.min(
+            this.layoutHeightPx - (this.measuredHeights.get(loadedSeq) || node.offsetHeight),
+            previousTop + previousHeight + this.config.chapterGapPx,
+          );
+          this.positions.set(loadedSeq, nextTop);
+          node.style.top = `${Math.round(nextTop)}px`;
+        }
+      }
+      previousSeq = loadedSeq;
+    }
   }
 
   coordinateForSeq(seq, measuredHeight, mode) {
@@ -533,6 +609,10 @@ export class ScriptureScrollerV3 {
 
   async measureChapter(node) {
     const clone = node.cloneNode(true);
+    clone.style.position = "static";
+    clone.style.width = `${this.chapterRenderWidthPx()}px`;
+    clone.style.left = "auto";
+    clone.style.top = "auto";
     this.measureHost.appendChild(clone);
     const styles = getComputedStyle(clone);
     const marginTop = Number.parseFloat(styles.marginTop) || 0;
@@ -540,6 +620,11 @@ export class ScriptureScrollerV3 {
     const height = clone.getBoundingClientRect().height + marginTop + marginBottom;
     clone.remove();
     return Math.ceil(height);
+  }
+
+  chapterRenderWidthPx() {
+    const scrollerWidth = this.scroller.clientWidth || window.innerWidth || 760;
+    return Math.max(1, Math.min(760, scrollerWidth - 40));
   }
 
   firstChapterNode() {
@@ -868,6 +953,47 @@ export class ScriptureScrollerV3 {
         metrics: { bottomSpacer: this.bottomSpacerPx },
       });
     }
+  }
+
+  canScrollForward() {
+    const loadedSeqs = this.loadedSeqs();
+    const lastSeq = loadedSeqs.at(-1);
+    if (!Number.isFinite(lastSeq)) return false;
+    if (lastSeq < this.sequence.length - 1) return true;
+    const lastTop = this.positions.get(lastSeq);
+    const lastHeight = this.measuredHeights.get(lastSeq) || this.loaded.get(lastSeq)?.offsetHeight || 0;
+    if (!Number.isFinite(lastTop)) return false;
+    return this.scroller.scrollTop + this.scroller.clientHeight < lastTop + lastHeight - 1;
+  }
+
+  handleAutoScrollTick(details = {}) {
+    this.emit("auto_scroll_tick", {
+      level: "trace",
+      summary: "V3 auto-scroll frame",
+      metrics: {
+        speed: details.speed,
+        scrollTop: Math.round(this.scroller.scrollTop),
+        canScrollForward: this.canScrollForward(),
+      },
+    });
+  }
+
+  emitAutoScrollStop(details = {}) {
+    const snapshot = this.getSnapshot("auto-scroll-stop");
+    this.emit("auto_scroll_stop", {
+      level: details.reason === "work-end" ? "info" : "debug",
+      summary: `Auto-scroll stopped: ${details.reason || "unknown"}`,
+      refs: { reference: snapshot.anchor?.reference, reason: details.reason },
+      metrics: {
+        scrollTop: snapshot.scrollTop,
+        viewportHeight: snapshot.viewportHeight,
+        contentHeight: snapshot.contentHeight,
+        loadedCount: snapshot.loadedCount,
+        pendingLoads: snapshot.pendingLoads,
+        canScrollForward: this.canScrollForward(),
+        speed: details.speed,
+      },
+    });
   }
 
   queueMeasure(reason) {

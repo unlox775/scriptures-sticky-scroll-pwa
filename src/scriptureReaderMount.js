@@ -1,5 +1,5 @@
 import { AutoScrollController } from "./autoScrollController.js";
-import { ScriptureScroller, parseScrollerRoute } from "./scriptureScroller.js";
+import { ScriptureScrollerV3 as ScriptureScroller, parseScrollerV3Route as parseScrollerRoute } from "./scriptureScrollerV3.js";
 
 export function createScriptureReader({
   index,
