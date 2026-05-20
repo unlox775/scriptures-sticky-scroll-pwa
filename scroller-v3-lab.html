@@ -3,32 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Scripture Infinite Scroller Lab</title>
-    <script type="module" crossorigin src="/scriptures-sticky-scroll-pwa/assets/scrollerLab-B7__Q-4h.js"></script>
-    <link rel="modulepreload" crossorigin href="/scriptures-sticky-scroll-pwa/assets/viewUtils-V0njwmIa.js">
-    <link rel="modulepreload" crossorigin href="/scriptures-sticky-scroll-pwa/assets/scriptureReaderMount-Dzuq7YeI.js">
-    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/scriptureReaderMount-W7mOsd-t.css">
-    <link rel="stylesheet" crossorigin href="/scriptures-sticky-scroll-pwa/assets/scrollerLab-BWCdTMRp.css">
+    <title>Scripture Infinite Scroller V3 Lab</title>
   </head>
   <body>
-    <div id="scrollerLab" class="scroller-lab-shell">
-      <section class="reader-pane" aria-label="Scripture scroller">
+    <div id="scrollerV3Lab" class="scroller-lab-shell scroller-v3-lab-shell">
+      <section class="reader-pane" aria-label="Scripture scroller V3">
         <header class="lab-header">
           <div>
-            <p class="eyebrow">Infinite Scroller Lab</p>
-            <h1>Book of Mormon debug reader</h1>
+            <p class="eyebrow">Infinite Scroller V3 Lab</p>
+            <h1>Momentum-safe virtual runway</h1>
           </div>
-          <button id="autoScrollToggle" class="lab-auto-scroll" type="button">Auto scroll</button>
+          <div class="v3-header-controls">
+            <span class="v3-mode-pill">No scrollTop writes after jump</span>
+            <button id="autoScrollToggle" class="lab-auto-scroll" type="button">Auto scroll</button>
+          </div>
         </header>
         <div class="align-guide" aria-hidden="true">
           <span>25% target line</span>
         </div>
         <main id="scriptureScroller" class="scripture-scroller" tabindex="0">
-          <div id="scriptureContent" class="scripture-content"></div>
+          <div id="scriptureContent" class="scripture-content v3-scripture-content">
+            <div id="topSpacer" class="v3-spacer v3-top-spacer" aria-hidden="true"></div>
+            <div id="bottomSpacer" class="v3-spacer v3-bottom-spacer" aria-hidden="true"></div>
+          </div>
+          <div id="measureHost" class="v3-measure-host" aria-hidden="true"></div>
         </main>
       </section>
 
-      <aside class="telemetry-pane" aria-label="Scroller telemetry">
+      <aside class="telemetry-pane" aria-label="Scroller V3 telemetry">
         <section class="top-dashboard">
           <div class="dashboard-controls">
             <section class="control-card">
@@ -46,11 +48,11 @@
                 </label>
                 <label>
                   Chapter
-                  <input id="chapterInput" type="number" min="1" value="2" inputmode="numeric" />
+                  <input id="chapterInput" type="number" min="1" value="36" inputmode="numeric" />
                 </label>
                 <label>
                   Verse
-                  <input id="verseInput" type="number" min="1" value="12" inputmode="numeric" />
+                  <input id="verseInput" type="number" min="1" value="1" inputmode="numeric" />
                 </label>
                 <button type="submit">Go</button>
               </form>
@@ -62,7 +64,7 @@
                 <strong id="loadedCount">0</strong>
               </article>
               <article class="metric-card">
-                <span class="metric-label">DOM</span>
+                <span class="metric-label">Virtual DOM</span>
                 <strong id="domHeight">0 px</strong>
               </article>
               <article class="metric-card">
@@ -73,11 +75,19 @@
                 <span class="metric-label">Cache</span>
                 <strong id="cacheState">0 books</strong>
               </article>
+              <article class="metric-card">
+                <span class="metric-label">Top spacer</span>
+                <strong id="topSpacerMetric">0 px</strong>
+              </article>
+              <article class="metric-card">
+                <span class="metric-label">Bottom spacer</span>
+                <strong id="bottomSpacerMetric">0 px</strong>
+              </article>
             </section>
 
             <section class="threshold-card">
               <div class="threshold-row">
-                <span>Scroll up to load previous</span>
+                <span>Distance to load previous</span>
                 <span id="topDistance">0 px</span>
               </div>
               <div class="threshold-meter">
@@ -85,7 +95,7 @@
                 <i class="threshold-line"></i>
               </div>
               <div class="threshold-row">
-                <span>Scroll down to load next</span>
+                <span>Distance to load next</span>
                 <span id="bottomDistance">0 px</span>
               </div>
               <div class="threshold-meter">
@@ -93,22 +103,26 @@
                 <i class="threshold-line"></i>
               </div>
               <div id="thresholdDetails" class="threshold-details"></div>
+              <div id="alignmentDetails" class="threshold-details v3-alignment-details"></div>
             </section>
           </div>
 
-          <section class="minimap-card">
+          <section class="minimap-card v3-minimap-card">
             <div class="panel-title-row">
-              <h3>Minimap + Triggers</h3>
+              <h3>Static Virtual Minimap</h3>
+              <button id="setMinimapScreens" class="minimap-config-button" type="button">Set screens</button>
               <span id="minimapScale">scale</span>
             </div>
-            <div id="minimap" class="minimap">
-              <div id="minimapBlocks" class="minimap-blocks"></div>
-              <div id="minimapLines" class="minimap-lines"></div>
-              <div id="minimapViewport" class="minimap-viewport"></div>
+            <div id="minimap" class="minimap v3-minimap">
+              <div id="minimapTrack" class="v3-minimap-track">
+                <div id="minimapBlocks" class="minimap-blocks"></div>
+                <div id="minimapLines" class="minimap-lines"></div>
+                <div id="minimapViewport" class="minimap-viewport"></div>
+              </div>
             </div>
             <div class="minimap-legend">
               <span><i class="legend-viewport"></i>viewport</span>
-              <span><i class="legend-preload"></i>load</span>
+              <span><i class="legend-preload"></i>load window</span>
               <span><i class="legend-unload"></i>unload</span>
             </div>
           </section>
@@ -129,5 +143,6 @@
       </aside>
     </div>
 
+    <script type="module" src="/src/scrollerV3Lab.js"></script>
   </body>
 </html>

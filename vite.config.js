@@ -11,6 +11,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         scrollerLab: resolve(__dirname, 'scroller-lab.html'),
+        scrollerV3Lab: resolve(__dirname, 'scroller-v3-lab.html'),
       },
     },
   },
