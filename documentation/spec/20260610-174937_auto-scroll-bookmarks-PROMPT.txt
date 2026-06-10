@@ -7,3 +7,7 @@ a new spec
 2026-06-10 18:17:00 UTC
 
 All right, go ahead and fix the persisted scroll position restore bug. Your findings and recommendations sound good to me.
+
+2026-06-10 18:32:31 UTC
+
+Well, it did change something as I was scrolling through the different chapters after. I started out at Alma 52 when I opened up the app. I scrolled down all the way to Alma 53, verse 6, and then I closed the window, killed the app. And then I reopened again and it took me right to Alma 52. That's not what it's supposed to do. Is it possible that it's not updating the position as we scroll and pass the target things? I don't know why it took me to Alma 52. That might have been where the last time it set the go to from the bookmark. That might be why it's doing there. Anyway, double check. It's possible the infinite scroller doesn't have something that broadcasts every time it passes a new verse number, that target. I mean it does because it broadcasts something moving the sticky scroll down. Anyway, see if you can fix it. Try again.

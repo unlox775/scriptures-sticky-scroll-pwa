@@ -547,7 +547,7 @@ function handleAnchorChange(anchor, meta) {
     });
   }
   if (!readerView.hidden) updateHeader("readerView");
-  navigationService.push(routeFromState());
+  pushRouteAndSave(routeFromState());
   renderBookmarkRibbons();
   uiEmit.reader({
     level: "debug",
