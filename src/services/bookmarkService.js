@@ -24,6 +24,19 @@ export function createBookmarkService(bookmarkStore) {
       });
       return bookmark;
     },
+    deleteBookmark(bookmarkId) {
+      const deleted = bookmarkStore.deleteBookmark(bookmarkId);
+      if (deleted) {
+        emit({
+          level: "info",
+          event: "bookmark_delete",
+          summary: "Deleted bookmark",
+          refs: { bookmarkId: deleted.id },
+          details: { name: deleted.name },
+        });
+      }
+      return deleted;
+    },
     updateBookmarkLocation(bookmarkId, location, source = "manual") {
       const bookmark = bookmarkStore.updateBookmarkLocation(bookmarkId, location, source);
       if (bookmark) {

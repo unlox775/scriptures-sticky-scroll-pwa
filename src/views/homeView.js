@@ -7,6 +7,7 @@ export function renderHomeView({
   onOpenWork,
   onViewHistory,
   onOpenBookmark,
+  onDeleteBookmark,
   onOpenSingleBook,
 }) {
   const worksHtml = works
@@ -23,7 +24,8 @@ export function renderHomeView({
     .map(
       (bookmark) => `
       <article class="bookmark-item">
-        <div>
+        <button class="bookmark-delete-btn" type="button" data-delete-bookmark="${bookmark.id}" aria-label="Delete ${escapeHtml(bookmark.name)}">🗑</button>
+        <div class="bookmark-summary">
           <strong>${escapeHtml(bookmark.name)}</strong>
           <div class="bookmark-meta">${escapeHtml(bookmark.location?.reference || "No location yet")}</div>
         </div>
@@ -67,6 +69,12 @@ export function renderHomeView({
   container.querySelectorAll("[data-open-bookmark]").forEach((btn) => {
     btn.addEventListener("click", () => {
       onOpenBookmark?.(btn.dataset.openBookmark);
+    });
+  });
+
+  container.querySelectorAll("[data-delete-bookmark]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      onDeleteBookmark?.(btn.dataset.deleteBookmark);
     });
   });
 }

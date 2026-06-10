@@ -11,9 +11,9 @@ This directory contains technical documentation for the Scripture Reader PWA. St
 | Infinite chapter scrolling | 🟩 Ready | Main app reader now uses the new reusable scroller with cross-book chapter loading and 25% bookmark/navigation anchor. |
 | Infinite scroller lab | 🟩 Ready | Standalone `scroller-lab.html` telemetry harness around the reusable reader module. |
 | Portable reader module | 🟩 Ready | `src/scriptureReader.js` exports the reusable scroller, mount adapter, styles, and optional auto-scroll controller used by both the lab and main app. |
-| Sticky bookmarks | 🟩 Ready | Multiple bookmarks, active selection, auto-follow while scrolling. |
+| Sticky bookmarks | 🟩 Ready | Multiple bookmarks, active selection, delete confirmation, and animated auto-follow while scrolling. |
 | Daily bookmark history | 🟩 Ready | Per-bookmark chronology snapshots persisted locally. |
-| Auto-scroll controls | 🟩 Ready | Top-mounted start/stop and speed slider. |
+| Auto-scroll controls | 🟩 Ready | Full-width top-mounted start/stop and speed slider. |
 | LRU book cache (max 2) | 🟩 Ready | Per-book gzip assets; runtime cache caps decompressed books. |
 | Non-verse sacred text | 🟨 Partial | Some source headings exist but are dropped by the build; other chapter prefaces need a supplemental source. |
 | Footnote/page references | 🟨 Partial | Current data source lacks official footnotes; links out to Gospel Library. |

@@ -31,9 +31,12 @@ function makeDefaultBookmark() {
 }
 
 function sanitizeState(raw) {
-  if (!raw || !Array.isArray(raw.bookmarks) || raw.bookmarks.length === 0) {
+  if (!raw || !Array.isArray(raw.bookmarks)) {
     const fallback = makeDefaultBookmark();
     return { activeBookmarkId: fallback.id, bookmarks: [fallback] };
+  }
+  if (raw.bookmarks.length === 0) {
+    return { activeBookmarkId: null, bookmarks: [] };
   }
   const active = raw.bookmarks.find((b) => b.id === raw.activeBookmarkId) || raw.bookmarks[0];
   return {
@@ -138,6 +141,26 @@ export class BookmarkStore {
       metrics: { totalBookmarks: this.state.bookmarks.length },
     });
     return bookmark;
+  }
+
+  deleteBookmark(bookmarkId) {
+    const index = this.state.bookmarks.findIndex((bookmark) => bookmark.id === bookmarkId);
+    if (index < 0) return null;
+    const [deleted] = this.state.bookmarks.splice(index, 1);
+    if (this.state.activeBookmarkId === bookmarkId) {
+      this.state.activeBookmarkId = this.state.bookmarks[0]?.id ?? null;
+    }
+    this.save();
+    logEvent({
+      level: "info",
+      module: "backend.bookmarks",
+      event: "bookmark_delete",
+      summary: "Deleted bookmark",
+      refs: { bookmarkId },
+      details: { name: deleted.name },
+      metrics: { totalBookmarks: this.state.bookmarks.length },
+    });
+    return deleted;
   }
 
   updateActiveLocation(location, source = "manual") {

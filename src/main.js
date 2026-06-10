@@ -377,6 +377,26 @@ function renderHomeView() {
       resetStickyFollowTracking();
       await openReader(loc);
     },
+    onDeleteBookmark: (bookmarkId) => {
+      const bookmark = bookmarkService.getBookmarks().find((item) => item.id === bookmarkId);
+      if (!bookmark) return;
+      const label = bookmark.location?.reference ? `${bookmark.name} (${bookmark.location.reference})` : bookmark.name;
+      const confirmed = window.confirm(`Delete bookmark "${label}"?`);
+      if (!confirmed) return;
+      const deleted = bookmarkService.deleteBookmark(bookmarkId);
+      if (!deleted) return;
+      if (state.stickyFollowBookmarkId === bookmarkId) {
+        clearStickyFollow();
+      }
+      renderHomeView();
+      uiEmit.home({
+        level: "info",
+        event: "home_delete_bookmark_click",
+        summary: "Bookmark deleted from home",
+        refs: { bookmarkId },
+        details: { name: deleted.name },
+      });
+    },
   });
   uiEmit.home({
     level: "info",

@@ -93,9 +93,12 @@ export class AutoScrollController {
     const panel = document.createElement("div");
     panel.className = "auto-scroll-panel";
     panel.innerHTML = `
-      <label>px/sec <input type="range" min="8" max="160" step="4" value="${this.speed}" /></label>
-      <span data-auto-speed>${this.speed} px/s</span>
-      <button type="button" data-auto-stop>Stop</button>
+      <label class="auto-scroll-speed-control">
+        <span>px/sec</span>
+        <input type="range" min="8" max="160" step="4" value="${this.speed}" />
+      </label>
+      <span class="auto-scroll-speed-value" data-auto-speed>${this.speed} px/s</span>
+      <button class="auto-scroll-stop" type="button" data-auto-stop>Stop</button>
     `;
 
     const input = panel.querySelector("input");
