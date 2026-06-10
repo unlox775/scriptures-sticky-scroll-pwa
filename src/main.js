@@ -15,6 +15,10 @@ import { renderHistoryView as renderHistoryTemplate } from "./views/historyView.
 import { renderBookmarkRibbons as renderBookmarkRibbonsTemplate } from "./views/readerView.js";
 import { escapeHtml } from "./viewUtils.js";
 
+if ("scrollRestoration" in history) {
+  history.scrollRestoration = "manual";
+}
+
 const state = {
   index: null,
   currentWork: null,
