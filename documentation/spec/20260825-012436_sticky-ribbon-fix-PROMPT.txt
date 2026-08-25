@@ -27,3 +27,11 @@ In reader mode, while scrolling (finger/wheel OR auto-scroll), the ribbon curren
 - Screenshots in the PR prove it.
 
 Live GitHub Pages build (current behavior, for reference): https://unlox775.github.io/scriptures-sticky-scroll-pwa/
+
+---
+
+Repo playbook from AGENTS.md, follow it:
+- Before making changes, append Dave's raw request (and this follow-up) to the active prompt log under documentation/spec/ (YYYYMMDD-HHMMSS_slug.md + matching -PROMPT.txt, newest-last, verbatim).
+- After every code update, run `npm run build` (build artifacts go to docs/) and commit the resulting changes unless something prevents it.
+- Update documentation/README.md traffic-light status if this feature's status changes.
+- Runtime source lives in src/ (main.js, bookmarks.js, data.js, readerEngine.js, styles.css).
