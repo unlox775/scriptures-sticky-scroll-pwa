@@ -21,6 +21,7 @@ export function renderBookmarkRibbons({
   const scrollerRect = scroller.getBoundingClientRect();
   const contentRect = content.getBoundingClientRect();
   const ribbonLeft = Math.max(4, contentRect.left - scrollerRect.left - 76);
+  const STICKY_RIBBON_TOP_INSET = 8;
   for (const bookmark of inView) {
     const loc = bookmark.location;
     if (!loc) continue;
@@ -36,7 +37,11 @@ export function renderBookmarkRibbons({
     const verseStyle = getComputedStyle(verseEl);
     const lineHeight = Number.parseFloat(verseStyle.lineHeight) || verseRect.height;
     const paddingTop = Number.parseFloat(verseStyle.paddingTop) || 0;
-    const top = verseRect.top - scrollerRect.top + paddingTop + lineHeight * 0.2;
+    let top = verseRect.top - scrollerRect.top + paddingTop + lineHeight * 0.2;
+    const isSticky = bookmark.id === activeStickyBookmarkId;
+    if (isSticky) {
+      top = Math.max(STICKY_RIBBON_TOP_INSET, top);
+    }
     if (top < -20 || top > scrollerRect.height + 20) continue;
     visibleIds.add(bookmark.id);
     const title = (bookmark.location?.reference || bookmark.name).replace(/"/g, "&quot;");
