@@ -1,0 +1,61 @@
+Fix the sticky verse/bookmark ribbon in the Scripture Reader PWA so it never drifts off-screen while sticky.
+
+## What Dave wants
+In reader mode, while scrolling (finger/wheel OR auto-scroll), the ribbon currently drifts a little off the top of the viewport and then drifts back on. Desired behavior:
+
+1. **When the ribbon is sticky:** it should stay wedged at its topmost / tallest on-screen point. It must never leave the viewport. Think of it as pinned to a fixed top inset and following the reader wherever they are. It is always visible, implying it is following you.
+2. **When the ribbon is not sticky:** it should scroll off the screen normally with its verse, like any other content.
+3. **Verse-to-verse updates must keep the existing bounce/slide animation.** When the active verse changes (next verse down), the ribbon should still slide down to the next verse, roll up, then settle — the normal bounce from verse to verse. Do not flatten that into a hard jump. Only the *drift-off-screen-during-scroll* should go away.
+
+## How to work
+- Investigate how the ribbon currently works. Likely related to the sticky bookmark / reading-anchor tracking (~25% from top) in reader mode. Also look at `scroller-lab.html` and `scroller-v3-lab.html` if they are the ribbon/scroller playground.
+- My guess (non-binding, verify and discard if wrong): the ribbon's Y is loosely tracking scroll/anchor instead of being clamped to stay fully visible at a stable top inset while sticky.
+- Run the app (`npm install`, `npm run build:data` if needed, `npm run dev`) and reproduce the drift yourself.
+- Implement the smallest correct fix. Do not rewrite the reader.
+- Follow existing repo conventions (see AGENTS.md, documentation/). Playwright is already set up — add or update a test if there is a natural place for this.
+- Take **before and after screenshots** of:
+  - mid-scroll with sticky ribbon (after: fully on-screen at the top, not clipped)
+  - verse-to-verse transition (bounce/slide still visible)
+  - not-sticky ribbon (still allowed to leave the viewport)
+- Open a pull request Dave can merge. Put the screenshots in the PR body and explain the behavior in plain language.
+
+## Done when
+- PR is open against the default branch.
+- Sticky ribbon stays fully visible at its topmost on-screen point during manual and auto-scroll.
+- Verse-to-verse bounce/slide still happens.
+- Non-sticky ribbon still scrolls away.
+- Screenshots in the PR prove it.
+
+Live GitHub Pages build (current behavior, for reference): https://unlox775.github.io/scriptures-sticky-scroll-pwa/
+
+---
+
+Repo playbook from AGENTS.md, follow it:
+- Before making changes, append Dave's raw request (and this follow-up) to the active prompt log under documentation/spec/ (YYYYMMDD-HHMMSS_slug.md + matching -PROMPT.txt, newest-last, verbatim).
+- After every code update, run `npm run build` (build artifacts go to docs/) and commit the resulting changes unless something prevents it.
+- Update documentation/README.md traffic-light status if this feature's status changes.
+- Runtime source lives in src/ (main.js, bookmarks.js, data.js, readerEngine.js, styles.css).
+
+---
+
+Additional request from Dave, same PR if it still fits cleanly — otherwise a second focused commit on the same branch is fine.
+
+After (or alongside) the sticky-ribbon fix, improve the look of the scripture reader. He says the current UI is pretty bare and dry. Treat this as visual polish, not a redesign of the scroller architecture.
+
+Hard constraints:
+- The infinite scroller is tricky. Visual/CSS/layout changes can silently break chapter loading, anchor tracking, spacer math, sticky headers, or the ribbon. You MUST run the app and manually exercise reader mode after any look change: finger/wheel scroll, auto-scroll, jump to a verse, sticky vs not-sticky ribbon, chapter boundaries, and a resize if practical.
+- Keep verse-to-verse ribbon bounce. Keep ribbon fully on-screen when sticky.
+- Do not rewrite ScriptureScrollerV3. Prefer CSS / chrome / typography / spacing / color / header/ribbon presentation. If a look change requires a scroller layout change, be extremely conservative and prove it still works.
+- Follow AGENTS.md: append this prompt to the spec/prompt log, run `npm run build`, commit docs/ artifacts.
+
+Visual direction:
+- Warm, readable scripture-reading feel (not a tech demo). Better type hierarchy, calmer chrome, a more finished ribbon/bookmark, chapter headings that feel like a book not a lab.
+- Don't add clutter. The reader should feel quieter and more finished.
+- Mobile-ish viewport matters (this is a PWA).
+
+Proof:
+- Before/after screenshots of home, a chapter in reader, sticky ribbon mid-scroll, and verse-to-verse bounce.
+- If you can, a short screen recording of scrolling (auto-scroll + a verse change) so the ribbon and scroller behavior is obvious.
+- Put shots in the PR body. Call out anything you tried that looked nicer but broke scrolling, and what you kept instead.
+
+Priority if you have to choose: (1) ribbon stays pinned when sticky + bounce preserved, (2) scroller still correct, (3) look upgrade.
