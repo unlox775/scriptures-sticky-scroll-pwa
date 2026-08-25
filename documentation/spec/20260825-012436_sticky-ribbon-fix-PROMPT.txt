@@ -35,3 +35,27 @@ Repo playbook from AGENTS.md, follow it:
 - After every code update, run `npm run build` (build artifacts go to docs/) and commit the resulting changes unless something prevents it.
 - Update documentation/README.md traffic-light status if this feature's status changes.
 - Runtime source lives in src/ (main.js, bookmarks.js, data.js, readerEngine.js, styles.css).
+
+---
+
+Additional request from Dave, same PR if it still fits cleanly — otherwise a second focused commit on the same branch is fine.
+
+After (or alongside) the sticky-ribbon fix, improve the look of the scripture reader. He says the current UI is pretty bare and dry. Treat this as visual polish, not a redesign of the scroller architecture.
+
+Hard constraints:
+- The infinite scroller is tricky. Visual/CSS/layout changes can silently break chapter loading, anchor tracking, spacer math, sticky headers, or the ribbon. You MUST run the app and manually exercise reader mode after any look change: finger/wheel scroll, auto-scroll, jump to a verse, sticky vs not-sticky ribbon, chapter boundaries, and a resize if practical.
+- Keep verse-to-verse ribbon bounce. Keep ribbon fully on-screen when sticky.
+- Do not rewrite ScriptureScrollerV3. Prefer CSS / chrome / typography / spacing / color / header/ribbon presentation. If a look change requires a scroller layout change, be extremely conservative and prove it still works.
+- Follow AGENTS.md: append this prompt to the spec/prompt log, run `npm run build`, commit docs/ artifacts.
+
+Visual direction:
+- Warm, readable scripture-reading feel (not a tech demo). Better type hierarchy, calmer chrome, a more finished ribbon/bookmark, chapter headings that feel like a book not a lab.
+- Don't add clutter. The reader should feel quieter and more finished.
+- Mobile-ish viewport matters (this is a PWA).
+
+Proof:
+- Before/after screenshots of home, a chapter in reader, sticky ribbon mid-scroll, and verse-to-verse bounce.
+- If you can, a short screen recording of scrolling (auto-scroll + a verse change) so the ribbon and scroller behavior is obvious.
+- Put shots in the PR body. Call out anything you tried that looked nicer but broke scrolling, and what you kept instead.
+
+Priority if you have to choose: (1) ribbon stays pinned when sticky + bounce preserved, (2) scroller still correct, (3) look upgrade.
