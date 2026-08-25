@@ -21,7 +21,19 @@ export function renderBookmarkRibbons({
   const scrollerRect = scroller.getBoundingClientRect();
   const contentRect = content.getBoundingClientRect();
   const ribbonLeft = Math.max(4, contentRect.left - scrollerRect.left - 76);
-  const STICKY_RIBBON_TOP_INSET = 8;
+
+  // Sticky chapter heading sits at the top of the scroller. The ribbon uses
+  // translateY(-100%), so `top` is its bottom edge — clamp that below the heading.
+  let headingFloor = 8;
+  for (const heading of scroller.querySelectorAll(".chapter-heading")) {
+    const rect = heading.getBoundingClientRect();
+    const relTop = rect.top - scrollerRect.top;
+    const relBottom = rect.bottom - scrollerRect.top;
+    if (relTop <= 8 && relBottom > 0) {
+      headingFloor = Math.max(headingFloor, relBottom);
+    }
+  }
+
   for (const bookmark of inView) {
     const loc = bookmark.location;
     if (!loc) continue;
@@ -32,21 +44,12 @@ export function renderBookmarkRibbons({
       `.lab-chapter[data-book-id="${CSS.escape(bookId)}"][data-chapter="${chapter}"]`,
     );
     const verseEl = chapterEl?.querySelector(`.scripture-block[data-verse="${verse}"]`);
-    if (!verseEl) continue;
-    const verseRect = verseEl.getBoundingClientRect();
-    const verseStyle = getComputedStyle(verseEl);
-    const lineHeight = Number.parseFloat(verseStyle.lineHeight) || verseRect.height;
-    const paddingTop = Number.parseFloat(verseStyle.paddingTop) || 0;
-    let top = verseRect.top - scrollerRect.top + paddingTop + lineHeight * 0.2;
     const isSticky = bookmark.id === activeStickyBookmarkId;
-    if (isSticky) {
-      top = Math.max(STICKY_RIBBON_TOP_INSET, top);
-    }
-    if (top < -20 || top > scrollerRect.height + 20) continue;
-    visibleIds.add(bookmark.id);
-    const title = (bookmark.location?.reference || bookmark.name).replace(/"/g, "&quot;");
+    if (!verseEl && !isSticky) continue;
+
     let node = overlay.querySelector(`[data-bookmark-id="${CSS.escape(bookmark.id)}"]`);
     if (!node) {
+      if (!verseEl) continue;
       node = document.createElement("span");
       node.className = "bookmark-ribbon";
       node.dataset.bookmarkId = bookmark.id;
@@ -55,6 +58,27 @@ export function renderBookmarkRibbons({
       });
       overlay.appendChild(node);
     }
+
+    let top;
+    if (verseEl) {
+      const verseRect = verseEl.getBoundingClientRect();
+      const verseStyle = getComputedStyle(verseEl);
+      const lineHeight = Number.parseFloat(verseStyle.lineHeight) || verseRect.height;
+      const paddingTop = Number.parseFloat(verseStyle.paddingTop) || 0;
+      top = verseRect.top - scrollerRect.top + paddingTop + lineHeight * 0.2;
+    } else {
+      top = headingFloor;
+    }
+
+    if (isSticky) {
+      const ribbonH = node.offsetHeight || 28;
+      top = Math.max(headingFloor + ribbonH + 6, top);
+    } else if (top < -20 || top > scrollerRect.height + 20) {
+      continue;
+    }
+
+    visibleIds.add(bookmark.id);
+    const title = (bookmark.location?.reference || bookmark.name).replace(/"/g, "&quot;");
     node.classList.toggle("bookmark-ribbon-active", bookmark.id === activeStickyBookmarkId);
     node.setAttribute("aria-pressed", bookmark.id === activeStickyBookmarkId ? "true" : "false");
     node.title = title;
@@ -67,4 +91,3 @@ export function renderBookmarkRibbons({
     if (!visibleIds.has(el.dataset.bookmarkId)) el.remove();
   });
 }
-
