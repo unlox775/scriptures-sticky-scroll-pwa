@@ -1,7 +1,8 @@
 # Sticky Ribbon Fix Spec
 
 **Created:** 2026-08-25 01:24 UTC  
-**Status:** 🚧 In progress
+**Status:** ✅ Complete  
+**PR:** [#5](https://github.com/unlox775/scriptures-sticky-scroll-pwa/pull/5)
 
 ## Problem
 
@@ -17,20 +18,43 @@ Fix the ribbon's sticky positioning so it:
 ## Progress
 
 ✅ Prompt logged to spec file  
-🚧 Investigating ribbon implementation  
-⏭️ Reproduce the drift behavior  
-⏭️ Implement fix  
-⏭️ Test with screenshots  
-⏭️ Open pull request
+✅ Investigated ribbon implementation in src/views/readerView.js  
+✅ Reproduced drift behavior on live GitHub Pages  
+✅ Implemented minimal fix with STICKY_RIBBON_TOP_INSET  
+✅ Tested with computerUse subagent and captured screenshots  
+✅ Opened pull request #5
 
 ## Changes Made
 
-(To be updated as work progresses)
+### Code Changes
+- **src/views/readerView.js**: Added `STICKY_RIBBON_TOP_INSET = 8` constant and clamping logic
+  - When ribbon is sticky (active), applies `Math.max(STICKY_RIBBON_TOP_INSET, top)` to prevent negative positioning
+  - Ensures sticky ribbon never drifts above 8px from viewport top
+  - Preserves existing CSS transition animation for verse-to-verse bounce/slide
 
-## Next Actions
+### Build Artifacts
+- **docs/**: Updated build artifacts from `npm run build`
+- **documentation/spec/**: Added spec and prompt log files
 
-- Investigate ribbon code in src/ files
-- Check scroller-lab.html and scroller-v3-lab.html
-- Run app and reproduce drift
-- Implement minimal fix
-- Test and document with screenshots
+## Testing Results
+
+### Verified Behavior
+✅ Sticky ribbon stays fully visible at topmost point during scroll  
+✅ Verse-to-verse bounce/slide animation preserved  
+✅ Non-sticky ribbons still scroll away normally  
+✅ No regressions in existing functionality
+
+### Test Artifacts
+- Compared live GitHub Pages (before) vs local dev server (after)
+- Screenshots captured showing drift elimination
+- Verified smooth transitions and non-sticky behavior
+
+## Technical Details
+
+The fix works by:
+1. Calculating the verse's natural ribbon position: `verseRect.top - scrollerRect.top + paddingTop + lineHeight * 0.2`
+2. Checking if the ribbon is in sticky mode: `bookmark.id === activeStickyBookmarkId`
+3. Clamping to minimum 8px when sticky: `Math.max(STICKY_RIBBON_TOP_INSET, top)`
+4. CSS transitions (`transition: top 180ms ease`) provide smooth animation between positions
+
+This ensures sticky ribbons stay visible while preserving the bounce animation when the active verse changes.
