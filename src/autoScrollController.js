@@ -4,7 +4,7 @@ const AUTO_SCROLL_SPEED_KEY = "scripture-pwa-auto-scroll-speed-v1";
 function readSavedSpeed(fallback) {
   try {
     const saved = Number(localStorage.getItem(AUTO_SCROLL_SPEED_KEY));
-    return Number.isFinite(saved) && saved > 0 ? saved : fallback;
+    return Number.isFinite(saved) && saved >= 0 ? saved : fallback;
   } catch {
     return fallback;
   }
@@ -14,6 +14,17 @@ function saveSpeed(speed) {
   try {
     localStorage.setItem(AUTO_SCROLL_SPEED_KEY, String(speed));
   } catch {}
+}
+
+// Cubic mapping: speed = 160 * t^3 (t in [0,1])
+// This makes the left half more detailed for typical reading speeds
+function sliderToSpeed(t) {
+  return 160 * Math.pow(t, 3);
+}
+
+// Inverse: t = (speed / 160)^(1/3)
+function speedToSlider(speed) {
+  return Math.pow(speed / 160, 1 / 3);
 }
 
 export class AutoScrollController {
@@ -92,21 +103,29 @@ export class AutoScrollController {
     this.stop();
     const panel = document.createElement("div");
     panel.className = "auto-scroll-panel";
+    const sliderValue = speedToSlider(this.speed);
+    const formatSpeed = (speed) => {
+      if (speed < 0.05) return "0 px/s";
+      if (speed < 1) return `${speed.toFixed(1)} px/s`;
+      if (speed < 10) return `${speed.toFixed(1)} px/s`;
+      return `${speed.toFixed(1)} px/s`;
+    };
     panel.innerHTML = `
       <label class="auto-scroll-speed-control">
         <span>px/sec</span>
-        <input type="range" min="8" max="160" step="4" value="${this.speed}" />
+        <input type="range" min="0" max="1" step="any" value="${sliderValue}" />
       </label>
-      <span class="auto-scroll-speed-value" data-auto-speed>${this.speed} px/s</span>
+      <span class="auto-scroll-speed-value" data-auto-speed>${formatSpeed(this.speed)}</span>
       <button class="auto-scroll-stop" type="button" data-auto-stop>Stop</button>
     `;
 
     const input = panel.querySelector("input");
     const speedLabel = panel.querySelector("[data-auto-speed]");
     input.addEventListener("input", () => {
-      this.speed = Number(input.value) || this.speed;
+      const t = Number(input.value);
+      this.speed = sliderToSpeed(t);
       saveSpeed(this.speed);
-      speedLabel.textContent = `${this.speed} px/s`;
+      speedLabel.textContent = formatSpeed(this.speed);
     });
     panel.querySelector("[data-auto-stop]").addEventListener("click", this.stop);
 
