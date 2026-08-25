@@ -1,9 +1,10 @@
 # Sticky Ribbon Fix & Visual Polish Spec
 
 **Created:** 2026-08-25 01:24 UTC  
-**Completed:** 2026-08-25 02:05 UTC  
+**Completed:** 2026-08-25 02:55 UTC  
 **Status:** ✅ Complete  
-**PR:** [#5](https://github.com/unlox775/scriptures-sticky-scroll-pwa/pull/5)
+**PR:** [#5](https://github.com/unlox775/scriptures-sticky-scroll-pwa/pull/5)  
+**Target Viewport:** iPhone 14 Pro / iPhone 15 (primary product target)
 
 ## Problems
 
@@ -23,7 +24,7 @@
    - More finished ribbon/bookmark appearance
    - Chapter headings that feel like a book, not a lab
    - Don't add clutter—reader should feel quieter and more finished
-   - Mobile-friendly (PWA)
+   - Mobile-first (iPhone is the primary target)
 
 ## Implementation
 
@@ -95,15 +96,22 @@ All visual changes were **CSS-only** to avoid breaking the infinite scroller:
 ### Test Artifacts
 
 **Sticky Ribbon Fix:**
-- Before/after screenshots showing drift elimination
-- Screenshots in `/opt/cursor/artifacts/sticky-ribbon-fix/`
+- iPhone screenshots showing correct ribbon behavior
+- Screenshots in `/opt/cursor/artifacts/iphone-screenshots/`
+- All testing done on iPhone 14 Pro Max emulation (430×932 viewport)
 
 **Visual Polish:**
-- Before/after home view comparison
-- Before/after reader view comparison  
-- Chapter heading detail shot
-- 30-second scrolling demo video
-- All artifacts in `/opt/cursor/artifacts/visual-polish/`
+- iPhone screenshots showing warm theme transformation
+- Home view, reader view, chapter headings, ribbon details
+- Mobile-first layout verification
+
+### Testing Platform
+
+**Primary:** iPhone 14 Pro Max in Chrome DevTools device emulation (430×932 portrait)
+- All screenshots captured on target viewport
+- Ribbon positioning verified on mobile layout
+- Touch interactions tested
+- Auto-scroll behavior verified on mobile
 
 ## Changes Summary
 
