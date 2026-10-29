@@ -511,7 +511,7 @@ function shouldAutoFollow(anchor, meta) {
 function stickyFollowDelta(bookmark, anchor) {
   if (!bookmark?.location || !anchor) return null;
   const loc = bookmark.location;
-  if (loc.workId !== anchor.workId || loc.bookId !== anchor.bookId) return null;
+  if (loc.workId !== anchor.workId) return null;
   if (Number.isFinite(loc.seq) && Number.isFinite(anchor.seq)) {
     const seqGap = anchor.seq - loc.seq;
     if (seqGap < 0 || seqGap > STICKY_FOLLOW_MAX_CHAPTER_GAP) return null;
@@ -519,6 +519,7 @@ function stickyFollowDelta(bookmark, anchor) {
       ? Math.abs((anchor.verse || 0) - (loc.verse || 0))
       : (anchor.verse || 0);
   }
+  if (loc.bookId !== anchor.bookId) return null;
   const chapterGap = (anchor.chapter || 0) - (loc.chapter || 0);
   if (chapterGap < 0 || chapterGap > STICKY_FOLLOW_MAX_CHAPTER_GAP) return null;
   return chapterGap === 0
@@ -1521,7 +1522,27 @@ async function init() {
     }
   });
 
-  await registerServiceWorker();
+  const isTestHarness = new URLSearchParams(window.location.search).has("test");
+  if (!isTestHarness) {
+    await registerServiceWorker();
+  }
+  if (isTestHarness) {
+    window.__scriptureReaderTest = {
+      getSnapshot(reason = "test") {
+        return readerService?.getReader()?.scroller?.getSnapshot(reason) ?? null;
+      },
+      startAutoScroll(speed = 20) {
+        const auto = readerService?.getReader()?.autoScroll;
+        if (!auto) return false;
+        if (!auto.isActive) auto.open();
+        auto.speed = speed;
+        return true;
+      },
+      stopAutoScroll() {
+        readerService?.getReader()?.autoScroll?.stop("test");
+      },
+    };
+  }
   logInfo("init complete");
 }
 

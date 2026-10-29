@@ -1,0 +1,11 @@
+Bug from Dave: plain auto-scroll at ~20 px/s breaks when crossing book boundaries. Repro in Chrome DevTools iPhone device mode (e.g. iPhone 14/15, 390x844): set position near the end of 4 Nephi and let auto-scroll run into Mormon; also near the end of Mormon running into Moroni. Normal auto-scrolling must never break.
+
+Tasks:
+1. Reproduce both boundaries with a headless/Playwright harness in iPhone emulation at 20 px/s. Capture iPhone screenshots (and ideally a short video/frame sequence) showing the break, and describe exactly what breaks (jump, stall, blank, ribbon/sticky wrong, wrong chapter, etc.).
+2. Find root cause in the infinite scroller / book-boundary loading and fix it minimally. The infinite scroller is fragile: no theme/look changes, one job only. Keep existing rules: fast fling (~900 px/s) still drops sticky-follow; slow scroll and auto-scroll keep follow on with the ribbon clamped on-screen.
+3. Add an automated regression test that auto-scrolls across both boundaries (and ideally every book boundary in the Book of Mormon) and asserts continuity.
+4. Open a PR, kept DRAFT until the body contains before/after iPhone screenshots proving both boundaries now scroll cleanly. Screenshot first, then commit; don't push if it looks the same as before. Report the PR URL, root cause, and what the screenshots show.
+
+---
+
+Update from Dave: the break may have been end of 3 Nephi into 4 Nephi instead. Explicitly reproduce and test both 3 Nephi→4 Nephi and 4 Nephi→Mormon (plus Mormon→Moroni) at 20 px/s auto-scroll in iPhone mode, with screenshots for each.

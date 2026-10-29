@@ -11,6 +11,9 @@ export function renderBookmarkRibbons({
   const inView = bookmarks.filter((bookmark) => {
     if (!bookmark.location || !currentLocation) return false;
     if (bookmark.location.workId !== currentLocation.workId) return false;
+    if (Number.isFinite(bookmark.location.seq) && Number.isFinite(currentLocation.seq)) {
+      return Math.abs(bookmark.location.seq - currentLocation.seq) <= 3;
+    }
     if (bookmark.location.bookId !== currentLocation.bookId) return false;
     const ch = currentLocation.chapter || 0;
     const bCh = bookmark.location.chapter || 0;

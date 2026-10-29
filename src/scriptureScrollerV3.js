@@ -44,6 +44,19 @@ function nextFrame() {
   });
 }
 
+function afterLayout() {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      resolve();
+    };
+    requestAnimationFrame(() => requestAnimationFrame(finish));
+    setTimeout(finish, 120);
+  });
+}
+
 function createEmitter(listener) {
   return (event, payload = {}) => {
     listener?.({
@@ -274,6 +287,9 @@ export class ScriptureScrollerV3 {
     await nextFrame();
     await this.preseedAroundSeq(targetSeq);
     await this.ensureViewportBuffer("initial-runway");
+    await afterLayout();
+    this.relayoutLoadedAroundSeq(targetSeq);
+    this.setVirtualSpacerMetrics();
     this.queueMeasure("initial-runway");
   }
 
@@ -468,6 +484,8 @@ export class ScriptureScrollerV3 {
 
     this.loaded.set(seq, node);
     this.measuredHeights.set(seq, measuredHeight);
+    await afterLayout();
+    this.syncInsertedChapterMetrics(seq, mode);
     this.setVirtualSpacerMetrics();
     this.emit("chapter_load_done", {
       level: "info",
@@ -497,36 +515,101 @@ export class ScriptureScrollerV3 {
     const nextNode = this.findNextChapterNode(seq);
     this.content.insertBefore(node, nextNode || this.bottomSpacer);
     this.positions.set(seq, top);
-    requestAnimationFrame(() => this.reconcileMeasuredHeight(seq));
     return top;
   }
 
-  reconcileMeasuredHeight(seq) {
+  syncInsertedChapterMetrics(seq, mode) {
     const node = this.loaded.get(seq);
     if (!node) return;
     const actualHeight = Math.ceil(node.getBoundingClientRect().height);
     const measuredHeight = this.measuredHeights.get(seq) || 0;
-    if (actualHeight <= measuredHeight + 1) return;
     this.measuredHeights.set(seq, actualHeight);
-    this.reflowLoadedCoordinatesFrom(seq);
+
+    let nextTop = this.positions.get(seq);
+    if (mode === "prepend") {
+      const neighborTop = this.positions.get(seq + 1);
+      if (Number.isFinite(neighborTop)) {
+        nextTop = Math.max(0, neighborTop - actualHeight - this.config.chapterGapPx);
+      }
+    } else {
+      const prevSeq = seq - 1;
+      const prevNode = this.loaded.get(prevSeq);
+      const prevTop = this.positions.get(prevSeq);
+      const prevHeight = prevNode
+        ? Math.ceil(prevNode.getBoundingClientRect().height)
+        : this.measuredHeights.get(prevSeq);
+      if (Number.isFinite(prevTop) && Number.isFinite(prevHeight)) {
+        this.measuredHeights.set(prevSeq, prevHeight);
+        nextTop = prevTop + prevHeight + this.config.chapterGapPx;
+      }
+    }
+
+    if (Number.isFinite(nextTop)) {
+      this.positions.set(seq, nextTop);
+      node.style.top = `${Math.round(nextTop)}px`;
+    }
+
+    if (Math.abs(actualHeight - measuredHeight) > 1) {
+      this.emit("chapter_measure_reconciled", {
+        level: "debug",
+        summary: `${this.pointerLabel(this.sequence[seq])} height reconciled after render`,
+        refs: { seq },
+        metrics: {
+          measuredHeight: Math.round(measuredHeight),
+          actualHeight: Math.round(actualHeight),
+          top: Math.round(this.positions.get(seq) ?? 0),
+        },
+      });
+    }
+  }
+
+  reconcileMeasuredHeight(seq) {
+    this.syncInsertedChapterMetrics(seq, "append");
     this.setVirtualSpacerMetrics();
-    this.emit("chapter_measure_reconciled", {
-      level: "debug",
-      summary: `${this.pointerLabel(this.sequence[seq])} height reconciled after render`,
-      refs: { seq },
-      metrics: {
-        measuredHeight: Math.round(measuredHeight),
-        actualHeight: Math.round(actualHeight),
-      },
-    });
     this.queueMeasure("height-reconcile");
   }
 
+  readLiveHeight(seq) {
+    const node = this.loaded.get(seq);
+    if (!node) return this.measuredHeights.get(seq) || 0;
+    const height = Math.ceil(node.getBoundingClientRect().height);
+    this.measuredHeights.set(seq, height);
+    return height;
+  }
+
+  relayoutLoadedAroundSeq(anchorSeq) {
+    if (!this.loaded.has(anchorSeq) || !Number.isFinite(this.positions.get(anchorSeq))) return;
+    const loadedSeqs = this.loadedSeqs();
+    for (const seq of loadedSeqs) this.readLiveHeight(seq);
+
+    let previousSeq = anchorSeq;
+    for (const seq of loadedSeqs) {
+      if (seq <= anchorSeq) continue;
+      const top = this.positions.get(previousSeq) + this.measuredHeights.get(previousSeq) + this.config.chapterGapPx;
+      this.positions.set(seq, top);
+      this.loaded.get(seq).style.top = `${Math.round(top)}px`;
+      previousSeq = seq;
+    }
+
+    let nextSeq = anchorSeq;
+    for (const seq of [...loadedSeqs].reverse()) {
+      if (seq >= anchorSeq) continue;
+      const top = Math.max(0, this.positions.get(nextSeq) - this.measuredHeights.get(seq) - this.config.chapterGapPx);
+      this.positions.set(seq, top);
+      this.loaded.get(seq).style.top = `${Math.round(top)}px`;
+      nextSeq = seq;
+    }
+  }
+
   reflowLoadedCoordinatesFrom(seq) {
+    this.reflowLoadedCoordinatesAfter(seq, { includeStart: true });
+  }
+
+  reflowLoadedCoordinatesAfter(seq, { includeStart = false } = {}) {
     const loadedSeqs = this.loadedSeqs();
     let previousSeq = null;
     for (const loadedSeq of loadedSeqs) {
-      if (loadedSeq < seq) {
+      if (loadedSeq < seq || (loadedSeq === seq && !includeStart)) {
         previousSeq = loadedSeq;
         continue;
       }
@@ -609,20 +692,24 @@ export class ScriptureScrollerV3 {
 
   async measureChapter(node) {
     const clone = node.cloneNode(true);
-    clone.style.position = "static";
+    clone.style.position = "absolute";
+    clone.style.boxSizing = "border-box";
+    clone.style.margin = "0";
     clone.style.width = `${this.chapterRenderWidthPx()}px`;
-    clone.style.left = "auto";
-    clone.style.top = "auto";
+    clone.style.left = "0";
+    clone.style.top = "0";
     this.measureHost.appendChild(clone);
-    const styles = getComputedStyle(clone);
-    const marginTop = Number.parseFloat(styles.marginTop) || 0;
-    const marginBottom = Number.parseFloat(styles.marginBottom) || 0;
-    const height = clone.getBoundingClientRect().height + marginTop + marginBottom;
+    const height = clone.getBoundingClientRect().height;
     clone.remove();
     return Math.ceil(height);
   }
 
   chapterRenderWidthPx() {
+    const rendered = this.content.querySelector(".lab-chapter");
+    const renderedWidth = rendered?.getBoundingClientRect().width;
+    if (Number.isFinite(renderedWidth) && renderedWidth > 0) {
+      return Math.round(renderedWidth);
+    }
     const scrollerWidth = this.scroller.clientWidth || window.innerWidth || 760;
     return Math.max(1, Math.min(760, scrollerWidth - 40));
   }
@@ -976,6 +1063,9 @@ export class ScriptureScrollerV3 {
         canScrollForward: this.canScrollForward(),
       },
     });
+    if (details.atLoadedBottom && !this.scrollRaf) {
+      void this.evaluateWindow("auto-scroll-bottom");
+    }
   }
 
   emitAutoScrollStop(details = {}) {

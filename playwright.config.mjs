@@ -15,5 +15,6 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:5173/scriptures-sticky-scroll-pwa/",
     trace: "retain-on-failure",
     ...devices["Desktop Chrome"],
+    channel: "chrome",
   },
 });
