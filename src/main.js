@@ -14,6 +14,7 @@ import { renderChaptersView as renderChaptersTemplate } from "./views/chaptersVi
 import { renderHistoryView as renderHistoryTemplate } from "./views/historyView.js";
 import { renderBookmarkRibbons as renderBookmarkRibbonsTemplate } from "./views/readerView.js";
 import { escapeHtml } from "./viewUtils.js";
+import { stickyFollowDelta } from "./stickyFollow.js";
 
 if ("scrollRestoration" in history) {
   history.scrollRestoration = "manual";
@@ -484,7 +485,6 @@ const SLOW_READING_THRESHOLD = 188;
 const STICKY_FOLLOW_FAST_SCROLL_DISABLE_PX_PER_SEC = 900;
 const STICKY_FOLLOW_RESUME_VERSE_GAP = 80;
 const STICKY_FOLLOW_MAX_UPDATE_VERSE_JUMP = 36;
-const STICKY_FOLLOW_MAX_CHAPTER_GAP = 1;
 const STICKY_FOLLOW_OUT_OF_RANGE_DISABLE_MS = 5 * 60 * 1000;
 
 function getAverageVelocityOverWindow() {
@@ -506,24 +506,6 @@ function shouldAutoFollow(anchor, meta) {
   }
   if (now - state.lastAutoBookmarkAt < 350) return { ok: false, reason: "update_throttled", averageVelocity: avg };
   return { ok: true, reason: "ok", averageVelocity: avg };
-}
-
-function stickyFollowDelta(bookmark, anchor) {
-  if (!bookmark?.location || !anchor) return null;
-  const loc = bookmark.location;
-  if (loc.workId !== anchor.workId || loc.bookId !== anchor.bookId) return null;
-  if (Number.isFinite(loc.seq) && Number.isFinite(anchor.seq)) {
-    const seqGap = anchor.seq - loc.seq;
-    if (seqGap < 0 || seqGap > STICKY_FOLLOW_MAX_CHAPTER_GAP) return null;
-    return seqGap === 0
-      ? Math.abs((anchor.verse || 0) - (loc.verse || 0))
-      : (anchor.verse || 0);
-  }
-  const chapterGap = (anchor.chapter || 0) - (loc.chapter || 0);
-  if (chapterGap < 0 || chapterGap > STICKY_FOLLOW_MAX_CHAPTER_GAP) return null;
-  return chapterGap === 0
-    ? Math.abs((anchor.verse || 0) - (loc.verse || 0))
-    : (anchor.verse || 0);
 }
 
 function handleAnchorChange(anchor, meta) {
