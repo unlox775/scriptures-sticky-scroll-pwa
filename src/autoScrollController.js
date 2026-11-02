@@ -1,10 +1,22 @@
 const MANUAL_SCROLL_CANCEL_PX = 12;
 const AUTO_SCROLL_SPEED_KEY = "scripture-pwa-auto-scroll-speed-v1";
 
+const SPEED_MIN = 8;
+const SPEED_MAX = 160;
+const SPEED_STEP = 4;
+
+// Snap a speed onto the slider grid (8..160, step 4). Older builds saved unrounded floats.
+export function normalizeSpeed(speed, fallback = 20) {
+  const n = Number(speed);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  const clamped = Math.min(SPEED_MAX, Math.max(SPEED_MIN, n));
+  return SPEED_MIN + Math.round((clamped - SPEED_MIN) / SPEED_STEP) * SPEED_STEP;
+}
+
 function readSavedSpeed(fallback) {
   try {
-    const saved = Number(localStorage.getItem(AUTO_SCROLL_SPEED_KEY));
-    return Number.isFinite(saved) && saved > 0 ? saved : fallback;
+    const raw = localStorage.getItem(AUTO_SCROLL_SPEED_KEY);
+    return raw == null ? fallback : normalizeSpeed(raw, fallback);
   } catch {
     return fallback;
   }
