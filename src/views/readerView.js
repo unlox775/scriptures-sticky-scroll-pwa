@@ -1,3 +1,19 @@
+export const RIBBON_NEAR_CHAPTER_GAP = 3;
+
+// True when a bookmark is close enough to the current location to try rendering its ribbon.
+// Uses seq (chapter index across the whole work) when present, so a bookmark at the start of
+// the next book (e.g. Ether 1:1 while the header says Mormon 9) still counts as nearby.
+export function isBookmarkNearLocation(bookmark, currentLocation) {
+  const loc = bookmark?.location;
+  if (!loc || !currentLocation) return false;
+  if (loc.workId !== currentLocation.workId) return false;
+  if (Number.isFinite(loc.seq) && Number.isFinite(currentLocation.seq)) {
+    return Math.abs(currentLocation.seq - loc.seq) <= RIBBON_NEAR_CHAPTER_GAP;
+  }
+  if (loc.bookId !== currentLocation.bookId) return false;
+  return Math.abs((currentLocation.chapter || 0) - (loc.chapter || 0)) <= RIBBON_NEAR_CHAPTER_GAP;
+}
+
 export function renderBookmarkRibbons({
   overlay,
   scroller,
@@ -8,14 +24,7 @@ export function renderBookmarkRibbons({
   onToggleStickyFollow,
 }) {
   if (!overlay || !scroller) return;
-  const inView = bookmarks.filter((bookmark) => {
-    if (!bookmark.location || !currentLocation) return false;
-    if (bookmark.location.workId !== currentLocation.workId) return false;
-    if (bookmark.location.bookId !== currentLocation.bookId) return false;
-    const ch = currentLocation.chapter || 0;
-    const bCh = bookmark.location.chapter || 0;
-    return Math.abs(ch - bCh) <= 3;
-  });
+  const inView = bookmarks.filter((bookmark) => isBookmarkNearLocation(bookmark, currentLocation));
 
   const visibleIds = new Set();
   const scrollerRect = scroller.getBoundingClientRect();
