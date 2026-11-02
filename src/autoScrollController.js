@@ -3,14 +3,18 @@ const AUTO_SCROLL_SPEED_KEY = "scripture-pwa-auto-scroll-speed-v1";
 
 const SPEED_MIN = 8;
 const SPEED_MAX = 160;
-const SPEED_STEP = 4;
 
-// Snap a speed onto the slider grid (8..160, step 4). Older builds saved unrounded floats.
+// Clamp a saved speed to the slider range; keep fractional values as-is.
 export function normalizeSpeed(speed, fallback = 20) {
   const n = Number(speed);
   if (!Number.isFinite(n) || n <= 0) return fallback;
-  const clamped = Math.min(SPEED_MAX, Math.max(SPEED_MIN, n));
-  return SPEED_MIN + Math.round((clamped - SPEED_MIN) / SPEED_STEP) * SPEED_STEP;
+  return Math.min(SPEED_MAX, Math.max(SPEED_MIN, n));
+}
+
+// Integers show no decimals; anything else shows exactly two.
+export function formatSpeedLabel(speed) {
+  const n = Number(speed);
+  return `${Number.isInteger(n) ? String(n) : n.toFixed(2)} px/s`;
 }
 
 function readSavedSpeed(fallback) {
@@ -109,7 +113,7 @@ export class AutoScrollController {
         <span>px/sec</span>
         <input type="range" min="8" max="160" step="4" value="${this.speed}" />
       </label>
-      <span class="auto-scroll-speed-value" data-auto-speed>${this.speed} px/s</span>
+      <span class="auto-scroll-speed-value" data-auto-speed>${formatSpeedLabel(this.speed)}</span>
       <button class="auto-scroll-stop" type="button" data-auto-stop>Stop</button>
     `;
 
@@ -118,7 +122,7 @@ export class AutoScrollController {
     input.addEventListener("input", () => {
       this.speed = Number(input.value) || this.speed;
       saveSpeed(this.speed);
-      speedLabel.textContent = `${this.speed} px/s`;
+      speedLabel.textContent = formatSpeedLabel(this.speed);
     });
     panel.querySelector("[data-auto-stop]").addEventListener("click", this.stop);
 
