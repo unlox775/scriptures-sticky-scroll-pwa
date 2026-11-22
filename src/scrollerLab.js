@@ -1,7 +1,7 @@
 import "./scrollerLab.css";
 import { loadIndex } from "./data.js";
 import { createScriptureReader, parseScrollerRoute } from "./scriptureReader.js";
-import { formatSpeedLabel } from "./autoScrollController.js";
+import { formatSpeedLabel, speedToSlider } from "./autoScrollController.js";
 
 const els = {
   labHeader: document.querySelector(".lab-header"),
@@ -73,7 +73,8 @@ function getBlockAtTargetLine() {
 function setAutoScrollSpeedForTest(speed) {
   if (!reader?.autoScroll) return;
   reader.autoScroll.speed = speed;
-  document.querySelector(".auto-scroll-panel input")?.setAttribute("value", String(speed));
+  const input = document.querySelector(".auto-scroll-panel input");
+  if (input) input.value = String(speedToSlider(speed));
   const label = document.querySelector("[data-auto-speed]");
   if (label) label.textContent = formatSpeedLabel(speed);
 }
