@@ -1,17 +1,35 @@
 const MANUAL_SCROLL_CANCEL_PX = 12;
 const AUTO_SCROLL_SPEED_KEY = "scripture-pwa-auto-scroll-speed-v1";
 
-const SPEED_MIN = 8;
+const SPEED_MIN = 0;
 const SPEED_MAX = 160;
 
 // Clamp a saved speed to the slider range; keep fractional values as-is.
+// Do not snap to the old 4 px/s grid.
 export function normalizeSpeed(speed, fallback = 20) {
   const n = Number(speed);
-  if (!Number.isFinite(n) || n <= 0) return fallback;
+  if (!Number.isFinite(n) || n < 0) return fallback;
   return Math.min(SPEED_MAX, Math.max(SPEED_MIN, n));
 }
 
-// Integers show no decimals; anything else shows exactly two.
+// Cubic mapping: speed = 160 * t^3 (t in [0,1])
+// Left half of the slider is fine-grained around typical reading speeds:
+//   t=0 (left) 0 px/s, t=0.5 (center) 20 px/s, t=1 (right) 160 px/s.
+export function sliderToSpeed(t) {
+  const n = Number(t);
+  if (!Number.isFinite(n)) return SPEED_MIN;
+  const clamped = Math.min(1, Math.max(0, n));
+  return SPEED_MAX * Math.pow(clamped, 3);
+}
+
+// Inverse: t = (speed / 160)^(1/3). A saved 20 px/s places the thumb at center.
+export function speedToSlider(speed) {
+  const n = Number(speed);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.pow(Math.min(SPEED_MAX, n) / SPEED_MAX, 1 / 3);
+}
+
+// Integers show no decimals; anything else shows exactly two (Nov 2, 2026 rule).
 export function formatSpeedLabel(speed) {
   const n = Number(speed);
   return `${Number.isInteger(n) ? String(n) : n.toFixed(2)} px/s`;
@@ -108,10 +126,11 @@ export class AutoScrollController {
     this.stop();
     const panel = document.createElement("div");
     panel.className = "auto-scroll-panel";
+    const sliderValue = speedToSlider(this.speed);
     panel.innerHTML = `
       <label class="auto-scroll-speed-control">
         <span>px/sec</span>
-        <input type="range" min="8" max="160" step="4" value="${this.speed}" />
+        <input type="range" min="0" max="1" step="any" value="${sliderValue}" />
       </label>
       <span class="auto-scroll-speed-value" data-auto-speed>${formatSpeedLabel(this.speed)}</span>
       <button class="auto-scroll-stop" type="button" data-auto-stop>Stop</button>
@@ -120,7 +139,8 @@ export class AutoScrollController {
     const input = panel.querySelector("input");
     const speedLabel = panel.querySelector("[data-auto-speed]");
     input.addEventListener("input", () => {
-      this.speed = Number(input.value) || this.speed;
+      const t = Number(input.value);
+      this.speed = Number.isFinite(t) ? sliderToSpeed(t) : this.speed;
       saveSpeed(this.speed);
       speedLabel.textContent = formatSpeedLabel(this.speed);
     });
