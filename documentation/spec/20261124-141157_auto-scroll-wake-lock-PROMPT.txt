@@ -1,0 +1,3 @@
+[2026-11-24] Dave:
+
+Alright, another feature that is missing. Take a look at the Web Whisper or Web Whisper Harness projects. We need something that keeps the screen awake while it is scrolling, because the screen will go to sleep after I sit and watch the scroll for about five or ten minutes.
