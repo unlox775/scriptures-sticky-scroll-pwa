@@ -1,3 +1,5 @@
+import { initializeWakeLock, setWakeLockActive } from "./wakeLock.js";
+
 const MANUAL_SCROLL_CANCEL_PX = 12;
 const AUTO_SCROLL_SPEED_KEY = "scripture-pwa-auto-scroll-speed-v1";
 
@@ -89,6 +91,7 @@ export class AutoScrollController {
     this.scroller.addEventListener("touchstart", this.handleTouchStart, { passive: true });
     this.scroller.addEventListener("touchmove", this.handleManualScrollIntent, { passive: true });
     this.scroller.addEventListener("keydown", this.handleManualScrollIntent);
+    initializeWakeLock();
   }
 
   disconnect() {
@@ -114,7 +117,10 @@ export class AutoScrollController {
     if (this.button) this.button.textContent = "Auto scroll";
     document.querySelectorAll(".auto-scroll-panel").forEach((node) => node.remove());
     this.onStateChange?.(false);
-    if (wasActive) this.onStop?.({ reason, scrollTop: this.scroller.scrollTop, speed: this.speed });
+    if (wasActive) {
+      void setWakeLockActive(false, reason);
+      this.onStop?.({ reason, scrollTop: this.scroller.scrollTop, speed: this.speed });
+    }
   }
 
   open() {
@@ -151,6 +157,8 @@ export class AutoScrollController {
     this.floatScrollTop = this.scroller.scrollTop;
     this.onStateChange?.(true);
     this.raf = requestAnimationFrame(this.step);
+    // Start in the same turn as the Auto scroll tap so iOS can play the video fallback.
+    void setWakeLockActive(true, "auto-scroll-start");
   }
 
   step(ts) {

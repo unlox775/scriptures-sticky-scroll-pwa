@@ -14,6 +14,7 @@ This directory contains technical documentation for the Scripture Reader PWA. St
 | Sticky bookmarks | 🟩 Ready | Multiple bookmarks, active selection, delete confirmation, and animated auto-follow while scrolling. |
 | Daily bookmark history | 🟩 Ready | Per-bookmark chronology snapshots persisted locally. |
 | Auto-scroll controls | 🟩 Ready | Full-width top-mounted start/stop and speed slider. |
+| Screen wake lock while auto-scrolling | 🟩 Ready | Screen Wake Lock API plus muted looping video fallback on iOS; held only while auto-scroll is running. Debug chip behind `?debug`; `window.__wakeLockState` hook. |
 | LRU book cache (max 2) | 🟩 Ready | Per-book gzip assets; runtime cache caps decompressed books. |
 | Non-verse sacred text | 🟨 Partial | Some source headings exist but are dropped by the build; other chapter prefaces need a supplemental source. |
 | Footnote/page references | 🟨 Partial | Current data source lacks official footnotes; links out to Gospel Library. |
