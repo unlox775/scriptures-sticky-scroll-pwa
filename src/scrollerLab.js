@@ -72,11 +72,7 @@ function getBlockAtTargetLine() {
 
 function setAutoScrollSpeedForTest(speed) {
   if (!reader?.autoScroll) return;
-  reader.autoScroll.speed = speed;
-  const input = document.querySelector(".auto-scroll-panel input");
-  if (input) input.value = String(speedToSlider(speed));
-  const label = document.querySelector("[data-auto-speed]");
-  if (label) label.textContent = formatSpeedLabel(speed);
+  reader.autoScroll.setSpeed(speed);
 }
 
 function fmtPx(value) {

@@ -1,0 +1,98 @@
+{
+  "before": {
+    "verseTop": 326.765625,
+    "scrollTop": 14999853,
+    "scrollerTop": 72.375,
+    "scrollerH": 591.625,
+    "headerH": 64.375
+  },
+  "after": {
+    "verseTop": 321.765625,
+    "scrollTop": 14999858,
+    "scrollerTop": 72.375,
+    "scrollerH": 591.625,
+    "headerH": 64.375
+  },
+  "scrolledSinceStartPx": 5,
+  "verseOffsetBefore": 254.390625,
+  "verseOffsetAfterAdjusted": 254.390625,
+  "layoutShiftScrollerTop": 0,
+  "layoutShiftScrollerHeight": 0,
+  "panelBox": {
+    "strip": {
+      "x": 370,
+      "y": 118.390625,
+      "width": 20,
+      "height": 531.21875,
+      "top": 118.390625,
+      "right": 390,
+      "bottom": 649.609375,
+      "left": 370
+    },
+    "thumb": {
+      "x": 371,
+      "y": 364.890625,
+      "width": 18,
+      "height": 38,
+      "top": 364.890625,
+      "right": 389,
+      "bottom": 402.890625,
+      "left": 371
+    },
+    "panelPosition": "fixed",
+    "vw": 390,
+    "vh": 664,
+    "inner": 664
+  },
+  "thumbStartFraction": 0.49977824241272256,
+  "middle": {
+    "label": "20 px/s",
+    "measuredPxPerS": 19.975031210986266,
+    "saved": null,
+    "wake": "held"
+  },
+  "slowLabel": "0.28 px/s",
+  "slow": {
+    "label": "0.28 px/s",
+    "measuredPxPerS": 0.3328340822100183,
+    "saved": "0.2764799828929864",
+    "wake": "held"
+  },
+  "dragNoScroll": {
+    "actualScrolledPx": 357,
+    "expectedFromDisplayedSpeedPx": 356.0746239978432,
+    "windowScrollY": 0,
+    "bodyScrollH": 664,
+    "innerH": 664,
+    "activeStill": true,
+    "samples": 183
+  },
+  "fast": {
+    "label": "140.42 px/s",
+    "measuredPxPerS": 140.17571884984025,
+    "saved": "140.42063409451674",
+    "wake": "held"
+  },
+  "tapTopLabel": "0 px/s",
+  "tapMidLabel": "20 px/s",
+  "savedAfter": "20",
+  "wakeWhileRunning": {
+    "status": "held",
+    "desiredActive": true,
+    "hasSentinel": false,
+    "videoPlaying": true,
+    "method": "video"
+  },
+  "afterStop": {
+    "panels": 0,
+    "wake": "released"
+  },
+  "restart": {
+    "label": "20 px/s",
+    "thumbFrac": 0.49977824241272256
+  },
+  "afterFling": {
+    "panels": 0,
+    "wake": "released"
+  }
+}

@@ -134,7 +134,7 @@ function setView(viewId) {
   addBookmarkButton.hidden = !inReader;
   moveBookmarkButton.hidden = !inReader;
   autoScrollStart.hidden = !inReader;
-  autoScrollStart.textContent = state.autoScrollActive ? "Auto scrolling" : "Auto scroll";
+  autoScrollStart.textContent = state.autoScrollActive ? "Stop" : "Auto scroll";
   updateHeader(viewId);
   updateInstallVisibility(viewId);
   updateDevEasterEggVisibility();
@@ -199,7 +199,7 @@ function ensureReaderService() {
     onAnchorChange: handleAnchorChange,
     onAutoScrollStateChange(active) {
       state.autoScrollActive = active;
-      autoScrollStart.textContent = active ? "Auto scrolling" : "Auto scroll";
+      autoScrollStart.textContent = active ? "Stop" : "Auto scroll";
     },
     onAutoScrollFrame() {
       if (!readerView.hidden) renderBookmarkRibbons();

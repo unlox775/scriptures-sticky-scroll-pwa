@@ -15,8 +15,8 @@ export function normalizeSpeed(speed, fallback = 20) {
 }
 
 // Cubic mapping: speed = 160 * t^3 (t in [0,1])
-// Left half of the slider is fine-grained around typical reading speeds:
-//   t=0 (left) 0 px/s, t=0.5 (center) 20 px/s, t=1 (right) 160 px/s.
+// The first half of the control is fine-grained around typical reading speeds:
+//   t=0 (top) 0 px/s, t=0.5 (middle) 20 px/s, t=1 (bottom) 160 px/s.
 export function sliderToSpeed(t) {
   const n = Number(t);
   if (!Number.isFinite(n)) return SPEED_MIN;
@@ -78,6 +78,11 @@ export class AutoScrollController {
     this.floatScrollTop = 0;
     this.touchStartY = null;
 
+    this.panel = null;
+    this.layoutSpeedControl = this.layoutSpeedControl.bind(this);
+    this.handleStripPointerDown = this.handleStripPointerDown.bind(this);
+    this.handleStripPointerMove = this.handleStripPointerMove.bind(this);
+    this.handleStripPointerEnd = this.handleStripPointerEnd.bind(this);
     this.open = this.open.bind(this);
     this.stop = this.stop.bind(this);
     this.step = this.step.bind(this);
@@ -115,6 +120,7 @@ export class AutoScrollController {
     this.floatScrollTop = 0;
     this.touchStartY = null;
     if (this.button) this.button.textContent = "Auto scroll";
+    this.unmountSpeedControl();
     document.querySelectorAll(".auto-scroll-panel").forEach((node) => node.remove());
     this.onStateChange?.(false);
     if (wasActive) {
@@ -130,35 +136,118 @@ export class AutoScrollController {
     }
 
     this.stop();
-    const panel = document.createElement("div");
-    panel.className = "auto-scroll-panel";
-    const sliderValue = speedToSlider(this.speed);
-    panel.innerHTML = `
-      <label class="auto-scroll-speed-control">
-        <span>px/sec</span>
-        <input type="range" min="0" max="1" step="any" value="${sliderValue}" />
-      </label>
-      <span class="auto-scroll-speed-value" data-auto-speed>${formatSpeedLabel(this.speed)}</span>
-      <button class="auto-scroll-stop" type="button" data-auto-stop>Stop</button>
-    `;
-
-    const input = panel.querySelector("input");
-    const speedLabel = panel.querySelector("[data-auto-speed]");
-    input.addEventListener("input", () => {
-      const t = Number(input.value);
-      this.speed = Number.isFinite(t) ? sliderToSpeed(t) : this.speed;
-      saveSpeed(this.speed);
-      speedLabel.textContent = formatSpeedLabel(this.speed);
-    });
-    panel.querySelector("[data-auto-stop]").addEventListener("click", this.stop);
-
-    this.panelHost?.insertAdjacentElement("afterend", panel);
-    if (this.button) this.button.textContent = "Auto scrolling";
+    this.mountSpeedControl();
+    if (this.button) this.button.textContent = "Stop";
     this.floatScrollTop = this.scroller.scrollTop;
     this.onStateChange?.(true);
     this.raf = requestAnimationFrame(this.step);
     // Start in the same turn as the Auto scroll tap so iOS can play the video fallback.
     void setWakeLockActive(true, "auto-scroll-start");
+  }
+
+  // Floating speed control: fixed to the viewport, takes no layout space.
+  // Thumb TOP = slowest (t=0), BOTTOM = fastest (t=1). Same cubic mapping as before.
+  mountSpeedControl() {
+    const panel = document.createElement("div");
+    panel.className = "auto-scroll-panel";
+    panel.innerHTML = `
+      <div class="auto-scroll-label" aria-hidden="true">
+        <span class="auto-scroll-label-title">Scroll speed</span>
+        <span class="auto-scroll-speed-value" data-auto-speed>${formatSpeedLabel(this.speed)}</span>
+      </div>
+      <div class="auto-scroll-strip" data-auto-strip role="slider" aria-label="Scroll speed"
+        aria-orientation="vertical" aria-valuemin="0" aria-valuemax="160">
+        <div class="auto-scroll-track"></div>
+        <div class="auto-scroll-thumb" data-auto-thumb></div>
+      </div>
+    `;
+    document.body.appendChild(panel);
+    this.panel = panel;
+    this.strip = panel.querySelector("[data-auto-strip]");
+    this.thumb = panel.querySelector("[data-auto-thumb]");
+    this.speedLabel = panel.querySelector("[data-auto-speed]");
+    this.dragOffset = null;
+
+    this.layoutSpeedControl();
+    this.syncSpeedUI();
+    window.addEventListener("resize", this.layoutSpeedControl);
+
+    const strip = this.strip;
+    strip.addEventListener("pointerdown", this.handleStripPointerDown);
+    strip.addEventListener("pointermove", this.handleStripPointerMove);
+    strip.addEventListener("pointerup", this.handleStripPointerEnd);
+    strip.addEventListener("pointercancel", this.handleStripPointerEnd);
+  }
+
+  unmountSpeedControl() {
+    window.removeEventListener("resize", this.layoutSpeedControl);
+    this.panel?.remove();
+    this.panel = null;
+    this.strip = null;
+    this.thumb = null;
+    this.speedLabel = null;
+    this.dragOffset = null;
+  }
+
+  // Anchor the control just below the app header (top of the reading view).
+  layoutSpeedControl() {
+    if (!this.panel) return;
+    const top = Math.max(0, Math.round(this.scroller.getBoundingClientRect().top));
+    this.panel.style.setProperty("--auto-scroll-top", `${top}px`);
+    this.syncSpeedUI();
+  }
+
+  speedFromPointer(clientY) {
+    const rect = this.strip.getBoundingClientRect();
+    const thumbH = this.thumb.offsetHeight;
+    const travel = Math.max(1, rect.height - thumbH);
+    const center = clientY - (this.dragOffset || 0);
+    return sliderToSpeed((center - rect.top - thumbH / 2) / travel);
+  }
+
+  handleStripPointerDown(event) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    event.preventDefault();
+    const thumbRect = this.thumb.getBoundingClientRect();
+    const onThumb = event.clientY >= thumbRect.top && event.clientY <= thumbRect.bottom;
+    // Grabbing the thumb keeps its offset; tapping the track jumps the thumb there.
+    this.dragOffset = onThumb ? event.clientY - (thumbRect.top + thumbRect.height / 2) : 0;
+    try {
+      this.strip.setPointerCapture(event.pointerId);
+    } catch {}
+    this.strip.classList.add("is-dragging");
+    this.setSpeed(this.speedFromPointer(event.clientY), { persist: true });
+  }
+
+  handleStripPointerMove(event) {
+    if (this.dragOffset === null || !this.strip?.hasPointerCapture?.(event.pointerId)) return;
+    event.preventDefault();
+    this.setSpeed(this.speedFromPointer(event.clientY), { persist: true });
+  }
+
+  handleStripPointerEnd(event) {
+    if (this.dragOffset === null) return;
+    this.dragOffset = null;
+    this.strip?.classList.remove("is-dragging");
+    try {
+      this.strip?.releasePointerCapture(event.pointerId);
+    } catch {}
+  }
+
+  setSpeed(speed, { persist = false } = {}) {
+    this.speed = normalizeSpeed(speed, this.speed);
+    if (persist) saveSpeed(this.speed);
+    this.syncSpeedUI();
+  }
+
+  syncSpeedUI() {
+    if (!this.panel) return;
+    const t = speedToSlider(this.speed);
+    const travel = Math.max(0, this.strip.clientHeight - this.thumb.offsetHeight);
+    this.thumb.style.transform = `translateY(${(t * travel).toFixed(2)}px)`;
+    this.strip.setAttribute("aria-valuenow", String(Math.round(this.speed * 100) / 100));
+    this.strip.setAttribute("aria-valuetext", formatSpeedLabel(this.speed));
+    this.speedLabel.textContent = formatSpeedLabel(this.speed);
   }
 
   step(ts) {
