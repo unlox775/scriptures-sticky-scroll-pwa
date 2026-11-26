@@ -57,6 +57,13 @@ body {
   color: #e2e8f0;
 }
 
+/* Keep the header the same width/height when the label flips to "Stop"
+   (a wider/narrower label made the title re-wrap and shifted the reader). */
+#autoScrollStart {
+  min-width: 5.7rem;
+  white-space: nowrap;
+}
+
 .header-title {
   flex: 1;
   font-weight: 600;
